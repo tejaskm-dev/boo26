@@ -1,0 +1,59 @@
+{
+ "_readme": "Per-sheet tuning for scripts/slice-sprite.py. 'erode' is how many px of ink are shaved off before the gaps are measured \u2014 higher clears more spray specks and drips out of the aisles, lower keeps pieces that sit close together apart. 'split_x'/'split_y' force a cut through a cell the projection could not find, 'merge' joins two cells, 'drop' removes one.",
+ "16DC7774-2000-4C7E-BFBA-6289E3EE607A": {
+  "erode": 4
+ },
+ "2FB4C214-9203-493E-9D64-2804D9C23FDA": {
+  "erode": 4
+ },
+ "66CFA744-5588-4B11-8099-2EBBA9051E28": {
+  "erode": 4,
+  "_note": "the dashed trail's segments read as two cells and are merged back; the controller sits on the lamp post's glow with no aisle between them, so that cell is cut by hand at the thinnest row",
+  "merge": [
+   [
+    4,
+    8
+   ]
+  ],
+  "split_y": {
+   "6": 674
+  }
+ },
+ "9E31BFFF-A9D8-42AF-8948-B9F70AB4D4CB": {
+  "erode": 10,
+  "_note": "the books and the pizza box overlap in the render; there is no aisle to find, so both are placed by hand",
+  "replace": {
+   "0": [
+    [
+     20,
+     20,
+     405,
+     553
+    ],
+    [
+     435,
+     20,
+     850,
+     553
+    ]
+   ]
+  }
+ },
+ "D251958E-3EEF-4E72-ADAB-EA5D00186762": {
+  "erode": 6,
+  "_note": "6 keeps each '!' joined to its dot; the scribble's two loops read as separate cells, so they are merged back, as are the two exclamation marks into one '!!'",
+  "merge": [
+   [
+    4,
+    5
+   ],
+   [
+    9,
+    10
+   ]
+  ]
+ },
+ "updatesprite": {
+  "erode": 4
+ }
+}

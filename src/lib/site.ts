@@ -21,6 +21,18 @@ export const EVENT = {
   discordHref: "#",
 } as const;
 
+/**
+ * The running bands. Facts only — the point of a band is that the answer to
+ * "when", "where" and "how long" is never more than a screen away.
+ */
+export const BAND = [
+  "24 OCT 2026",
+  "ASIET, KALADY",
+  "20 HOURS",
+  "2 PER TEAM",
+  "MULEARN @ ASIET",
+] as const;
+
 export type NavItem = { label: string; index: string; href: string };
 
 export const NAV: NavItem[] = [

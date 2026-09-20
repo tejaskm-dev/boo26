@@ -115,11 +115,37 @@ body[data-lock="true"] {
 }
 
 /* ------------------------------------------------------------------ *
+ * Artwork scale
+ *
+ * Every Sprite is sized in px from its own artwork, which is what keeps the
+ * props rendering at or near 1:1 instead of being blown up. Those sizes are
+ * art-directed against a desktop canvas, so on a phone the same number is
+ * enormous — a cat can end up 96% of a 375px screen. One multiplier scales the
+ * whole system down per breakpoint rather than each placement carrying its own
+ * responsive width.
+ * ------------------------------------------------------------------ */
+:root {
+  --sprite-scale: 1;
+}
+
+@media (max-width: 640px) {
+  :root {
+    --sprite-scale: 0.52;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1023px) {
+  :root {
+    --sprite-scale: 0.74;
+  }
+}
+
+/* ------------------------------------------------------------------ *
  * Film grain — one fixed layer over the whole document
  * ------------------------------------------------------------------ */
 .grain {
   position: fixed;
-  inset: -50%;
+  inset: -8%;
   z-index: 60;
   pointer-events: none;
   opacity: 0.5;
@@ -143,10 +169,6 @@ body[data-lock="true"] {
 /* ------------------------------------------------------------------ *
  * Entrance: elements start hidden only when JS will animate them in
  * ------------------------------------------------------------------ */
-[data-anim] {
-  will-change: transform, opacity;
-}
-
 html[data-js="true"] [data-anim="rise"] {
   opacity: 0;
   transform: translate3d(0, 1.6rem, 0);
@@ -159,6 +181,14 @@ html[data-js="true"] [data-anim="fade"] {
 /* ------------------------------------------------------------------ *
  * Reduced motion
  * ------------------------------------------------------------------ */
+@media (max-width: 640px) {
+  .grain {
+    animation: none;
+    mix-blend-mode: normal;
+    opacity: 0.22;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .grain {
     animation: none;
@@ -180,12 +210,44 @@ html {
   --mark-bone: 0;
   --head-fg: var(--color-ink);
   --head-fg-right: var(--color-ink);
+  --head-bg: var(--color-bone);
 }
 
 html[data-tone="ink"] {
   --mark-ink: 0;
   --mark-bone: 1;
   --head-fg: var(--color-bone);
+  --head-bg: var(--color-ink);
+}
+
+/* The header floats over the page, so once anything has scrolled under it the
+   wordmark lands on whatever happens to be there — usually a headline in the
+   same colour. A scrim in the current field's own colour keeps it legible
+   without reading as a bar; over the hero there is nothing behind it yet, so
+   it stays off until the page has moved. */
+header::before {
+  content: "";
+  position: absolute;
+  inset: -0.5rem 0 auto;
+  height: calc(100% + 1.75rem);
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0;
+  background: linear-gradient(
+    to bottom,
+    var(--head-bg) 0%,
+    color-mix(in srgb, var(--head-bg) 82%, transparent) 46%,
+    transparent 100%
+  );
+  transition: opacity 0.45s var(--ease-out-soft);
+}
+
+html[data-scrolled="true"] header::before {
+  opacity: 1;
+}
+
+html[data-nav="open"] header::before {
+  opacity: 0;
 }
 
 html[data-tone-right="ink"] {
@@ -330,59 +392,6 @@ html[data-nav="open"] .scrollrail {
 @media (prefers-reduced-motion: reduce) {
   .scrollrail-bead {
     transition: none;
-  }
-}
-
-/* ------------------------------------------------------------------ *
- * Ambient drift — the fields are never completely still. Compositor-only
- * transforms on very long, mismatched periods, so nothing ever visibly
- * loops and the cost is close to zero.
- * ------------------------------------------------------------------ */
-@keyframes drift-a {
-  0%   { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
-  25%  { transform: translate3d(2.5%, -1.8%, 0) rotate(3deg) scale(1.05); }
-  50%  { transform: translate3d(-1.5%, 2.2%, 0) rotate(-2deg) scale(0.97); }
-  75%  { transform: translate3d(-2.8%, -1%, 0) rotate(2.5deg) scale(1.04); }
-  100% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
-}
-
-@keyframes drift-b {
-  0%   { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
-  33%  { transform: translate3d(-3%, 1.6%, 0) rotate(-4deg) scale(1.06); }
-  66%  { transform: translate3d(2%, 2.6%, 0) rotate(3deg) scale(0.95); }
-  100% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
-}
-
-@keyframes drift-c {
-  0%   { transform: translate3d(0, 0, 0) scale(1); }
-  40%  { transform: translate3d(1.8%, 2.8%, 0) scale(1.07); }
-  70%  { transform: translate3d(-2.2%, -1.4%, 0) scale(0.96); }
-  100% { transform: translate3d(0, 0, 0) scale(1); }
-}
-
-/* the blob itself also breathes, so the silhouette is never static either */
-@keyframes morph {
-  0%   { border-radius: 58% 42% 46% 54% / 52% 58% 42% 48%; }
-  25%  { border-radius: 44% 56% 62% 38% / 42% 46% 54% 58%; }
-  50%  { border-radius: 62% 38% 40% 60% / 58% 42% 58% 42%; }
-  75%  { border-radius: 38% 62% 56% 44% / 46% 62% 38% 54%; }
-  100% { border-radius: 58% 42% 46% 54% / 52% 58% 42% 48%; }
-}
-
-.ambient-blob {
-  position: absolute;
-  /* heavily blurred so it lands as depth in the field, never as a shape */
-  filter: blur(clamp(40px, 6vw, 90px));
-  will-change: transform, border-radius;
-  animation:
-    var(--drift, drift-a) var(--drift-time, 54s) ease-in-out infinite,
-    morph var(--morph-time, 26s) ease-in-out infinite;
-  animation-delay: var(--drift-delay, 0s), var(--morph-delay, 0s);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ambient-blob {
-    animation: none;
   }
 }
 

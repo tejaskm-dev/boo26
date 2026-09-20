@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { SPRITE, type SpriteName } from "@/lib/sprites";
 import { subscribePointer } from "@/lib/pointer";
@@ -10,11 +10,15 @@ import { prefersReducedMotion } from "@/lib/motion";
 /**
  * Places one piece of the BOO! artwork.
  *
- * The board these were cut from is only 1536px across, so each asset has a
- * small intrinsic size. `scale` is a multiple of that size rather than a free
+ * `scale` is a multiple of the artwork's own pixel size rather than a free
  * width, which keeps every prop rendering at or near 1:1 instead of being
  * blown up until it turns to mush. `drift` opts the piece into the same
  * pointer parallax the hero fields use.
+ *
+ * Both the float and the parallax are held until the piece is actually near
+ * the viewport. The page carries sixty-odd of these; a looping tween and a
+ * pointer subscription each, running the whole way down, is most of a frame
+ * spent animating things nobody is looking at.
  */
 export default function Sprite({
   name,
@@ -42,9 +46,23 @@ export default function Sprite({
   const art = SPRITE[name];
   const wrap = useRef<HTMLSpanElement>(null);
   const inner = useRef<HTMLSpanElement>(null);
+  const [near, setNear] = useState(false);
+  const animated = (idle > 0 || drift > 0) && near;
 
   useEffect(() => {
-    if (!idle || prefersReducedMotion()) return;
+    if (!idle && !drift) return;
+    const el = wrap.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([e]) => setNear(e.isIntersecting),
+      { rootMargin: "35% 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [idle, drift]);
+
+  useEffect(() => {
+    if (!idle || !near || prefersReducedMotion()) return;
     const el = inner.current;
     if (!el) return;
     // a different phase and period per instance, so a row of cats never
@@ -60,11 +78,12 @@ export default function Sprite({
     });
     return () => {
       tween.kill();
+      gsap.set(el, { clearProps: "transform" });
     };
-  }, [idle]);
+  }, [idle, near]);
 
   useEffect(() => {
-    if (!drift || prefersReducedMotion()) return;
+    if (!drift || !near || prefersReducedMotion()) return;
     const el = wrap.current;
     if (!el) return;
     const x = gsap.quickTo(el, "x", { duration: 1.4, ease: "power2.out" });
@@ -73,16 +92,16 @@ export default function Sprite({
       x(-nx * drift);
       y(-ny * drift * 0.55);
     });
-  }, [drift]);
+  }, [drift, near]);
 
   return (
     <span
       ref={wrap}
       className={`pointer-events-none block select-none ${className}`}
-      style={{ width: `${art.w * scale}px`, ...style }}
+      style={{ width: `calc(${art.w * scale}px * var(--sprite-scale, 1))`, ...style }}
       {...rest}
     >
-      <span ref={inner} className="block will-change-transform">
+      <span ref={inner} className="block" style={animated ? { willChange: "transform" } : undefined}>
       <Image
         src={art.src}
         alt={alt}

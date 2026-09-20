@@ -25,15 +25,20 @@ const CLIP_BONE =
 
 /**
  * Each item is set differently — width axis, size and indent — so the index
- * reads as a composition rather than a menu. Long words get narrower cuts so
- * they still land inside the off-white field.
+ * reads as a composition rather than a menu.
+ *
+ * One entry per label, in order, because the setting has to answer the word:
+ * the big wide cuts go to the short labels and the long ones are set narrow
+ * and smaller, which is what keeps every line inside the off-white field
+ * instead of running out into the ink.
  */
 const ITEM = [
-  { wdth: 125, size: 1.16, indent: 0, tilt: -1.9 },
-  { wdth: 88, size: 0.92, indent: 2.6, tilt: 1.3 },
-  { wdth: 102, size: 0.96, indent: 0.9, tilt: -0.7 },
-  { wdth: 125, size: 1.3, indent: 5.4, tilt: 2.3 },
-  { wdth: 106, size: 1.02, indent: 2.2, tilt: -1.4 },
+  { wdth: 118, size: 1.1, indent: 0, tilt: -1.9 },   // The Night
+  { wdth: 86, size: 0.9, indent: 2.6, tilt: 1.3 },   // Experience
+  { wdth: 112, size: 1.05, indent: 0.9, tilt: -0.7 }, // 20 Hours
+  { wdth: 88, size: 0.92, indent: 3, tilt: 2.3 },    // After Dark
+  { wdth: 125, size: 1.34, indent: 5.4, tilt: -1.4 }, // Build
+  { wdth: 125, size: 1.5, indent: 7.5, tilt: 1.8 },  // FAQ
 ];
 
 /** where the blob starts from, and how big it has to get to cover the page */
@@ -106,11 +111,15 @@ export default function FullscreenNav({
         .fromTo(ink.current, shut, { ...wide, duration: 1, ease: "power3.inOut" })
         .fromTo(bone.current, shut, { ...wide, duration: 0.95, ease: "power3.inOut" }, 0.17)
         .set(targets, { autoAlpha: 1 })
+        // y as well as yPercent: closing lifts the letters with `y`, and an
+        // open that only resets `yPercent` leaves every letter 18px high from
+        // the second time the menu is used onwards
         .fromTo(
           chars,
-          { yPercent: 155, rotate: (i: number) => (i % 2 ? 9 : -9), autoAlpha: 0 },
+          { yPercent: 155, y: 0, rotate: (i: number) => (i % 2 ? 9 : -9), autoAlpha: 0 },
           {
             yPercent: 0,
+            y: 0,
             rotate: 0,
             autoAlpha: 1,
             duration: 0.78,
@@ -141,37 +150,61 @@ export default function FullscreenNav({
     }
   }, [open]);
 
-  // hover response — the letters lift in a wave, the rest of the index steps back
+  /**
+   * Hover response — the letters lift in a wave, the rest of the index steps
+   * back.
+   *
+   * Only the two rows whose state actually changed are re-tweened. Running the
+   * whole index on every pointer move restarted five staggered letter tweens
+   * mid-flight, and a stagger that restarts at a different phase reads as a
+   * jitter. `overwrite` finishes the job: crossing rows quickly can queue a
+   * leave and an enter in the same frame, and without it both would play.
+   */
+  const prevHover = useRef<number | null>(null);
   useEffect(() => {
     if (prefersReducedMotion()) return;
     const targets = items.current.filter(Boolean);
     if (!targets.length) return;
 
+    const was = prevHover.current;
+    prevHover.current = hovered;
+    // a row only moves if it just gained or lost the pointer; the rest are
+    // only dimmed, which is a single cheap tween on the row itself
+    const touched = new Set<number>();
+    if (was !== null) touched.add(was);
+    if (hovered !== null) touched.add(hovered);
+
     targets.forEach((li, i) => {
-      const chars = li.querySelectorAll<HTMLElement>("[data-char]");
-      const index = li.querySelector<HTMLElement>("[data-nav-index]");
       const on = hovered === i;
 
-      gsap.to(chars, {
-        yPercent: on ? -13 : 0,
-        scale: on ? 1.05 : 1,
-        duration: on ? 0.42 : 0.55,
-        ease: on ? "back.out(3)" : "power3.out",
-        stagger: { each: 0.021, from: "start" },
-      });
+      if (touched.has(i)) {
+        const chars = li.querySelectorAll<HTMLElement>("[data-char]");
+        gsap.to(chars, {
+          yPercent: on ? -13 : 0,
+          scale: on ? 1.05 : 1,
+          duration: on ? 0.42 : 0.5,
+          ease: on ? "back.out(3)" : "power3.out",
+          stagger: { each: on ? 0.021 : 0.012, from: "start" },
+          overwrite: "auto",
+        });
+        const index = li.querySelector<HTMLElement>("[data-nav-index]");
+        if (index) {
+          gsap.to(index, {
+            color: on ? "var(--color-lime)" : "",
+            y: on ? -4 : 0,
+            duration: 0.35,
+            ease: "power2.out",
+            overwrite: "auto",
+          });
+        }
+      }
+
       gsap.to(li, {
         opacity: hovered === null || on ? 1 : 0.32,
         duration: 0.4,
         ease: "power2.out",
+        overwrite: "auto",
       });
-      if (index) {
-        gsap.to(index, {
-          color: on ? "var(--color-lime)" : "",
-          y: on ? -4 : 0,
-          duration: 0.35,
-          ease: "power2.out",
-        });
-      }
     });
 
     gsap.to(cat.current, {
@@ -179,6 +212,7 @@ export default function FullscreenNav({
       rotate: hovered === null ? 0 : -2.5,
       duration: 0.7,
       ease: "power3.out",
+      overwrite: "auto",
     });
   }, [hovered]);
 

@@ -39,10 +39,29 @@ MIN_RUN_Y = 5   # empty rows needed to call it a row break
 MIN_RUN_X = 6   # empty columns needed to call it a cell break
 MIN_CELL = 34   # anything smaller is a stray speck, not an asset
 NOISE = 0.004   # share of a line that may carry ink and still count as empty
+ERODE = 8       # px of ink shaved off before profiling, to clear the aisles
 
 
 def mask(im, threshold):
     return im.getchannel("A").point(lambda v: 255 if v > threshold else 0)
+
+
+def erode(m, px):
+    """
+    Shrink the ink before looking for gaps.
+
+    These sheets are covered in loose spray specks and hanging drips that are
+    only a few pixels across but sit right in the aisles between pieces. A
+    projection sees them as a wall. Eroding first deletes anything thinner than
+    `px` so the aisles open up, while the pieces themselves — hundreds of
+    pixels across — barely change. The crop still comes off the untouched
+    alpha, so every speck stays in the asset it belongs to.
+    """
+    out = m
+    step = 2  # MinFilter(5) removes 2px per pass
+    for _ in range(max(0, px // step)):
+        out = out.filter(ImageFilter.MinFilter(5))
+    return out
 
 
 def runs(profile, min_run):
@@ -136,42 +155,125 @@ def xy_cut(m, box, depth=0):
     return out
 
 
-def cells(im):
-    solid = mask(im, SOLID)
+def grow(box, faint, cores, step=4, limit=600):
+    """
+    Put back what erosion took.
+
+    Eroding to find the aisles also eats anything thin — a safety pin's wire, a
+    whisker, a drip — so a cell can come back smaller than the piece it holds.
+    Each edge is pushed outward while there is still ink against it in the
+    untouched alpha, and stopped the moment it would reach into another cell's
+    core. That recovers the thin parts without welding neighbours together.
+    """
+    px = faint.load()
+    x0, y0, x1, y1 = box
+    others = [c for c in cores if c != box]
+
+    def blocked(nb):
+        return any(nb[0] < o[2] and o[0] < nb[2] and nb[1] < o[3] and o[1] < nb[3]
+                   for o in others)
+
+    for _ in range(limit // step):
+        moved = False
+        # left
+        if x0 - step >= 0 and any(px[x, y] for x in range(max(0, x0 - step), x0)
+                                  for y in range(y0, y1)):
+            nb = (x0 - step, y0, x1, y1)
+            if not blocked(nb):
+                x0 -= step; moved = True
+        # right
+        if x1 + step <= faint.width and any(px[x, y] for x in range(x1, min(faint.width, x1 + step))
+                                            for y in range(y0, y1)):
+            nb = (x0, y0, x1 + step, y1)
+            if not blocked(nb):
+                x1 += step; moved = True
+        # top
+        if y0 - step >= 0 and any(px[x, y] for y in range(max(0, y0 - step), y0)
+                                  for x in range(x0, x1)):
+            nb = (x0, y0 - step, x1, y1)
+            if not blocked(nb):
+                y0 -= step; moved = True
+        # bottom
+        if y1 + step <= faint.height and any(px[x, y] for y in range(y1, min(faint.height, y1 + step))
+                                             for x in range(x0, x1)):
+            nb = (x0, y0, x1, y1 + step)
+            if not blocked(nb):
+                y1 += step; moved = True
+        if not moved:
+            break
+    return (x0, y0, x1, y1)
+
+
+def cells(im, erode_px=ERODE):
+    solid = erode(mask(im, SOLID), erode_px)
     # start from the ink, not the canvas — empty margins are not separators
     start = solid.getbbox() or (0, 0, im.width, im.height)
-    out = []
+    faint = mask(im, FAINT)
+    cores = []
     for box in xy_cut(solid, start):
-        # tighten to what is actually there, glow included
         sub = mask(im.crop(box), FAINT).getbbox()
         if not sub:
             continue
         b = (box[0] + sub[0], box[1] + sub[1], box[0] + sub[2], box[1] + sub[3])
         if b[2] - b[0] >= MIN_CELL and b[3] - b[1] >= MIN_CELL:
-            out.append(b)
+            cores.append(b)
+
+    out = [grow(b, faint, cores) for b in cores]
     # reading order: top-to-bottom in bands, left-to-right inside them
     out.sort(key=lambda b: (round(b[1] / 90), b[0]))
     return out
 
 
+def rules_for(sheet):
+    if not OVERRIDES.exists():
+        return {}
+    return json.load(open(OVERRIDES)).get(sheet, {})
+
+
 def apply_overrides(sheet, boxes):
     """
-    Hand corrections for the cases the projection cannot see: two pieces that
-    touch and must be split, or a cell that should have been one asset.
+    Hand corrections for what measuring empty space cannot settle: pieces that
+    genuinely overlap in the render, and marks the erosion separated that are
+    really one thing.
+
+    Every index refers to the *raw* segmentation — the numbering on the contact
+    sheet — so rules never have to account for how earlier rules renumbered
+    things. Each original cell becomes a list of boxes, the rules edit those
+    lists in place, and the result is flattened at the end.
     """
-    if not OVERRIDES.exists():
-        return boxes
-    rules = json.load(open(OVERRIDES)).get(sheet, {})
-    for at in sorted((int(k) for k in rules.get("split_x", {})), reverse=True):
-        x = rules["split_x"][str(at)]
-        b = boxes[at]
-        boxes[at:at + 1] = [(b[0], b[1], x, b[3]), (x, b[1], b[2], b[3])]
+    rules = rules_for(sheet)
+    slots = [[b] for b in boxes]
+
     for a, b in rules.get("merge", []):
-        boxes[a] = (min(boxes[a][0], boxes[b][0]), min(boxes[a][1], boxes[b][1]),
-                    max(boxes[a][2], boxes[b][2]), max(boxes[a][3], boxes[b][3]))
-    for i in sorted(rules.get("drop", []), reverse=True):
-        del boxes[i]
-    return boxes
+        if a >= len(slots) or b >= len(slots) or not slots[a] or not slots[b]:
+            continue
+        ax, ay, ax1, ay1 = slots[a][0]
+        bx, by, bx1, by1 = slots[b][0]
+        slots[a][0] = (min(ax, bx), min(ay, by), max(ax1, bx1), max(ay1, by1))
+        slots[b] = []
+
+    for k, x in rules.get("split_x", {}).items():
+        i = int(k)
+        if i < len(slots) and slots[i]:
+            x0, y0, x1, y1 = slots[i][0]
+            slots[i] = [(x0, y0, x, y1), (x, y0, x1, y1)]
+
+    for k, y in rules.get("split_y", {}).items():
+        i = int(k)
+        if i < len(slots) and slots[i]:
+            x0, y0, x1, y1 = slots[i][0]
+            slots[i] = [(x0, y0, x1, y), (x0, y, x1, y1)]
+
+    for k, boxlist in rules.get("replace", {}).items():
+        i = int(k)
+        if i < len(slots):
+            slots[i] = [tuple(b) for b in boxlist]
+
+    for i in rules.get("drop", []):
+        if i < len(slots):
+            slots[i] = []
+
+    return [b for slot in slots for b in slot]
 
 
 def sheets():
@@ -184,6 +286,78 @@ def sheets():
             continue  # no transparency, not an asset sheet
         found[p.stem] = im
     return found
+
+
+def components(im, thr=SOLID):
+    """Connected runs of ink, biggest first."""
+    w, h = im.size
+    a = im.getchannel("A").tobytes()
+    seen = bytearray(w * h)
+    out = []
+    for start in range(w * h):
+        if seen[start] or a[start] <= thr:
+            continue
+        stack = [start]; seen[start] = 1; px = []
+        while stack:
+            i = stack.pop(); px.append(i)
+            x, y = i % w, i // w
+            for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
+                if 0 <= nx < w and 0 <= ny < h:
+                    j = ny * w + nx
+                    if not seen[j] and a[j] > thr:
+                        seen[j] = 1; stack.append(j)
+        out.append(px)
+    return sorted(out, key=len, reverse=True), w, h
+
+
+def sliced_by_frame(px, w, h):
+    """
+    True when the crop cut straight through this shape.
+
+    A piece that merely reaches the edge of its own bounding box touches it at
+    a point. A piece the frame cut in half runs flat along that edge for most
+    of its width, which is the tell for a neighbour leaking in.
+    """
+    xs = [i % w for i in px]; ys = [i // w for i in px]
+    cw, ch = max(xs) - min(xs) + 1, max(ys) - min(ys) + 1
+    edges = ((sorted(i % w for i in px if i // w <= 1), cw),
+             (sorted(i % w for i in px if i // w >= h - 2), cw),
+             (sorted(i // w for i in px if i % w <= 1), ch),
+             (sorted(i // w for i in px if i % w >= w - 2), ch))
+    for coords, extent in edges:
+        best = run = 0; prev = None
+        for c in coords:
+            run = run + 1 if prev is not None and c - prev <= 1 else 1
+            prev = c; best = max(best, run)
+        if best >= 10 and best >= 0.55 * extent:
+            return True
+    return False
+
+
+def declutter(im):
+    """
+    Drop shapes that belong to the piece next door.
+
+    Only for cells the map opts into: on the graffiti the loose spray really is
+    part of the mark, and a rule that cannot tell one from the other would eat
+    it. Keeping the call explicit means the judgement stays where it is
+    readable, in sprite-map.json.
+    """
+    parts, w, h = components(im)
+    if len(parts) < 2:
+        return im
+    keep = [p for p in parts[1:] if len(p) > 0.08 * len(parts[0])
+            or not sliced_by_frame(p, w, h)]
+    if len(keep) == len(parts) - 1:
+        return im
+    px = im.load()
+    for p in parts[1:]:
+        if p in keep:
+            continue
+        for i in p:
+            x, y = i % w, i // w
+            px[x, y] = (0, 0, 0, 0)
+    return im.crop(im.getchannel("A").point(lambda v: 255 if v > FAINT else 0).getbbox())
 
 
 def enhance(im, factor=2.0):
@@ -214,7 +388,7 @@ def save(im, name, quality=92):
 def contact(found):
     index = {}
     for stem, im in found.items():
-        boxes = apply_overrides(stem, cells(im))
+        boxes = apply_overrides(stem, cells(im, rules_for(stem).get("erode", ERODE)))
         index[stem] = [{"i": i, "box": list(b), "size": [b[2] - b[0], b[3] - b[1]]}
                        for i, b in enumerate(boxes)]
         flat = Image.new("RGB", im.size, (52, 52, 52))
@@ -232,13 +406,21 @@ def cut_all(found):
     if not MAP.exists():
         sys.exit("no design/sprite-map.json — run --contact first, then name the cells")
     OUT.mkdir(parents=True, exist_ok=True)
-    boxes = {stem: apply_overrides(stem, cells(im)) for stem, im in found.items()}
+    boxes = {stem: apply_overrides(stem, cells(im, rules_for(stem).get("erode", ERODE)))
+             for stem, im in found.items()}
     for name, ref in json.load(open(MAP)).items():
-        stem, idx = ref["sheet"], ref["cell"]
+        if name.startswith("_"):
+            continue
+        stem = ref["sheet"]
         match = next((s for s in found if s.startswith(stem)), None)
         if match is None:
             print(f"  !! {name}: no sheet {stem}"); continue
-        asset = enhance(found[match].crop(tuple(boxes[match][idx])))
+        # A few pieces are single hairlines - a spider web, a small star. Erosion
+        # deletes them before the gaps are even measured, so they never become a
+        # cell. Those are named by box instead of by cell.
+        box = tuple(ref["box"]) if "box" in ref else tuple(boxes[match][ref["cell"]])
+        raw = found[match].crop(box)
+        asset = enhance(declutter(raw) if ref.get("clean") else raw)
         path = save(asset, name)
         print(f"  {name:22} {asset.size[0]:4}x{asset.size[1]:<4} {path.stat().st_size/1024:6.1f} kB")
 

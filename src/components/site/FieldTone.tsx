@@ -36,6 +36,10 @@ export default function FieldTone() {
       const nextRight = band?.right ?? "bone";
       if (root.dataset.tone !== next) root.dataset.tone = next;
       if (root.dataset.toneRight !== nextRight) root.dataset.toneRight = nextRight;
+      // the scrim behind the header only earns its place once something has
+      // actually scrolled under it
+      const scrolled = window.scrollY > (header?.offsetHeight ?? 72) * 0.9 ? "true" : "false";
+      if (root.dataset.scrolled !== scrolled) root.dataset.scrolled = scrolled;
     };
 
     const onScroll = () => {

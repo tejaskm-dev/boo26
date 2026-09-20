@@ -20,8 +20,7 @@ export default function Faq() {
     <Section
       id="faq"
       field="bone"
-      edge={{ from: "ink", shape: "swell" }}
-      className="pb-[clamp(4rem,10vh,7rem)] pt-[clamp(5rem,13vh,9rem)]"
+      className="pb-[clamp(4rem,10vh,7rem)] pt-[clamp(5rem,15vh,12rem)] md:pt-[clamp(5rem,22vh,12rem)]"
     >
       <div className="grid gap-[clamp(2.5rem,5vw,4.5rem)] px-[var(--edge)] lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.1fr)]">
         {/* the poster half */}
@@ -38,7 +37,7 @@ export default function Faq() {
             </Words>
             <Sprite
               name="cat-confused"
-              scale={1.1}
+              scale={0.68}
               drift={16}
               idle={6}
               className="absolute -top-[clamp(2rem,5vw,4rem)] right-[6%] z-10"
@@ -48,13 +47,10 @@ export default function Faq() {
           <p className="label label-loose mt-4 whitespace-pre-line text-ink/50">
             The important stuff.{"\n"}(And a few other things.)
           </p>
-          <Sprite name="squiggle-lime" scale={1.2} className="mt-3" />
 
           {/* the desk, down in the corner */}
           <div data-scrub="up" data-scrub-amount="16" className="relative mt-[clamp(2.5rem,6vh,4rem)] hidden min-h-[11rem] lg:block">
-            <Sprite name="cat-laptop" scale={1.25} drift={12} idle={4} className="absolute bottom-0 left-0 z-10" />
-            <Sprite name="books" scale={1.1} drift={7} className="absolute bottom-0 left-[46%]" />
-            <Sprite name="thought-bubble" scale={1} drift={22} className="absolute left-[8%] top-0" />
+            <Sprite name="cat-laptop" scale={1.0} drift={12} idle={4} className="absolute bottom-0 left-0 z-10" />
             <p className="hand absolute right-0 top-[10%] max-w-[13ch] whitespace-pre-line text-[clamp(1rem,1.4vw,1.25rem)] text-ink/55">
               Real questions.{"\n"}Real answers.{"\n"}(We think.)
             </p>
@@ -136,7 +132,7 @@ export default function Faq() {
               <p className="hand max-w-[16ch] whitespace-pre-line text-[clamp(1.05rem,1.6vw,1.45rem)] text-ink/60">
                 Couldn&rsquo;t find what{"\n"}you&rsquo;re looking for?
               </p>
-              <Sprite name="squiggle-lime" scale={0.8} className="mt-2 rotate-[8deg]" />
+              <Sprite name="squiggle-lime" scale={0.28} className="mt-2 rotate-[8deg]" />
             </div>
             <BlobButton href={EVENT.discordHref} tone="ink">
               Join our Discord

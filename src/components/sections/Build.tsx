@@ -13,8 +13,8 @@ export default function Build() {
     <Section
       id="build"
       field="bone"
-      edge={{ from: "ink", shape: "swell" }}
-      className="pb-[clamp(3rem,8vh,5rem)] pt-[clamp(5rem,13vh,9rem)]"
+      forms={[{ shape: "spillLeft", tone: "ink", at: "inset-x-0 top-0 w-full h-[14vh] md:h-[22vh]" }]}
+      className="pb-[clamp(3rem,8vh,5rem)] pt-[clamp(5.5rem,17vh,13rem)] md:pt-[clamp(5.5rem,26vh,13rem)]"
     >
       <div className="flex items-start justify-between gap-6 px-[var(--edge)]">
         <SectionLabel index="05">The Hackathon</SectionLabel>
@@ -34,12 +34,11 @@ export default function Build() {
 
         <Sprite
           name="cat-faq-peek"
-          scale={1.15}
+          scale={0.71}
           drift={18}
           idle={6}
           className="absolute right-[10%] top-[38%] z-10 md:right-[22%]"
         />
-        <Sprite name="blob" scale={0.7} drift={8} className="absolute -left-[2%] bottom-[8%] hidden opacity-90 lg:block" />
       </div>
 
       <div className="mt-[clamp(0.5rem,2vh,1.5rem)] flex flex-wrap items-end gap-x-6 gap-y-3 px-[var(--edge)]">
@@ -48,18 +47,20 @@ export default function Build() {
           <br />
           weird.
         </p>
-        <Sprite name="squiggle-lime" scale={1.1} className="mb-2" />
+        <Sprite name="squiggle-lime" scale={0.39} className="mb-2" />
+
       </div>
 
       {/* the four steps */}
       <ol data-stagger
-        className="mt-[clamp(2.5rem,6vh,4rem)] grid gap-px border-y border-ink/15 bg-ink/15 sm:grid-cols-2 lg:grid-cols-4">
+        className="mt-[clamp(2.5rem,6vh,4rem)] grid border-y border-ink/15 sm:grid-cols-2 lg:grid-cols-4">
         {BUILD_STEPS.map((step, i) => (
           <li
             key={step.label}
             data-anim="rise"
-            style={{ rotate: `${[-0.7, 0.5, -0.4, 0.8][i] ?? 0}deg` }}
-            className="relative bg-bone px-[var(--edge)] py-[clamp(1.25rem,3vh,2rem)] lg:px-[clamp(1.25rem,2.5vw,2.5rem)]"
+            className={`relative bg-bone px-[var(--edge)] py-[clamp(1.25rem,3vh,2rem)] lg:px-[clamp(1.25rem,2.5vw,2.5rem)] ${
+              i > 0 ? "border-t border-ink/15 sm:border-t-0 sm:border-l" : ""
+            } ${i === 2 ? "sm:border-t sm:border-l-0 lg:border-t-0 lg:border-l" : ""}`}
           >
             <span className="label text-lime">{step.index}</span>
             <p className="mt-3">

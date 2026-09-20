@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Sprite from "@/components/ui/Sprite";
-import Ambient from "@/components/fx/Ambient";
 import SocialIcon from "@/components/ui/SocialIcon";
 import Words from "@/components/fx/Words";
 import { EVENT, FOOTER_LEGAL, FOOTER_NAV, NOTES, SOCIALS } from "@/lib/site";
@@ -29,19 +28,24 @@ export default function Footer() {
     if (prefersReducedMotion()) return;
     gsap.registerPlugin(ScrollTrigger);
     const ctx = gsap.context(() => {
-      // the footer is uncovered rather than scrolled to: its contents start
+      // The footer is uncovered rather than scrolled to: its contents start
       // low and rise to rest as the last section clears them, which reads as
-      // the page sliding off something that was always underneath
+      // the page sliding off something that was always underneath.
+      //
+      // A fixed distance, not a percentage. 16% of a footer this tall is 260px
+      // of empty ink above the content, and since the section before it is ink
+      // too that reads as a black void rather than a reveal. 72px stays inside
+      // the footer's own top padding, so there is never a hole.
       gsap.fromTo(
         inner.current,
-        { yPercent: 16 },
+        { y: 72 },
         {
-          yPercent: 0,
+          y: 0,
           ease: "none",
           scrollTrigger: {
             trigger: root.current,
             start: "top bottom",
-            end: "bottom bottom",
+            end: "top top",
             scrub: 0.45,
           },
         },
@@ -71,25 +75,18 @@ export default function Footer() {
     <footer
       ref={root}
       data-field="ink"
-      className="relative isolate w-full overflow-hidden bg-ink pb-[clamp(1.5rem,4vh,2.5rem)] pt-[clamp(4rem,11vh,7rem)] text-bone"
+      className="relative isolate w-full overflow-x-clip bg-ink pb-[clamp(1.5rem,4vh,2.5rem)] pt-[clamp(4rem,11vh,7rem)] text-bone"
     >
-      <div ref={inner} className="will-change-transform">
-      <Ambient
-        tone="ink"
-        blobs={[
-          { x: "-10%", y: "-8%", w: "44vw" },
-          { x: "62%", y: "22%", w: "48vw" },
-          { x: "24%", y: "58%", w: "36vw" },
-        ]}
-      />
+      {/* Welded to the footer's top edge, so they stay outside the block that
+          rises — otherwise they ride down with it and stop marking the join. */}
+      <span data-hang className="absolute -top-[clamp(2.5rem,6vw,4.5rem)] left-[2%] z-20 block md:left-[7%]">
+        <Sprite name="cat-hanging" scale={0.52} drift={12} idle={5} />
+      </span>
+      <span data-hang className="absolute -top-[clamp(2rem,5vw,3.5rem)] right-[4%] z-20 hidden md:block">
+        <Sprite name="cat-tail" scale={0.5} drift={16} idle={4} />
+      </span>
 
-      {/* hanging over the top edge */}
-      <span data-hang className="absolute -top-[clamp(0.5rem,2vw,1.5rem)] left-[6%] z-20 block md:left-[11%]">
-        <Sprite name="cat-hanging" scale={1.15} drift={12} idle={5} />
-      </span>
-      <span data-hang className="absolute -top-[clamp(0.25rem,1vw,1rem)] right-[12%] z-20 hidden md:block">
-        <Sprite name="cat-tail" scale={1} drift={16} idle={4} />
-      </span>
+      <div ref={inner} className="will-change-transform">
 
       <div className="relative z-10 px-[var(--edge)]">
         {/* band 1 — the statement and the sign-up */}
@@ -228,15 +225,11 @@ export default function Footer() {
           className="pointer-events-none relative mt-[clamp(2rem,5vh,3.5rem)] hidden h-[clamp(6rem,10vw,9rem)] lg:block"
           aria-hidden="true"
         >
-          <Sprite name="books" scale={1.1} drift={6} className="absolute bottom-0 left-0" />
-          <Sprite name="tape-dark" scale={0.9} drift={12} className="absolute bottom-[54%] left-[11%] -rotate-[18deg] opacity-80" />
-          <Sprite name="cable" scale={1} drift={9} idle={3} className="absolute bottom-[4%] left-[19%]" />
-          <Sprite name="can" scale={0.95} drift={11} idle={4} className="absolute bottom-[2%] left-[38%] rotate-[6deg]" />
-          <Sprite name="clip" scale={0.95} drift={8} className="absolute bottom-[38%] left-[48%] -rotate-[24deg]" />
-          <Sprite name="paper-ball" scale={0.9} drift={15} idle={5} className="absolute bottom-[10%] left-[55%]" />
-          <Sprite name="pin" scale={0.85} drift={10} className="absolute bottom-[52%] left-[64%] rotate-[38deg] opacity-85" />
-          <Sprite name="pizza-box" scale={1.05} drift={7} className="absolute bottom-0 right-[6%] -rotate-[3deg]" />
-          <Sprite name="tape-lime" scale={0.85} drift={13} className="absolute bottom-[58%] right-[2%] rotate-[12deg]" />
+          <Sprite name="cable" scale={0.62} drift={9} idle={3} className="absolute bottom-0 left-[1%]" />
+          <Sprite name="can" scale={0.34} drift={11} idle={4} className="absolute bottom-[2%] left-[15%] rotate-[6deg]" />
+          <Sprite name="paper-ball" scale={0.26} drift={15} idle={5} className="absolute bottom-[8%] left-[23%]" />
+          <Sprite name="pizza-box" scale={0.52} drift={7} className="absolute bottom-0 right-[4%] -rotate-[3deg]" />
+          <Sprite name="cat-goodbye" scale={0.44} drift={14} idle={4} className="absolute bottom-0 right-[22%] z-10" />
         </div>
 
         <div className="mt-[clamp(1.5rem,4vh,2.5rem)] flex flex-col gap-5 border-t border-bone/12 pt-6 lg:flex-row lg:items-center lg:justify-between">

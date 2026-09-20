@@ -25,16 +25,19 @@ export default function SmoothScroll() {
       touchMultiplier: 1.7,
     });
 
-    // velocity is published as a CSS variable, so anything on the page can
-    // lean into the scroll without each piece running its own listener
-    const root = document.documentElement;
+    // Velocity is published as a CSS variable so anything on the page can lean
+    // into the scroll without each piece running its own listener — but it is
+    // set on the leaning elements themselves, not on :root. A custom property
+    // written to the root every frame invalidates style for the whole document,
+    // which is over a thousand elements recalculated to move four headings.
+    const leaners = Array.from(document.querySelectorAll<HTMLElement>(".lean"));
     let raf = 0;
     const publish = ({ velocity }: { velocity: number }) => {
       if (raf) return;
       raf = requestAnimationFrame(() => {
         raf = 0;
-        const v = Math.max(-1, Math.min(1, velocity / 34));
-        root.style.setProperty("--scroll-v", v.toFixed(3));
+        const v = (Math.max(-1, Math.min(1, velocity / 34))).toFixed(3);
+        for (const el of leaners) el.style.setProperty("--scroll-v", v);
       });
     };
     lenis.on("scroll", publish);
@@ -43,12 +46,11 @@ export default function SmoothScroll() {
     lenis.on("scroll", ScrollTrigger.update);
     const tick = (time: number) => lenis.raf(time * 1000);
     gsap.ticker.add(tick);
-    gsap.ticker.lagSmoothing(0);
 
     return () => {
       gsap.ticker.remove(tick);
       if (raf) cancelAnimationFrame(raf);
-      root.style.removeProperty("--scroll-v");
+      for (const el of leaners) el.style.removeProperty("--scroll-v");
       setLenis(null);
       lenis.destroy();
     };

@@ -49,6 +49,7 @@ export default function Words({
           duration: 1,
           ease: "power4.out",
           stagger,
+          clearProps: "willChange",
           scrollTrigger: { trigger: el, start: "top 86%", once: true },
         },
       );
@@ -68,7 +69,7 @@ export default function Words({
               className="inline-block"
               style={{ clipPath: "inset(-0.42em -0.5em -0.28em -0.3em)" }}
             >
-              <span data-word className="inline-block will-change-transform">
+              <span data-word className="inline-block">
                 {word}
               </span>
               {wi < line.split(" ").length - 1 ? " " : null}

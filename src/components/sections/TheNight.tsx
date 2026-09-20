@@ -15,15 +15,13 @@ export default function TheNight() {
     <Section
       id="night"
       field="bone"
-      edge={{ from: "ink", shape: "swell" }}
-      className="pb-[clamp(3rem,8vh,5.5rem)] pt-[clamp(4rem,11vh,7.5rem)]"
+      className="pb-[clamp(3rem,8vh,5.5rem)] pt-[clamp(5.5rem,17vh,13rem)] md:pt-[clamp(5.5rem,26vh,13rem)]"
     >
       {/* the cat is hauling itself over the boundary above */}
       <RiseIn className="absolute -top-[clamp(2.5rem,7vw,6rem)] right-[6%] z-10 md:right-[26%]" start="top 96%">
-        <Sprite name="cat-peek" scale={1.15} drift={16} idle={6} />
+        <Sprite name="cat-peek" scale={0.7} drift={16} idle={6} />
       </RiseIn>
-      <Sprite name="star" scale={0.5} drift={26} className="absolute left-[46%] top-[42%] hidden md:block" />
-      <Sprite name="star-small" scale={0.5} drift={20} className="absolute right-[8%] top-[68%] hidden md:block" />
+      <Sprite name="star" scale={0.14} drift={26} className="absolute left-[46%] top-[42%] hidden md:block" />
 
       <div className="px-[var(--edge)]">
         <SectionLabel index="01">The Night</SectionLabel>
@@ -34,11 +32,11 @@ export default function TheNight() {
         <div className="min-w-0">
           <Words
             as="h2"
-            className="brush lean -rotate-[1.4deg] select-none pl-[var(--edge)] text-[clamp(4rem,13.5vw,12rem)] leading-[0.84]"
+            className="brush lean -rotate-[1.4deg] select-none pb-[0.1em] pl-[var(--edge)] text-[clamp(4.4rem,13.5vw,12rem)] leading-[0.84]"
           >
             {"The\nNight"}
           </Words>
-          <p className="hand mt-[clamp(0.75rem,2vh,1.25rem)] max-w-[14ch] -rotate-[2deg] whitespace-pre-line pl-[calc(var(--edge)+0.5rem)] text-[clamp(1rem,1.5vw,1.4rem)] text-ink/55">
+          <p className="hand mt-7 max-w-[14ch] lg:mt-[clamp(0.75rem,2vh,1.25rem)] -rotate-[2deg] whitespace-pre-line pl-[calc(var(--edge)+0.5rem)] text-[clamp(1rem,1.5vw,1.4rem)] text-ink/55">
             {NOTES.night}
           </p>
         </div>

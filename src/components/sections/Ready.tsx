@@ -1,9 +1,10 @@
 import Section from "./Section";
+import Marquee from "@/components/fx/Marquee";
 import Sprite from "@/components/ui/Sprite";
 import Words from "@/components/fx/Words";
 import RiseIn from "@/components/fx/RiseIn";
 import BlobButton from "@/components/ui/BlobButton";
-import { EVENT, NOTES } from "@/lib/site";
+import { BAND, EVENT, NOTES } from "@/lib/site";
 
 /**
  * The closing beat. Lime at full size for the only time on the page, and the
@@ -14,8 +15,8 @@ export default function Ready() {
     <Section
       id="register"
       field="ink"
-      edge={{ from: "bone", shape: "wave" }}
-      className="pb-[clamp(6rem,16vh,11rem)] pt-[clamp(5rem,13vh,9rem)]"
+      forms={[{ shape: "spillLeft", tone: "bone", at: "inset-x-0 top-0 w-full h-[13vh] md:h-[21vh]" }]}
+      className="pb-[clamp(4rem,10vh,7rem)] pt-[clamp(5.5rem,16vh,13rem)] md:pt-[clamp(5.5rem,25vh,13rem)]"
     >
       <div className="relative px-[var(--edge)]">
         <p className="label label-loose whitespace-pre-line text-bone/45">
@@ -25,7 +26,7 @@ export default function Ready() {
         <div className="mt-[clamp(1.5rem,4vh,3rem)] flex flex-wrap items-center justify-center gap-[clamp(1.5rem,5vw,4rem)]">
           <Words
             as="h2"
-            className="brush -rotate-[1.5deg] select-none text-center text-[clamp(4.5rem,18vw,14rem)] leading-[0.84] text-lime"
+            className="brush -rotate-[1.5deg] select-none text-center text-[clamp(5.6rem,18vw,14rem)] leading-[0.84] text-lime"
           >
             Ready?
           </Words>
@@ -40,17 +41,23 @@ export default function Ready() {
           </p>
         </div>
 
-        <p className="label label-loose mt-[clamp(2.5rem,6vh,4rem)] text-center text-bone/40">
-          {EVENT.date} &nbsp;|&nbsp; {EVENT.venue} &nbsp;|&nbsp; {EVENT.duration}
-        </p>
+      </div>
+
+      {/* the facts, running — the measure under the call to action was the
+          emptiest on the page and this is the one thing still worth saying */}
+      <div className="mt-[clamp(2.5rem,7vh,4.5rem)] border-y border-bone/12 py-[clamp(0.85rem,2.2vh,1.5rem)]">
+        <Marquee
+          items={BAND}
+          speed={42}
+          className="display text-[clamp(1.6rem,4.4vw,3.4rem)] leading-none text-bone/70"
+        />
       </div>
 
       {/* coming up over the bottom edge */}
       <RiseIn from="bottom" className="absolute -bottom-[clamp(1.5rem,4vw,3.5rem)] left-[6%] z-10 md:left-[12%]" start="top 92%">
-        <Sprite name="cat-peek" scale={1.25} drift={14} idle={6} />
+        <Sprite name="cat-peek" scale={0.76} drift={14} idle={6} />
       </RiseIn>
-      <Sprite name="ghost-drip" scale={1.1} drift={22} idle={7} className="absolute right-[10%] top-[24%] hidden opacity-80 md:block" />
-      <Sprite name="star" scale={0.55} drift={28} className="absolute right-[22%] top-[58%] hidden md:block" />
+      <Sprite name="star" scale={0.15} drift={28} className="absolute right-[22%] top-[58%] hidden md:block" />
     </Section>
   );
 }

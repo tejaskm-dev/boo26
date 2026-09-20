@@ -20,8 +20,7 @@ export default function AfterDark() {
       <Section
         id="after-dark"
         field="bone"
-        edge={{ from: "ink", shape: "swell" }}
-        className="pb-[clamp(2.5rem,6vh,4rem)] pt-[clamp(4rem,11vh,7.5rem)]"
+        className="pb-[clamp(2.5rem,6vh,4rem)] pt-[clamp(5.5rem,16vh,13rem)] md:pt-[clamp(5.5rem,25vh,13rem)]"
       >
         <div className="px-[var(--edge)]">
           <SectionLabel index="04">After Dark</SectionLabel>
@@ -43,7 +42,7 @@ export default function AfterDark() {
                 aria-hidden="true"
                 className="absolute h-[clamp(13rem,20vw,17rem)] w-[clamp(15rem,24vw,21rem)] bg-ink [border-radius:58%_42%_46%_54%/52%_58%_42%_48%]"
               />
-              <Sprite name="eyes-glow" scale={1.45} drift={26} idle={6} className="relative" />
+              <Sprite name="eyes-glow" scale={0.69} drift={26} idle={6} className="relative" />
             </div>
             <p className="hand mt-6 max-w-[12ch] whitespace-pre-line text-[clamp(1.05rem,1.6vw,1.5rem)] text-ink/60">
               {NOTES.afterDark}
@@ -55,11 +54,6 @@ export default function AfterDark() {
           <p className="label label-loose whitespace-pre-line text-ink/45">
             Same people.{"\n"}Different kind of chaos.
           </p>
-          <span className="hidden items-end gap-[clamp(1rem,3vw,2.5rem)] md:flex">
-            <Sprite name="ghost" scale={1} drift={18} idle={6} className="opacity-90" />
-            <Sprite name="web" scale={0.85} drift={10} className="opacity-70" />
-            <Sprite name="lamp-post" scale={1.15} drift={8} className="opacity-85" />
-          </span>
         </div>
       </Section>
 
@@ -78,8 +72,8 @@ function HauntedHouse() {
   return (
     <Section
       field="ink"
-      edge={{ from: "bone", shape: "wave" }}
-      className="pb-[clamp(3.5rem,9vh,6rem)] pt-[clamp(4rem,10vh,7rem)]"
+      forms={[{ shape: "spillRight", tone: "bone", at: "inset-x-0 top-0 w-full h-[15vh] md:h-[24vh]" }]}
+      className="pb-[clamp(3.5rem,9vh,6rem)] pt-[clamp(5.5rem,18vh,14rem)] md:pt-[clamp(5.5rem,27vh,14rem)]"
     >
       <div className="grid items-center gap-[clamp(2rem,5vw,4rem)] px-[var(--edge)] lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
         <Scene
@@ -100,7 +94,7 @@ function HauntedHouse() {
           >
             <Sprite
               name="door-haunted"
-              scale={1.85}
+              scale={0.72}
               drift={10}
               className="relative z-10 drop-shadow-[0_18px_40px_rgba(0,0,0,0.55)]"
             />
@@ -109,12 +103,11 @@ function HauntedHouse() {
               className="pointer-events-none absolute left-1/2 top-[52%] -translate-x-1/2 -translate-y-1/2 transition-[opacity,transform] duration-700 ease-[var(--ease-out-soft)]"
               style={{ opacity: open ? 1 : 0, transform: `translate(-50%,-50%) scale(${open ? 1 : 0.82})` }}
             >
-              <Sprite name="eyes-glow" scale={0.85} />
+              <Sprite name="eyes-glow" scale={0.41} />
             </div>
           </div>
 
-          <Sprite name="web" scale={0.9} drift={18} className="absolute -right-[6%] -top-[6%] opacity-70" />
-          <Sprite name="lamp-post" scale={1.2} drift={8} className="absolute -bottom-[8%] left-[2%] hidden opacity-80 md:block" />
+          <Sprite name="cat-scared" scale={0.46} drift={14} idle={5} className="absolute -bottom-[6%] right-[2%] z-20" />
         </div>
       </div>
 
@@ -151,21 +144,19 @@ function TreasureHunt() {
   return (
     <Section
       field="bone"
-      edge={{ from: "ink", shape: "swell" }}
-      className="pb-[clamp(3.5rem,9vh,6rem)] pt-[clamp(4rem,10vh,7rem)]"
+      forms={[{ shape: "shelf", tone: "ink", at: "inset-x-0 top-0 w-full h-[9vh] md:h-[13vh]" }]}
+      className="pb-[clamp(3.5rem,9vh,6rem)] pt-[clamp(5rem,12vh,10rem)] md:pt-[clamp(5rem,18vh,10rem)]"
     >
       <div className="grid items-center gap-[clamp(2rem,5vw,4rem)] px-[var(--edge)] lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1fr)]">
         {/* the route reads left to right, so the scene leads on desktop */}
         <div ref={scene} className="relative order-2 min-h-[clamp(16rem,26vw,22rem)] lg:order-1">
-          <Sprite name="clue-note" scale={1.45} drift={14} idle={4} className="absolute left-[2%] top-0 -rotate-6" />
-          <Sprite name="trail-a" scale={1.3} drift={22} className="absolute left-[30%] top-[22%]" />
-          <Sprite name="map-pin" scale={1} drift={10} className="absolute left-[16%] top-[52%]" />
-          <Sprite name="trail-b" scale={1.3} drift={26} className="absolute left-[44%] top-[50%]" />
-          <Sprite name="treasure-x" scale={1.3} drift={18} className="absolute right-[10%] top-[30%]" />
-          <Sprite name="map-pin" scale={0.8} drift={12} className="absolute right-[4%] bottom-[14%] opacity-70" />
+          <Sprite name="trail-dash" scale={0.32} drift={22} className="absolute left-[30%] top-[22%]" />
+          <Sprite name="trail-dash" scale={0.39} drift={26} className="absolute left-[44%] top-[50%]" />
+          <Sprite name="treasure-x" scale={0.3} drift={18} className="absolute right-[10%] top-[30%]" />
+          <Sprite name="map-pin" scale={0.2} drift={12} className="absolute right-[4%] bottom-[14%] opacity-70" />
           <Sprite
             name="cat-treasure"
-            scale={1.3}
+            scale={0.86}
             drift={16}
             idle={5}
             className="absolute -bottom-[6%] left-[38%] z-10"
@@ -208,8 +199,8 @@ function MidnightGames() {
   return (
     <Section
       field="ink"
-      edge={{ from: "bone", shape: "wave" }}
-      className="pb-[clamp(4rem,10vh,7rem)] pt-[clamp(4rem,10vh,7rem)]"
+      forms={[{ shape: "notch", tone: "bone", at: "inset-x-0 top-0 w-full h-[12vh] md:h-[20vh]" }]}
+      className="pb-[clamp(4rem,10vh,7rem)] pt-[clamp(5.5rem,16vh,13rem)] md:pt-[clamp(5.5rem,24vh,13rem)]"
     >
       <div className="grid items-center gap-[clamp(2rem,5vw,4rem)] px-[var(--edge)] lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div>
@@ -220,13 +211,11 @@ function MidnightGames() {
         </div>
 
         <div ref={table} className="relative min-h-[clamp(15rem,24vw,20rem)]">
-          <Sprite name="moon" scale={1.35} drift={30} idle={7} className="absolute right-[12%] top-0" />
-          <Sprite name="chess-pawn" scale={1.2} drift={10} className="absolute left-[6%] bottom-[16%]" />
-          <Sprite name="dice" scale={1.3} drift={16} idle={4} className="absolute left-[30%] bottom-[6%] rotate-12" />
-          <Sprite name="star-small" scale={0.6} drift={24} className="absolute left-[18%] top-[14%]" />
+          <Sprite name="moon" scale={0.33} drift={30} idle={7} className="absolute right-[12%] top-0" />
+          <Sprite name="dice" scale={0.39} drift={16} idle={4} className="absolute left-[30%] bottom-[6%] rotate-12" />
           <Sprite
             name="cat-controller"
-            scale={1.3}
+            scale={0.78}
             drift={12}
             idle={5}
             className="absolute right-[4%] bottom-[8%] z-10"

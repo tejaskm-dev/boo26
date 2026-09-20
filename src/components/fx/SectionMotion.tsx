@@ -44,18 +44,28 @@ export default function SectionMotion() {
         );
       });
 
-      // rows that should arrive in sequence rather than all at once
+      // Rows that should arrive in sequence rather than all at once.
+      //
+      // fromTo, never from: the children carry [data-anim], which CSS holds at
+      // opacity 0 until JS takes over. A `from` tween reads that as the value
+      // to land on and animates them to invisible, which is how whole lists of
+      // facts and FAQ rows were ending up blank.
       gsap.utils.toArray<HTMLElement>("[data-stagger]").forEach((group) => {
         const kids = gsap.utils.toArray<HTMLElement>(":scope > *", group);
         if (!kids.length) return;
-        gsap.from(kids, {
-          yPercent: 22,
-          autoAlpha: 0,
-          duration: 0.85,
-          ease: "power3.out",
-          stagger: 0.09,
-          scrollTrigger: { trigger: group, start: "top 86%", once: true },
-        });
+        gsap.fromTo(
+          kids,
+          { yPercent: 22, autoAlpha: 0 },
+          {
+            yPercent: 0,
+            autoAlpha: 1,
+            duration: 0.85,
+            ease: "power3.out",
+            stagger: 0.09,
+            clearProps: "willChange",
+            scrollTrigger: { trigger: group, start: "top 86%", once: true },
+          },
+        );
       });
     });
 

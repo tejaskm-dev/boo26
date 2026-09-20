@@ -1,362 +1,297 @@
 {
- "cat-door": [
-  1000,
-  20,
-  1212,
-  252
- ],
- "cat-peek": [
-  44,
-  48,
-  256,
-  256
- ],
- "cat-excited": [
-  252,
-  64,
-  428,
-  248
- ],
- "cat-curious": [
-  440,
-  44,
-  628,
-  244
- ],
- "cat-playful": [
-  1216,
-  76,
-  1380,
-  252
- ],
- "cat-scared": [
-  1368,
-  32,
-  1556,
-  236
- ],
- "ghost-small": [
-  1584,
-  68,
-  1612,
-  116
- ],
- "cat-laptop": [
-  1780,
-  76,
-  1976,
-  252
- ],
- "cat-goodbye": [
-  1952,
-  88,
-  2136,
-  248
- ],
- "cat-sneak": [
-  620,
-  100,
-  820,
-  244
- ],
- "cat-sleepy": [
-  828,
-  132,
-  996,
-  244
- ],
- "cat-confused": [
-  1576,
-  100,
-  1760,
-  248
- ],
- "cat-treasure": [
-  236,
-  264,
-  468,
-  452
- ],
- "eyes-glow": [
-  60,
-  296,
-  220,
-  456
- ],
- "cat-controller": [
-  456,
-  292,
-  652,
-  468
- ],
- "cat-faq-peek": [
-  804,
-  300,
-  980,
-  440
- ],
- "cat-hanging": [
-  1000,
-  280,
-  1168,
-  464
- ],
- "cat-tail": [
-  1184,
-  324,
-  1408,
-  436
- ],
- "cat-box": [
-  1424,
-  308,
-  1612,
-  468
- ],
- "cat-witch": [
-  1604,
-  272,
-  1736,
-  452
- ],
- "ghost": [
-  1728,
-  328,
-  1836,
-  460
- ],
- "cat-pumpkin": [
-  1844,
-  316,
-  1968,
-  460
- ],
- "cat-hooded": [
-  1980,
-  304,
-  2124,
-  456
- ],
- "cat-ears": [
-  668,
-  360,
-  780,
-  444
- ],
- "door-haunted": [
-  24,
-  468,
-  148,
-  592
- ],
- "flashlight": [
-  164,
-  484,
-  280,
-  584
- ],
- "clue-note": [
-  288,
-  476,
-  416,
-  604
- ],
- "map-pin": [
-  440,
-  508,
-  484,
-  580
- ],
- "dice": [
-  860,
-  508,
-  924,
-  572
- ],
- "chess-pawn": [
-  956,
-  500,
-  1016,
-  588
- ],
- "lamp-post": [
-  1136,
-  476,
-  1180,
-  608
- ],
- "signboard": [
-  1204,
-  472,
-  1312,
-  600
- ],
- "web": [
-  1328,
-  492,
-  1420,
-  596
- ],
- "ghost-drip": [
-  1444,
-  500,
-  1504,
-  608
- ],
- "thought-bubble": [
-  1816,
-  500,
-  1900,
-  608
- ],
- "mark-bang": [
-  1960,
-  508,
-  1988,
-  592
- ],
- "trail-a": [
-  496,
-  516,
-  560,
-  560
- ],
- "trail-b": [
-  532,
-  536,
-  608,
-  580
- ],
- "treasure-x": [
-  632,
-  524,
-  696,
-  584
- ],
- "controller": [
-  728,
-  512,
-  828,
-  580
- ],
- "moon": [
-  1044,
-  512,
-  1116,
-  584
- ],
- "star": [
-  1516,
-  512,
-  1580,
-  584
- ],
- "drip": [
-  1596,
-  520,
-  1688,
-  580
- ],
- "crown": [
-  1712,
-  516,
-  1796,
-  592
- ],
- "scribble": [
-  2016,
-  512,
-  2148,
-  584
- ],
- "books": [
-  32,
-  616,
-  152,
-  712
- ],
- "can": [
-  388,
-  604,
-  456,
-  720
- ],
- "cable": [
-  468,
-  612,
-  676,
-  712
- ],
- "clip": [
-  704,
-  624,
-  772,
-  708
- ],
- "pin": [
-  792,
-  620,
-  864,
-  704
- ],
- "tape-dark": [
-  996,
-  628,
-  1092,
-  696
- ],
- "tape-lime": [
-  1120,
-  628,
-  1224,
-  692
- ],
- "blob": [
-  1412,
-  624,
-  1620,
-  704
- ],
- "blob-drip": [
-  1664,
-  628,
-  1840,
-  712
- ],
- "squiggle-lime": [
-  1940,
-  624,
-  2008,
-  712
- ],
- "smear": [
-  2020,
-  620,
-  2140,
-  708
- ],
- "pizza-box": [
-  164,
-  644,
-  368,
-  708
- ],
- "paper-ball": [
-  888,
-  632,
-  964,
-  708
- ],
- "blob-cream": [
-  1256,
-  648,
-  1380,
-  708
- ],
- "star-small": [
-  1860,
-  640,
-  1916,
-  696
- ]
+  "_readme": "Names the cells that scripts/slice-sprite.py finds. Run with --contact to renumber, then read design/sprite-contact-*.png. 'cell' is an index into that numbering; 'box' is an escape hatch for hairline pieces that erosion deletes before they can become a cell.",
+  "cat-treasure": {
+    "sheet": "16DC7774",
+    "cell": 0
+  },
+  "eyes-glow": {
+    "sheet": "16DC7774",
+    "cell": 1
+  },
+  "cat-controller": {
+    "sheet": "16DC7774",
+    "cell": 2
+  },
+  "cat-thinking": {
+    "sheet": "16DC7774",
+    "cell": 3
+  },
+  "cat-hanging": {
+    "sheet": "16DC7774",
+    "cell": 4
+  },
+  "cat-box": {
+    "sheet": "16DC7774",
+    "cell": 5
+  },
+  "cat-tail": {
+    "sheet": "16DC7774",
+    "cell": 6
+  },
+  "cat-peek": {
+    "sheet": "16DC7774",
+    "cell": 7
+  },
+  "cat-excited": {
+    "sheet": "2FB4C214",
+    "cell": 0
+  },
+  "cat-curious": {
+    "sheet": "2FB4C214",
+    "cell": 1
+  },
+  "cat-stretch": {
+    "sheet": "2FB4C214",
+    "cell": 2
+  },
+  "cat-faq-peek": {
+    "sheet": "2FB4C214",
+    "cell": 3
+  },
+  "cat-sleepy": {
+    "sheet": "2FB4C214",
+    "cell": 4
+  },
+  "cat-playful": {
+    "sheet": "2FB4C214",
+    "cell": 6
+  },
+  "cat-tired": {
+    "sheet": "2FB4C214",
+    "cell": 7
+  },
+  "cat-scared": {
+    "sheet": "2FB4C214",
+    "cell": 8
+  },
+  "cat-confused": {
+    "sheet": "2FB4C214",
+    "cell": 9
+  },
+  "cat-laptop": {
+    "sheet": "2FB4C214",
+    "cell": 10
+  },
+  "cat-goodbye": {
+    "sheet": "2FB4C214",
+    "cell": 11
+  },
+  "door-haunted": {
+    "sheet": "66CFA744",
+    "cell": 0
+  },
+  "flashlight": {
+    "sheet": "66CFA744",
+    "cell": 1
+  },
+  "treasure-map": {
+    "sheet": "66CFA744",
+    "cell": 2
+  },
+  "map-pin": {
+    "sheet": "66CFA744",
+    "cell": 3
+  },
+  "trail-dash": {
+    "sheet": "66CFA744",
+    "cell": 4,
+    "clean": true
+  },
+  "treasure-x": {
+    "sheet": "66CFA744",
+    "cell": 5
+  },
+  "controller": {
+    "sheet": "66CFA744",
+    "cell": 6,
+    "clean": true
+  },
+  "lamp-post": {
+    "sheet": "66CFA744",
+    "cell": 7
+  },
+  "dice": {
+    "sheet": "66CFA744",
+    "cell": 8
+  },
+  "chess-pawn": {
+    "sheet": "66CFA744",
+    "cell": 9,
+    "clean": true
+  },
+  "moon": {
+    "sheet": "66CFA744",
+    "cell": 10
+  },
+  "signboard": {
+    "sheet": "66CFA744",
+    "cell": 11
+  },
+  "books": {
+    "sheet": "9E31BFFF",
+    "cell": 0,
+    "clean": true
+  },
+  "pizza-box": {
+    "sheet": "9E31BFFF",
+    "cell": 1,
+    "clean": true
+  },
+  "can": {
+    "sheet": "9E31BFFF",
+    "cell": 2
+  },
+  "cable": {
+    "sheet": "9E31BFFF",
+    "cell": 3
+  },
+  "clip": {
+    "sheet": "9E31BFFF",
+    "cell": 4
+  },
+  "pin": {
+    "sheet": "9E31BFFF",
+    "cell": 5
+  },
+  "paper-ball": {
+    "sheet": "9E31BFFF",
+    "cell": 6
+  },
+  "tape-dark": {
+    "sheet": "9E31BFFF",
+    "cell": 7,
+    "clean": true
+  },
+  "tape-lime": {
+    "sheet": "9E31BFFF",
+    "cell": 8,
+    "clean": true
+  },
+  "paper-torn": {
+    "sheet": "9E31BFFF",
+    "cell": 9,
+    "clean": true
+  },
+  "star": {
+    "sheet": "D251958E",
+    "cell": 0
+  },
+  "crown": {
+    "sheet": "D251958E",
+    "cell": 1
+  },
+  "thought-bubble": {
+    "sheet": "D251958E",
+    "cell": 2
+  },
+  "drip": {
+    "sheet": "D251958E",
+    "cell": 3
+  },
+  "mark-bang": {
+    "sheet": "D251958E",
+    "cell": 4
+  },
+  "zzz": {
+    "sheet": "D251958E",
+    "cell": 5
+  },
+  "squiggle-lime": {
+    "sheet": "D251958E",
+    "cell": 6
+  },
+  "arrow-lime": {
+    "sheet": "D251958E",
+    "cell": 7
+  },
+  "scribble": {
+    "sheet": "D251958E",
+    "cell": 8
+  },
+  "badge-ideas": {
+    "sheet": "D251958E",
+    "cell": 9
+  },
+  "badge-build": {
+    "sheet": "D251958E",
+    "cell": 10
+  },
+  "badge-survive": {
+    "sheet": "D251958E",
+    "cell": 11
+  },
+  "badge-ship": {
+    "sheet": "D251958E",
+    "cell": 12
+  },
+  "_note_extras": "The first asset board is kept only for pieces the newer sheets do not draw at all.",
+  "cat-sneak": {
+    "sheet": "updatesprite",
+    "cell": 8,
+    "clean": true
+  },
+  "cat-witch": {
+    "sheet": "updatesprite",
+    "cell": 17,
+    "clean": true
+  },
+  "cat-pumpkin": {
+    "sheet": "updatesprite",
+    "cell": 18,
+    "clean": true
+  },
+  "cat-hooded": {
+    "sheet": "updatesprite",
+    "cell": 19,
+    "clean": true
+  },
+  "ghost": {
+    "sheet": "updatesprite",
+    "cell": 22,
+    "clean": true
+  },
+  "ghost-drip": {
+    "sheet": "updatesprite",
+    "cell": 33
+  },
+  "clue-note": {
+    "sheet": "updatesprite",
+    "cell": 25,
+    "clean": true
+  },
+  "blob": {
+    "sheet": "updatesprite",
+    "cell": 45
+  },
+  "blob-cream": {
+    "sheet": "updatesprite",
+    "cell": 44
+  },
+  "blob-drip": {
+    "sheet": "updatesprite",
+    "cell": 46
+  },
+  "smear": {
+    "sheet": "updatesprite",
+    "cell": 47
+  },
+  "web": {
+    "sheet": "updatesprite",
+    "box": [
+      1324,
+      488,
+      1424,
+      600
+    ]
+  },
+  "star-small": {
+    "sheet": "updatesprite",
+    "box": [
+      1856,
+      636,
+      1920,
+      700
+    ]
+  },
+  "_note_clean": "'clean': drop detached shapes the crop sliced through - a neighbour leaking in. Off by default so the graffiti's loose spray survives."
 }

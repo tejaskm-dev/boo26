@@ -31,7 +31,7 @@ export default function BouncyWord({
             className="inline-block"
             style={{ transform: `rotate(${rot.toFixed(2)}deg) translate(${dx.toFixed(3)}em, ${dy.toFixed(3)}em)` }}
           >
-            <span data-char className="inline-block will-change-transform">
+            <span data-char className="inline-block">
               {ch === " " ? " " : ch}
             </span>
           </span>
