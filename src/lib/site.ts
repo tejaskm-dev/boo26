@@ -38,8 +38,9 @@ export const NAV: NavItem[] = [
   { label: "Experience", index: "02", href: "#experience" },
   { label: "20 Hours", index: "03", href: "#hours" },
   { label: "After Dark", index: "04", href: "#after-dark" },
-  { label: "Build", index: "05", href: "#build" },
-  { label: "FAQ", index: "06", href: "#faq" },
+  { label: "The People", index: "05", href: "#team" },
+  { label: "Build", index: "06", href: "#build" },
+  { label: "FAQ", index: "07", href: "#faq" },
 ];
 
 export const SOCIALS = [

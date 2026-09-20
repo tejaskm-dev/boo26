@@ -45,7 +45,8 @@ const ITEM = [
   { wdth: 86, size: 0.9, indent: 2.6, tilt: 1.3 },   // Experience
   { wdth: 112, size: 1.05, indent: 0.9, tilt: -0.7 }, // 20 Hours
   { wdth: 88, size: 0.92, indent: 3, tilt: 2.3 },    // After Dark
-  { wdth: 125, size: 1.34, indent: 5.4, tilt: -1.4 }, // Build
+  { wdth: 96, size: 0.82, indent: 4.2, tilt: -1.1 }, // The People
+  { wdth: 125, size: 1.2, indent: 5.4, tilt: -1.4 }, // Build
   { wdth: 125, size: 1.5, indent: 7.5, tilt: 1.8 },  // FAQ
 ];
 
