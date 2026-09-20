@@ -38,6 +38,7 @@ export default function RiseIn({
         duration: 1.15,
         ease: "back.out(1.35)",
         scrollTrigger: { trigger: el, start, once: true },
+        clearProps: "transform,willChange",
       });
     }, el);
     return () => ctx.revert();

@@ -117,7 +117,15 @@ function DesktopField({ className = "" }: { className?: string }) {
       sy: gsap.quickTo(n, "scaleY", { duration: 1.6, ease: "power2.out" }),
       d: Number(n.dataset.depth) || 12,
     }));
+    let isIntersecting = true;
+    const heroSec = svg.closest("section") || svg;
+    const io = new IntersectionObserver(([entry]) => {
+      isIntersecting = entry.isIntersecting;
+    }, { rootMargin: "0px" });
+    io.observe(heroSec);
+
     const stopPointer = subscribePointer((nx, ny) => {
+      if (!isIntersecting) return;
       setters.forEach((l) => {
         l.x(-nx * l.d);
         l.y(-ny * l.d * 0.62);
@@ -149,6 +157,7 @@ function DesktopField({ className = "" }: { className?: string }) {
     });
 
     return () => {
+      io.disconnect();
       stopPointer();
       stopLiquid();
       drift.scrollTrigger?.kill();
@@ -274,7 +283,15 @@ function MobileField({ className = "" }: { className?: string }) {
       y: gsap.quickTo(n, "y", { duration: 1.4, ease: "power2.out" }),
       d: Number(n.dataset.depth) || 8,
     }));
+    let isIntersecting = true;
+    const heroSec = svg.closest("section") || svg;
+    const io = new IntersectionObserver(([entry]) => {
+      isIntersecting = entry.isIntersecting;
+    }, { rootMargin: "0px" });
+    io.observe(heroSec);
+
     const stopPointer = subscribePointer((nx, ny) => {
+      if (!isIntersecting) return;
       setters.forEach((l) => {
         l.x(-nx * l.d);
         l.y(-ny * l.d * 0.5);
@@ -289,6 +306,7 @@ function MobileField({ className = "" }: { className?: string }) {
     });
 
     return () => {
+      io.disconnect();
       stopPointer();
       stopLiquid();
     };

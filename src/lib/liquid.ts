@@ -193,6 +193,7 @@ export function startLiquidFlow({ svg, shapes, ns, isMobile = false }: LiquidSet
   let hasPointer = false;
 
   const unsubscribePointer = subscribePointer((nx, ny) => {
+    if (!isIntersecting) return;
     if (!hasPointer) {
       hasPointer = true;
       prevPointerX = nx;
@@ -236,7 +237,7 @@ export function startLiquidFlow({ svg, shapes, ns, isMobile = false }: LiquidSet
           isIntersecting = entry.isIntersecting;
         }
       },
-      { rootMargin: "100px 0px" }
+      { rootMargin: "0px" }
     );
     observer.observe(heroSection);
   }
@@ -246,12 +247,6 @@ export function startLiquidFlow({ svg, shapes, ns, isMobile = false }: LiquidSet
   const tick = (_time: number, deltaTime: number) => {
     // 1. Guard against inactive or hidden states
     if (document.hidden || root.dataset.idle === "true" || !isIntersecting) {
-      return;
-    }
-
-    // Skip computation if this SVG is currently hidden by media queries (e.g. mobile field on desktop)
-    const rect = svg.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) {
       return;
     }
 

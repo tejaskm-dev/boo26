@@ -101,10 +101,12 @@ function flush() {
     // Deadband filter for micro sensor noise to avoid jitter
     const diffX = targetX - x;
     const diffY = targetY - y;
-    if (Math.abs(diffX) > 0.002 || Math.abs(diffY) > 0.002) {
+    if (Math.abs(diffX) > 0.003 || Math.abs(diffY) > 0.003) {
       x += diffX * 0.12;
       y += diffY * 0.12;
+      for (const fn of listeners) fn(x, y);
     }
+    return;
   }
 
   for (const fn of listeners) fn(x, y);

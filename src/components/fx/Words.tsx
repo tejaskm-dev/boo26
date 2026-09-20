@@ -34,6 +34,10 @@ export default function Words({
 
     if (prefersReducedMotion()) {
       gsap.set(words, { yPercent: 0, rotate: 0, autoAlpha: 1 });
+      const clips = el.querySelectorAll<HTMLElement>("[data-clip]");
+      clips.forEach((c) => {
+        c.style.clipPath = "none";
+      });
       return;
     }
 
@@ -51,6 +55,12 @@ export default function Words({
           stagger,
           clearProps: "willChange",
           scrollTrigger: { trigger: el, start: "top 86%", once: true },
+          onComplete: () => {
+            const clips = el.querySelectorAll<HTMLElement>("[data-clip]");
+            clips.forEach((c) => {
+              c.style.clipPath = "none";
+            });
+          },
         },
       );
     }, el);
@@ -66,6 +76,7 @@ export default function Words({
           {line.split(" ").map((word, wi) => (
             <span
               key={`${li}-${wi}`}
+              data-clip
               className="inline-block"
               style={{ clipPath: "inset(-0.42em -0.5em -0.28em -0.3em)" }}
             >

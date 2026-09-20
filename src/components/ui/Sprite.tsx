@@ -55,7 +55,7 @@ export default function Sprite({
     if (!el) return;
     const io = new IntersectionObserver(
       ([e]) => setNear(e.isIntersecting),
-      { rootMargin: "35% 0px" },
+      { rootMargin: "15% 0px" },
     );
     io.observe(el);
     return () => io.disconnect();
@@ -88,10 +88,14 @@ export default function Sprite({
     if (!el) return;
     const x = gsap.quickTo(el, "x", { duration: 1.4, ease: "power2.out" });
     const y = gsap.quickTo(el, "y", { duration: 1.4, ease: "power2.out" });
-    return subscribePointer((nx, ny) => {
+    const unsubscribe = subscribePointer((nx, ny) => {
       x(-nx * drift);
       y(-ny * drift * 0.55);
     });
+    return () => {
+      unsubscribe();
+      gsap.set(el, { clearProps: "x,y" });
+    };
   }, [drift, near]);
 
   return (

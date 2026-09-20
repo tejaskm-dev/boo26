@@ -19,29 +19,68 @@ import { useEffect } from "react";
  * Both ends of the header are sampled independently, because the composition
  * regularly puts a different field under each one.
  */
-type Form = { path: SVGPathElement; svg: SVGSVGElement; tone: "ink" | "bone" };
-type Band = { top: number; bottom: number; field: "ink" | "bone"; forms: Form[] };
+type Form = {
+  path: SVGPathElement;
+  svg: SVGSVGElement;
+  tone: "ink" | "bone";
+  pageTop: number;
+  pageBottom: number;
+  pageLeft: number;
+  pageRight: number;
+  width: number;
+  height: number;
+  vbWidth: number;
+  vbHeight: number;
+};
+type Band = {
+  top: number;
+  bottom: number;
+  field: "ink" | "bone";
+  fieldRight?: "ink" | "bone";
+  forms: Form[];
+};
 
 export default function FieldTone() {
   useEffect(() => {
     const root = document.documentElement;
     let bands: Band[] = [];
     let queued = false;
+    let cachedHeaderH = 40;
+    let cachedEdge = 24;
 
     const measure = () => {
+      const scrollY = window.scrollY;
+      const header = document.querySelector("header");
+      cachedHeaderH = (header?.offsetHeight ?? 72) * 0.55;
+      cachedEdge = Math.max(24, window.innerWidth * 0.06);
+
       bands = Array.from(document.querySelectorAll<HTMLElement>("[data-field]")).map((el) => {
-        const top = el.getBoundingClientRect().top + window.scrollY;
+        const top = el.getBoundingClientRect().top + scrollY;
         const forms: Form[] = Array.from(
           el.querySelectorAll<SVGPathElement>(":scope > span svg > path:first-of-type"),
-        ).map((path) => ({
-          path,
-          svg: path.ownerSVGElement as SVGSVGElement,
-          tone: (path.getAttribute("fill") ?? "").includes("ink") ? "ink" : "bone",
-        }));
+        ).map((path) => {
+          const svg = path.ownerSVGElement as SVGSVGElement;
+          const box = svg.getBoundingClientRect();
+          const vb = svg.viewBox.baseVal;
+          return {
+            path,
+            svg,
+            tone: (path.getAttribute("fill") ?? "").includes("ink") ? "ink" : "bone",
+            pageTop: box.top + scrollY,
+            pageBottom: box.bottom + scrollY,
+            pageLeft: box.left,
+            pageRight: box.right,
+            width: box.width,
+            height: box.height,
+            vbWidth: vb?.width || 1000,
+            vbHeight: vb?.height || 300,
+          };
+        });
         return {
           top,
           bottom: top + el.offsetHeight,
           field: (el.dataset.field as "ink" | "bone") ?? "bone",
+          fieldRight: (el.dataset.fieldRight as "ink" | "bone") || undefined,
           forms,
         };
       });
@@ -49,23 +88,23 @@ export default function FieldTone() {
     };
 
     /** what is painted at this viewport point */
-    const toneAt = (x: number, y: number): "ink" | "bone" => {
+    const toneAt = (x: number, y: number, isRight = false): "ink" | "bone" => {
       const line = window.scrollY + y;
       const band = bands.find((b) => line >= b.top && line < b.bottom);
       if (!band) return "bone";
 
-      let tone = band.field;
-      for (const { path, svg, tone: formTone } of band.forms) {
-        const box = svg.getBoundingClientRect();
-        if (box.width < 2 || box.height < 2) continue;
-        if (x < box.left || x > box.right || y < box.top || y > box.bottom) continue;
-        const vb = svg.viewBox.baseVal;
+      let tone = isRight && band.fieldRight ? band.fieldRight : band.field;
+      if (band.forms.length === 0) return tone;
+
+      for (const form of band.forms) {
+        if (form.width < 2 || form.height < 2) continue;
+        if (line < form.pageTop || line > form.pageBottom || x < form.pageLeft || x > form.pageRight) continue;
         // preserveAspectRatio is "none" on every form, so the mapping is a
         // straight scale on each axis
-        const vx = ((x - box.left) / box.width) * vb.width;
-        const vy = ((y - box.top) / box.height) * vb.height;
+        const vx = ((x - form.pageLeft) / form.width) * form.vbWidth;
+        const vy = ((line - form.pageTop) / form.height) * form.vbHeight;
         try {
-          if (path.isPointInFill(new DOMPoint(vx, vy))) tone = formTone;
+          if (form.path.isPointInFill(new DOMPoint(vx, vy))) tone = form.tone;
         } catch {
           /* isPointInFill needs a rendered path; skip if it is not */
         }
@@ -75,12 +114,11 @@ export default function FieldTone() {
 
     const apply = () => {
       queued = false;
-      const header = document.querySelector("header");
-      const h = (header?.offsetHeight ?? 72) * 0.55;
-      const edge = Math.max(24, window.innerWidth * 0.06);
+      const h = cachedHeaderH;
+      const edge = cachedEdge;
 
-      const left = toneAt(edge, h);
-      const right = toneAt(window.innerWidth - edge, h);
+      const left = toneAt(edge, h, false);
+      const right = toneAt(window.innerWidth - edge, h, true);
       if (root.dataset.tone !== left) root.dataset.tone = left;
       if (root.dataset.toneRight !== right) root.dataset.toneRight = right;
     };

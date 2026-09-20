@@ -204,6 +204,17 @@ body[data-lock="true"] {
   animation: drift-b 61s ease-in-out infinite;
 }
 
+@media (max-width: 768px) {
+  .drift {
+    mix-blend-mode: normal;
+    opacity: 0.35;
+  }
+  .drift > span {
+    animation: none;
+    will-change: auto;
+  }
+}
+
 /* Nothing ambient runs while the page is in a background tab. Browsers
    throttle hidden tabs, but a page left open in the foreground and untouched
    still pays for every infinite animation on it. */
@@ -580,8 +591,15 @@ html[data-nav="open"] .scrollrail {
 .lean {
   transform: skewY(calc(var(--scroll-v) * 0.85deg))
     translate3d(0, calc(var(--scroll-v) * -6px), 0);
-  transition: transform 0.35s var(--ease-out-soft);
   will-change: transform;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .lean {
+    transform: none !important;
+    transition: none !important;
+    will-change: auto !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

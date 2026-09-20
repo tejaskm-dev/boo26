@@ -22,25 +22,22 @@ export default function SmoothScroll() {
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothWheel: true,
       wheelMultiplier: 0.95,
-      touchMultiplier: 1.7,
     });
 
-    // Velocity is published as a CSS variable so anything on the page can lean
-    // into the scroll without each piece running its own listener — but it is
-    // set on the leaning elements themselves, not on :root. A custom property
-    // written to the root every frame invalidates style for the whole document,
-    // which is over a thousand elements recalculated to move four headings.
-    const leaners = Array.from(document.querySelectorAll<HTMLElement>(".lean"));
+    const isTouch = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+    const leaners = isTouch ? [] : Array.from(document.querySelectorAll<HTMLElement>(".lean"));
     let raf = 0;
     const publish = ({ velocity }: { velocity: number }) => {
-      if (raf) return;
+      if (raf || isTouch) return;
       raf = requestAnimationFrame(() => {
         raf = 0;
         const v = (Math.max(-1, Math.min(1, velocity / 34))).toFixed(3);
         for (const el of leaners) el.style.setProperty("--scroll-v", v);
       });
     };
-    lenis.on("scroll", publish);
+    if (!isTouch) {
+      lenis.on("scroll", publish);
+    }
 
     setLenis(lenis);
     lenis.on("scroll", ScrollTrigger.update);

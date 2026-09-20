@@ -47,6 +47,13 @@ const spaceGrotesk = Space_Grotesk({
 export const metadata: Metadata = {
   title: `${EVENT.name} ${EVENT.year} — ${EVENT.date}, ${EVENT.venue}`,
   description: `${EVENT.format}. ${EVENT.dateLong} at ASIET, Kalady.`,
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/favicon.png", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
   openGraph: {
     title: `${EVENT.name} ${EVENT.year}`,
     description: `${EVENT.format} — ${EVENT.dateLong}, ASIET Kalady.`,
