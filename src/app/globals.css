@@ -1,26 +1,443 @@
 @import "tailwindcss";
 
+/* ------------------------------------------------------------------ *
+ * BOO! 2026 — design tokens
+ * ------------------------------------------------------------------ */
+@theme {
+  --color-ink: #080808;
+  --color-bone: #f3f0e7;
+  --color-paper: #ffffff;
+  --color-lime: #d8ff28;
+  /* the lime baked into the supplied art, used where CSS meets artwork */
+  --color-lime-art: #e4f93e;
+
+  --font-display: var(--font-archivo), "Helvetica Neue", Arial, sans-serif;
+  --font-brush: var(--font-bagel), var(--font-archivo), Impact, sans-serif;
+  --font-hand: var(--font-caveat), "Segoe Script", cursive;
+  --font-mono: var(--font-space-grotesk), ui-monospace, monospace;
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-organic: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+  --edge: clamp(1.25rem, 3.6vw, 4.5rem);
+  --header-h: clamp(4.25rem, 7vh, 5.5rem);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+* {
+  -webkit-tap-highlight-color: transparent;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--color-ink);
+  /* Lenis owns scrolling — a native smooth behaviour here fights its rAF */
+  scroll-behavior: auto;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  background: var(--color-bone);
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-synthesis-weight: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+
+body[data-lock="true"] {
+  overflow: hidden;
+}
+
+::selection {
+  background: var(--color-lime);
+  color: var(--color-ink);
+}
+
+/* ------------------------------------------------------------------ *
+ * Typography primitives
+ * ------------------------------------------------------------------ */
+.display {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-variation-settings: "wdth" 112;
+  line-height: 0.82;
+  letter-spacing: -0.035em;
+  text-transform: uppercase;
+}
+
+.display-wide {
+  font-variation-settings: "wdth" 125;
+}
+
+.display-narrow {
+  font-variation-settings: "wdth" 84;
+}
+
+/* the fat brush voice — section headings, and nothing else */
+.brush {
+  font-family: var(--font-brush);
+  font-weight: 400;
+  line-height: 0.88;
+  letter-spacing: -0.015em;
+  text-transform: uppercase;
+}
+
+/* handwritten margin notes */
+.hand {
+  font-family: var(--font-hand);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: 0.005em;
+}
+
+.label {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  font-size: clamp(0.62rem, 0.72vw, 0.78rem);
+  line-height: 1;
+}
+
+.label-loose {
+  letter-spacing: 0.36em;
+}
+
+.body-copy {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: -0.005em;
+  text-wrap: pretty;
+}
+
+/* ------------------------------------------------------------------ *
+ * Film grain — one fixed layer over the whole document
+ * ------------------------------------------------------------------ */
+.grain {
+  position: fixed;
+  inset: -50%;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.5;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.86' numOctaves='4' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='180' height='180' filter='url(%23n)' opacity='0.55'/></svg>");
+  background-size: 180px 180px;
+  will-change: transform;
+  animation: grain-shift 6s steps(6, end) infinite;
+}
+
+@keyframes grain-shift {
+  0%   { transform: translate3d(0, 0, 0); }
+  16%  { transform: translate3d(-3%, 2%, 0); }
+  33%  { transform: translate3d(2%, -3%, 0); }
+  50%  { transform: translate3d(-2%, -2%, 0); }
+  66%  { transform: translate3d(3%, 1%, 0); }
+  83%  { transform: translate3d(-1%, 3%, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+
+/* ------------------------------------------------------------------ *
+ * Entrance: elements start hidden only when JS will animate them in
+ * ------------------------------------------------------------------ */
+[data-anim] {
+  will-change: transform, opacity;
+}
+
+html[data-js="true"] [data-anim="rise"] {
+  opacity: 0;
+  transform: translate3d(0, 1.6rem, 0);
+}
+
+html[data-js="true"] [data-anim="fade"] {
+  opacity: 0;
+}
+
+/* ------------------------------------------------------------------ *
+ * Reduced motion
+ * ------------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  .grain {
+    animation: none;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Field tone — the header re-inks itself over black vs off-white
+ * ------------------------------------------------------------------ */
+html {
+  --mark-ink: 1;
+  --mark-bone: 0;
+  --head-fg: var(--color-ink);
+  --head-fg-right: var(--color-ink);
+}
+
+html[data-tone="ink"] {
+  --mark-ink: 0;
+  --mark-bone: 1;
+  --head-fg: var(--color-bone);
+}
+
+html[data-tone-right="ink"] {
+  --head-fg-right: var(--color-bone);
+}
+
+/* ------------------------------------------------------------------ *
+ * Menu trigger — outlined over the desktop composition, solid on mobile
+ * where the mockup sets it into the field as a little black blob
+ * ------------------------------------------------------------------ */
+.menu-trigger {
+  --trigger-fill: var(--color-ink);
+  --trigger-stroke: var(--color-ink);
+  --trigger-weight: 1;
+  --trigger-dash: var(--color-lime);
+}
+
+@media (min-width: 768px) {
+  .menu-trigger {
+    --trigger-fill: none;
+    --trigger-stroke: var(--head-fg-right);
+    --trigger-weight: 2.6;
+    --trigger-dash: var(--head-fg-right);
+    transition: none;
+  }
+  .menu-trigger:hover,
+  .menu-trigger:focus-visible {
+    --trigger-stroke: var(--color-lime);
+    --trigger-dash: var(--color-lime);
+  }
+}
+
+@keyframes cue {
+  0%, 100% { transform: translateY(0); opacity: 0.55; }
+  50% { transform: translateY(0.35rem); opacity: 1; }
+}
+
+/* ------------------------------------------------------------------ *
+ * Fields sit above the off-white rather than being cut out of it
+ * ------------------------------------------------------------------ */
+.field-lift {
+  filter: drop-shadow(0 10px 16px rgba(8, 8, 8, 0.22));
+}
+
+@media (min-width: 768px) {
+  .field-lift {
+    filter: drop-shadow(0 16px 30px rgba(8, 8, 8, 0.26));
+  }
+}
+
+/* While the menu is open the chrome answers to the menu's own fields */
+html[data-nav="open"] {
+  --mark-ink: 1;
+  --mark-bone: 0;
+  --head-fg: var(--color-ink);
+  --head-fg-right: var(--color-bone);
+}
+
+/* ------------------------------------------------------------------ *
+ * Scrollbar — the native one is replaced by a thread and a lime bead
+ * (src/components/fx/Scrollbar.tsx). Colours follow the field the right
+ * edge is currently over, the same way the header does.
+ * ------------------------------------------------------------------ */
+html {
+  scrollbar-width: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.scrollrail {
+  position: fixed;
+  top: calc(var(--header-h) + 1.5rem);
+  bottom: 1.5rem;
+  right: clamp(0.65rem, 1.1vw, 1.35rem);
+  z-index: 65;
+  /* wide enough to grab, narrow enough to ignore */
+  width: 1.15rem;
+  cursor: pointer;
+  opacity: 0.92;
+  transition: opacity 0.4s var(--ease-out-soft);
+}
+
+.scrollrail[data-idle="true"] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* the menu covers the page, so the bar steps out of the way */
+html[data-nav="open"] .scrollrail {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.scrollrail-thread {
+  position: absolute;
+  inset-block: 0;
+  left: 50%;
+  width: 1px;
+  translate: -50% 0;
+  background: currentColor;
+  color: var(--head-fg-right);
+  opacity: 0.26;
+  transition: color 0.5s var(--ease-out-soft);
+}
+
+.scrollrail-bead {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 0.45rem;
+  background: var(--color-lime);
+  border-radius: 58% 42% 46% 54% / 34% 32% 68% 66%;
+  /* the hairline keeps the bead crisp where lime meets off-white */
+  box-shadow:
+    0 0 14px rgba(216, 255, 40, 0.45),
+    0 0 0 1px color-mix(in srgb, var(--head-fg-right) 24%, transparent);
+  transform-origin: 50% 50%;
+  will-change: transform;
+  transition:
+    width 0.35s var(--ease-out-soft),
+    box-shadow 0.35s var(--ease-out-soft),
+    border-radius 0.6s var(--ease-out-soft);
+}
+
+.scrollrail:hover .scrollrail-bead,
+.scrollrail[data-dragging="true"] .scrollrail-bead {
+  width: 0.7rem;
+  border-radius: 46% 54% 58% 42% / 42% 60% 40% 58%;
+  box-shadow:
+    0 0 22px rgba(216, 255, 40, 0.7),
+    0 0 0 1px color-mix(in srgb, var(--head-fg-right) 32%, transparent);
+}
+
+.scrollrail[data-dragging="true"] {
+  cursor: grabbing;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scrollrail-bead {
+    transition: none;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Ambient drift — the fields are never completely still. Compositor-only
+ * transforms on very long, mismatched periods, so nothing ever visibly
+ * loops and the cost is close to zero.
+ * ------------------------------------------------------------------ */
+@keyframes drift-a {
+  0%   { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
+  25%  { transform: translate3d(2.5%, -1.8%, 0) rotate(3deg) scale(1.05); }
+  50%  { transform: translate3d(-1.5%, 2.2%, 0) rotate(-2deg) scale(0.97); }
+  75%  { transform: translate3d(-2.8%, -1%, 0) rotate(2.5deg) scale(1.04); }
+  100% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
+}
+
+@keyframes drift-b {
+  0%   { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
+  33%  { transform: translate3d(-3%, 1.6%, 0) rotate(-4deg) scale(1.06); }
+  66%  { transform: translate3d(2%, 2.6%, 0) rotate(3deg) scale(0.95); }
+  100% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
+}
+
+@keyframes drift-c {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  40%  { transform: translate3d(1.8%, 2.8%, 0) scale(1.07); }
+  70%  { transform: translate3d(-2.2%, -1.4%, 0) scale(0.96); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+
+/* the blob itself also breathes, so the silhouette is never static either */
+@keyframes morph {
+  0%   { border-radius: 58% 42% 46% 54% / 52% 58% 42% 48%; }
+  25%  { border-radius: 44% 56% 62% 38% / 42% 46% 54% 58%; }
+  50%  { border-radius: 62% 38% 40% 60% / 58% 42% 58% 42%; }
+  75%  { border-radius: 38% 62% 56% 44% / 46% 62% 38% 54%; }
+  100% { border-radius: 58% 42% 46% 54% / 52% 58% 42% 48%; }
+}
+
+.ambient-blob {
+  position: absolute;
+  /* heavily blurred so it lands as depth in the field, never as a shape */
+  filter: blur(clamp(40px, 6vw, 90px));
+  will-change: transform, border-radius;
+  animation:
+    var(--drift, drift-a) var(--drift-time, 54s) ease-in-out infinite,
+    morph var(--morph-time, 26s) ease-in-out infinite;
+  animation-delay: var(--drift-delay, 0s), var(--morph-delay, 0s);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient-blob {
+    animation: none;
+  }
+}
+
+/* The hero fields keep moving even when the pointer does not. Transform-box
+   keeps the origin on each group's own bounds rather than the viewBox. */
+@keyframes breathe {
+  0%   { transform: translate(0, 0) rotate(0deg) scale(1); }
+  30%  { transform: translate(-0.9%, 0.7%) rotate(0.5deg) scale(1.012); }
+  62%  { transform: translate(0.8%, -0.6%) rotate(-0.45deg) scale(0.994); }
+  100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+}
+
+.field-breathe {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: breathe var(--breathe, 60s) ease-in-out infinite;
+  animation-delay: var(--breathe-delay, 0s);
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .field-breathe {
+    animation: none;
+  }
+}
+
+/* Scroll velocity, published by Lenis, leans the artwork into the movement. */
+:root {
+  --scroll-v: 0;
+}
+
+.lean {
+  transform: skewY(calc(var(--scroll-v) * 0.85deg))
+    translate3d(0, calc(var(--scroll-v) * -6px), 0);
+  transition: transform 0.35s var(--ease-out-soft);
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lean {
+    transform: none;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * The footer sits on a lower layer than the page, so the last section
+ * passes over it and anything hanging across that seam stays whole.
+ * The reveal itself is scrubbed in Footer.tsx.
+ * ------------------------------------------------------------------ */
+main {
+  position: relative;
+  z-index: 2;
+}
+
+footer[data-field] {
+  position: relative;
+  z-index: 1;
 }
