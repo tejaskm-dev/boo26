@@ -622,3 +622,37 @@ footer[data-field] {
   position: relative;
   z-index: 1;
 }
+
+/* ------------------------------------------------------------------ *
+ * Polaroid Chemical Color Reveal & Surface Glint
+ * ------------------------------------------------------------------ */
+.polaroid-color-reveal {
+  clip-path: circle(0% at 50% 115%);
+  transition: clip-path 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: clip-path;
+}
+
+.group:hover .polaroid-color-reveal,
+.group[data-active="true"] .polaroid-color-reveal {
+  clip-path: circle(160% at 50% 115%);
+}
+
+.polaroid-glint {
+  transform: translateX(-140%) skewX(-25deg);
+  transition: transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+.group:hover .polaroid-glint,
+.group[data-active="true"] .polaroid-glint {
+  transform: translateX(240%) skewX(-25deg);
+}
+
+.group[data-active="true"] .polaroid-cat-popup,
+.group[data-popped="true"] .polaroid-cat-popup {
+  transform: translate(-50%, 0) scale(1) !important;
+  opacity: 1 !important;
+}
+
+
+

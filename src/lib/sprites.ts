@@ -72,6 +72,12 @@ export const SPRITE = {
   "treasure-x": { src: "/assets/treasure-x.webp", w: 332, h: 263 },
   "web": { src: "/assets/web.webp", w: 100, h: 112 },
   "zzz": { src: "/assets/zzz.webp", w: 329, h: 279 },
+  "cat-pop-coder": { src: "/assets/cat-pop-coder.webp", w: 476, h: 504 },
+  "cat-pop-artist": { src: "/assets/cat-pop-artist.webp", w: 508, h: 470 },
+  "cat-pop-jump": { src: "/assets/cat-pop-jump.webp", w: 495, h: 467 },
+  "cat-pop-detective": { src: "/assets/cat-pop-detective.webp", w: 464, h: 482 },
+  "cat-pop-gamer": { src: "/assets/cat-pop-gamer.webp", w: 441, h: 440 },
+  "cat-pop-sleepy": { src: "/assets/cat-pop-sleepy.webp", w: 467, h: 408 },
 } as const satisfies Record<string, Sprite>;
 
 export type SpriteName = keyof typeof SPRITE;

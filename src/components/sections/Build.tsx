@@ -13,11 +13,10 @@ export default function Build() {
     <Section
       id="build"
       field="bone"
-      forms={[{ shape: "spillLeft", tone: "ink", at: "inset-x-0 top-0 w-full h-[14vh] md:h-[22vh]" }]}
-      className="pb-[clamp(3rem,8vh,5rem)] pt-[clamp(5.5rem,17vh,13rem)] md:pt-[clamp(5.5rem,26vh,13rem)]"
+      className="pb-[clamp(3rem,8vh,5rem)] pt-[clamp(3.5rem,8vh,5.5rem)]"
     >
       <div className="flex items-start justify-between gap-6 px-[var(--edge)]">
-        <SectionLabel index="05">The Hackathon</SectionLabel>
+        <SectionLabel index="06">The Hackathon</SectionLabel>
         <p className="label whitespace-pre-line text-right text-ink/45">
           Your idea.{"\n"}Your stack.{"\n"}20 hours.
         </p>

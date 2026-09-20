@@ -354,9 +354,18 @@ def declutter(im):
     for p in parts[1:]:
         if p in keep:
             continue
-        for i in p:
-            x, y = i % w, i // w
-            px[x, y] = (0, 0, 0, 0)
+        stack = list(p)
+        seen = set(p)
+        while stack:
+            i = stack.pop()
+            cx, cy = i % w, i // w
+            px[cx, cy] = (0, 0, 0, 0)
+            for nx, ny in ((cx - 1, cy), (cx + 1, cy), (cx, cy - 1), (cx, cy + 1)):
+                if 0 <= nx < w and 0 <= ny < h:
+                    ni = ny * w + nx
+                    if ni not in seen and px[nx, ny][3] > 0:
+                        seen.add(ni)
+                        stack.append(ni)
     return im.crop(im.getchannel("A").point(lambda v: 255 if v > FAINT else 0).getbbox())
 
 

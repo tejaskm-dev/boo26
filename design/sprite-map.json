@@ -293,5 +293,31 @@
       700
     ]
   },
+  "cat-pop-coder": {
+    "sheet": "catpopup",
+    "cell": 0
+  },
+  "cat-pop-artist": {
+    "sheet": "catpopup",
+    "cell": 1
+  },
+  "cat-pop-jump": {
+    "sheet": "catpopup",
+    "cell": 2,
+    "clean": true
+  },
+  "cat-pop-detective": {
+    "sheet": "catpopup",
+    "cell": 3,
+    "clean": true
+  },
+  "cat-pop-gamer": {
+    "sheet": "catpopup",
+    "cell": 4
+  },
+  "cat-pop-sleepy": {
+    "sheet": "catpopup",
+    "cell": 5
+  },
   "_note_clean": "'clean': drop detached shapes the crop sliced through - a neighbour leaking in. Off by default so the graffiti's loose spray survives."
 }

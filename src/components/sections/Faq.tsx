@@ -26,7 +26,7 @@ export default function Faq() {
       <div className="grid gap-[clamp(2.5rem,5vw,4.5rem)] px-[var(--edge)] lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.1fr)]">
         {/* the poster half */}
         <div className="relative">
-          <SectionLabel index="06">FAQ</SectionLabel>
+          <SectionLabel index="07">FAQ</SectionLabel>
 
           <p className="hand mt-6 max-w-[12ch] -rotate-[4deg] whitespace-pre-line text-[clamp(1.15rem,2vw,1.8rem)] text-ink/70">
             {NOTES.faq}
