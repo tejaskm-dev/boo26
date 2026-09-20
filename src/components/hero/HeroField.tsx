@@ -35,7 +35,9 @@ export default function HeroField({ className = "" }: { className?: string }) {
  * multi-speed SVG liquid deformation filters (background, midground, and
  * foreground contour flow).
  */
-function FieldDefs({ ns }: { ns: string }) {
+function FieldDefs({ ns, isMobile = false }: { ns: string; isMobile?: boolean }) {
+  // 4.5 in mobile 390x800 viewBox equals 15 in desktop 1600x900 viewBox
+  const shadowStd = isMobile ? 4.5 : 15;
   return (
     <defs>
       <filter id={`${ns}-glow`} x="-70%" y="-90%" width="240%" height="280%">
@@ -48,7 +50,7 @@ function FieldDefs({ ns }: { ns: string }) {
       </filter>
       {/* GPU-cached static shadow filter — calculated once on load, never re-blurred per frame */}
       <filter id={`${ns}-shadow-blur`} x="-20%" y="-20%" width="140%" height="140%">
-        <feGaussianBlur stdDeviation="15" />
+        <feGaussianBlur stdDeviation={shadowStd} />
       </filter>
       <radialGradient id={`${ns}-wash`} cx="46%" cy="34%" r="62%">
         <stop offset="0%" stopColor="#ffffff" stopOpacity="0.075" />
@@ -99,7 +101,8 @@ function DesktopField({ className = "" }: { className?: string }) {
   const root = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
-    if (prefersReducedMotion()) return;
+    // Only run on desktop screens (>= 768px)
+    if (prefersReducedMotion() || window.innerWidth < 768) return;
     const svg = root.current;
     if (!svg) return;
 
@@ -259,7 +262,8 @@ function MobileField({ className = "" }: { className?: string }) {
   const root = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
-    if (prefersReducedMotion()) return;
+    // Only run on mobile screens (< 768px)
+    if (prefersReducedMotion() || window.innerWidth >= 768) return;
     const svg = root.current;
     if (!svg) return;
 
@@ -298,7 +302,7 @@ function MobileField({ className = "" }: { className?: string }) {
       className={`absolute inset-0 h-full w-full ${className}`}
       aria-hidden="true"
     >
-      <FieldDefs ns="mob" />
+      <FieldDefs ns="mob" isMobile={true} />
 
       {/* Morphing shape definitions */}
       <defs>

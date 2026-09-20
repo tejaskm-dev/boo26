@@ -47,7 +47,7 @@ export default function Hero() {
 
         <div className="flex flex-col gap-[clamp(1.1rem,2.6vh,1.75rem)] md:items-center md:gap-[clamp(1.5rem,3.4vh,2.6rem)]">
           {/* Mobile facts sit directly above the register button over the dark ink mass */}
-          <div className="label label-loose grid grid-cols-[auto_auto] justify-start gap-x-[clamp(1.25rem,6vw,2.5rem)] gap-y-[clamp(0.5rem,1.4vh,0.9rem)] font-medium text-bone/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] md:flex md:items-baseline md:gap-6 md:font-normal md:text-bone/80 md:drop-shadow-none">
+          <div className="label label-loose grid grid-cols-[auto_auto] justify-start gap-x-[clamp(1.25rem,6vw,2.5rem)] gap-y-[clamp(0.5rem,1.4vh,0.9rem)] font-medium text-bone/95 [text-shadow:0_1px_3px_rgba(0,0,0,0.85)] md:flex md:items-baseline md:gap-6 md:font-normal md:text-bone/80 md:[text-shadow:none]">
             <span data-anim="rise">{EVENT.date}</span>
             <span data-anim="rise" className="md:hidden">{EVENT.duration}</span>
             <span aria-hidden="true" className="hidden h-3 w-px bg-bone/30 md:block" />

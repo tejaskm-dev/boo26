@@ -18,11 +18,6 @@ let frame = 0;
 let x = 0;
 let y = 0;
 
-function flush() {
-  frame = 0;
-  for (const fn of listeners) fn(x, y);
-}
-
 function schedule() {
   if (!frame) frame = requestAnimationFrame(flush);
 }
@@ -45,6 +40,9 @@ const TARGET_RESTING_ROLL = 0;
 
 let baseline = { beta: TARGET_RESTING_PITCH, gamma: TARGET_RESTING_ROLL };
 let hasFirstReading = false;
+let latestBeta = TARGET_RESTING_PITCH;
+let latestGamma = TARGET_RESTING_ROLL;
+let hasSensorData = false;
 
 // Soft S-curve so tilting feels smooth, natural, and never hits a hard wall
 function softNorm(val: number, range: number): number {
@@ -62,47 +60,61 @@ function getOrientationAngle(): number {
   return 0;
 }
 
+function flush() {
+  frame = 0;
+
+  if (hasSensorData) {
+    // 1. First reading: seed baseline close to user's current posture
+    if (!hasFirstReading) {
+      hasFirstReading = true;
+      baseline.beta = Math.max(25, Math.min(75, latestBeta));
+      baseline.gamma = Math.max(-30, Math.min(30, latestGamma));
+    }
+
+    // 2. Adaptive center-drift: slowly migrate resting baseline so posture shifts never peg
+    baseline.beta += (latestBeta - baseline.beta) * 0.005;
+    baseline.gamma += (latestGamma - baseline.gamma) * 0.005;
+
+    const dBeta = latestBeta - baseline.beta;
+    const dGamma = latestGamma - baseline.gamma;
+
+    // Handle device orientation (landscape left/right)
+    const angle = getOrientationAngle();
+    let rawX = dGamma;
+    let rawY = dBeta;
+
+    if (angle === 90) {
+      rawX = dBeta;
+      rawY = -dGamma;
+    } else if (angle === -90 || angle === 270) {
+      rawX = -dBeta;
+      rawY = dGamma;
+    } else if (angle === 180) {
+      rawX = -dGamma;
+      rawY = -dBeta;
+    }
+
+    // Smooth S-curve normalization: ~18° roll, ~22° pitch
+    const targetX = softNorm(rawX, 18);
+    const targetY = softNorm(rawY, 22);
+
+    // Deadband filter for micro sensor noise to avoid jitter
+    const diffX = targetX - x;
+    const diffY = targetY - y;
+    if (Math.abs(diffX) > 0.002 || Math.abs(diffY) > 0.002) {
+      x += diffX * 0.12;
+      y += diffY * 0.12;
+    }
+  }
+
+  for (const fn of listeners) fn(x, y);
+}
+
 function onTilt(e: DeviceOrientationEvent) {
-  const { beta, gamma } = e;
-  if (beta === null || gamma === null) return;
-
-  // First reading: seed baseline close to user's current posture
-  if (!hasFirstReading) {
-    hasFirstReading = true;
-    baseline.beta = Math.max(25, Math.min(75, beta));
-    baseline.gamma = Math.max(-30, Math.min(30, gamma));
-  }
-
-  // Adaptive center-drift: slowly migrate resting baseline so posture shifts never peg the parallax
-  baseline.beta += (beta - baseline.beta) * 0.005;
-  baseline.gamma += (gamma - baseline.gamma) * 0.005;
-
-  const dBeta = beta - baseline.beta;
-  const dGamma = gamma - baseline.gamma;
-
-  // Handle device orientation (landscape left/right)
-  const angle = getOrientationAngle();
-  let rawX = dGamma;
-  let rawY = dBeta;
-
-  if (angle === 90) {
-    rawX = dBeta;
-    rawY = -dGamma;
-  } else if (angle === -90 || angle === 270) {
-    rawX = -dBeta;
-    rawY = dGamma;
-  } else if (angle === 180) {
-    rawX = -dGamma;
-    rawY = -dBeta;
-  }
-
-  // Smooth S-curve normalization: ~18° roll, ~22° pitch
-  const targetX = softNorm(rawX, 18);
-  const targetY = softNorm(rawY, 22);
-
-  // Smooth lerp (0.14) for fluid responsiveness without jitter
-  x += (targetX - x) * 0.14;
-  y += (targetY - y) * 0.14;
+  if (e.beta === null || e.gamma === null) return;
+  latestBeta = e.beta;
+  latestGamma = e.gamma;
+  hasSensorData = true;
   schedule();
 }
 
@@ -148,6 +160,7 @@ export async function enableTilt(): Promise<boolean> {
 /** Recalibrates current holding posture as the center. */
 export function recalibrateTilt() {
   hasFirstReading = false;
+  hasSensorData = false;
   baseline = { beta: TARGET_RESTING_PITCH, gamma: TARGET_RESTING_ROLL };
 }
 

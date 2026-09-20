@@ -204,11 +204,21 @@ export function startLiquidFlow({ svg, shapes, ns, isMobile = false }: LiquidSet
     prevPointerX = nx;
     prevPointerY = ny;
 
-    const multiplier = isMobile ? 24 : 45;
+    if (isMobile) {
+      const mag = Math.hypot(dX, dY);
+      if (mag < 0.006) return;
+      mouseImpulseX += dX * 8;
+      mouseImpulseY += dY * 6;
+      mouseImpulseX = Math.max(-10, Math.min(10, mouseImpulseX));
+      mouseImpulseY = Math.max(-10, Math.min(10, mouseImpulseY));
+      return;
+    }
+
+    const multiplier = 45;
     mouseImpulseX += dX * multiplier;
     mouseImpulseY += dY * (multiplier * 0.75);
 
-    const maxImpulse = isMobile ? 22 : 38;
+    const maxImpulse = 38;
     mouseImpulseX = Math.max(-maxImpulse, Math.min(maxImpulse, mouseImpulseX));
     mouseImpulseY = Math.max(-maxImpulse, Math.min(maxImpulse, mouseImpulseY));
   });

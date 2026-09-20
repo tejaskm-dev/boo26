@@ -28,19 +28,25 @@ export default function HeroLockup({
     const el = wrap.current;
     if (!el) return;
 
-    // Desktop mouse travel vs mobile tilt travel
-    const travelX = fine ? 30 : 16;
-    const travelY = fine ? 18 : 10;
-    const rot = fine ? 1.1 : 0.6;
+    if (!fine) {
+      // Mobile: pure GPU translate3d without rotation (rotation forces CPU redraw in iOS Safari)
+      const x = gsap.quickTo(el, "x", { duration: 0.8, ease: "power2.out" });
+      const y = gsap.quickTo(el, "y", { duration: 0.8, ease: "power2.out" });
+      return subscribePointer((nx, ny) => {
+        x(nx * 12);
+        y(ny * 8);
+      });
+    }
 
-    const x = gsap.quickTo(el, "x", { duration: fine ? 1.2 : 0.9, ease: "power2.out" });
-    const y = gsap.quickTo(el, "y", { duration: fine ? 1.2 : 0.9, ease: "power2.out" });
-    const r = gsap.quickTo(el, "rotation", { duration: fine ? 1.6 : 1.1, ease: "power2.out" });
+    // Desktop: full mouse travel and rotation
+    const x = gsap.quickTo(el, "x", { duration: 1.2, ease: "power2.out" });
+    const y = gsap.quickTo(el, "y", { duration: 1.2, ease: "power2.out" });
+    const r = gsap.quickTo(el, "rotation", { duration: 1.6, ease: "power2.out" });
 
     return subscribePointer((nx, ny) => {
-      x(nx * travelX);
-      y(ny * travelY);
-      r(nx * rot);
+      x(nx * 30);
+      y(ny * 18);
+      r(nx * 1.1);
     });
   }, [fine]);
 
@@ -89,7 +95,7 @@ export default function HeroLockup({
             sizes="(max-width: 767px) 96vw, (max-width: 1279px) 72vw, 62vw"
             className="object-contain"
           />
-          <CatEyes art={LOCKUP_EYES} track={true} excited={hovered} />
+          <CatEyes art={LOCKUP_EYES} track={fine} excited={hovered} />
         </div>
       </div>
     </div>
