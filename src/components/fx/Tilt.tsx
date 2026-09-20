@@ -1,39 +1,63 @@
 "use client";
 
 import { useEffect } from "react";
-import { enableTilt, recalibrateTilt } from "@/lib/pointer";
+import { enableTilt, recalibrateTilt, canTilt } from "@/lib/pointer";
 import { prefersReducedMotion } from "@/lib/motion";
 
 /**
- * Turns the device's tilt into the page's motion source on touch devices.
+ * Turns device tilt into the motion source on mobile and touch devices.
  *
- * iOS only hands out orientation from inside a user gesture, so the request is
- * made on the first touch rather than on load — the visitor is already doing
- * something, and nothing has to be asked of them in a dialog they did not
- * expect. Android grants it silently and this is a no-op there beyond the
- * listener. Rotating the device re-levels, so landscape does not arrive with
- * the whole composition shoved to one side.
+ * - Android / Chrome grants orientation immediately on mount without user gestures.
+ * - iOS Safari strictly requires a user gesture activation (click, touchend, pointerup).
+ * - Rotating the device re-levels the adaptive baseline.
  */
 export default function Tilt() {
   useEffect(() => {
-    if (prefersReducedMotion()) return;
-    // a pointer that can hover is a mouse, and the mouse is already the source
+    if (prefersReducedMotion() || !canTilt()) return;
     if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
 
-    const start = () => {
-      void enableTilt();
-      window.removeEventListener("touchstart", start);
-      window.removeEventListener("pointerdown", start);
+    const DOE = window.DeviceOrientationEvent as typeof DeviceOrientationEvent & {
+      requestPermission?: () => Promise<"granted" | "denied">;
     };
-    window.addEventListener("touchstart", start, { passive: true, once: true });
-    window.addEventListener("pointerdown", start, { passive: true, once: true });
+
+    const isIOS = typeof DOE.requestPermission === "function";
+
+    if (!isIOS) {
+      // Android / non-iOS: silently activates immediately
+      void enableTilt();
+    } else {
+      // iOS Safari: must be requested from valid user gesture (click, touchend, pointerup)
+      const tryEnable = () => {
+        void enableTilt().then((granted) => {
+          if (granted) {
+            removeGestureListeners();
+          }
+        });
+      };
+
+      const removeGestureListeners = () => {
+        window.removeEventListener("touchend", tryEnable);
+        window.removeEventListener("click", tryEnable);
+        window.removeEventListener("pointerup", tryEnable);
+      };
+
+      window.addEventListener("touchend", tryEnable, { passive: true });
+      window.addEventListener("click", tryEnable, { passive: true });
+      window.addEventListener("pointerup", tryEnable, { passive: true });
+
+      const onOrient = () => recalibrateTilt();
+      window.addEventListener("orientationchange", onOrient);
+
+      return () => {
+        removeGestureListeners();
+        window.removeEventListener("orientationchange", onOrient);
+      };
+    }
 
     const onOrient = () => recalibrateTilt();
     window.addEventListener("orientationchange", onOrient);
 
     return () => {
-      window.removeEventListener("touchstart", start);
-      window.removeEventListener("pointerdown", start);
       window.removeEventListener("orientationchange", onOrient);
     };
   }, []);

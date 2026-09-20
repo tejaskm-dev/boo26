@@ -32,12 +32,9 @@ export default function Hero() {
       */}
       <div className="relative z-10 flex min-h-svh flex-col justify-between gap-[clamp(1.25rem,3vh,2rem)] px-[var(--edge)] pb-[clamp(4.5rem,11vh,6rem)] pt-[calc(var(--header-h)+clamp(1.25rem,4vh,2.5rem))] md:items-center md:justify-center md:gap-[clamp(1.5rem,3.4vh,2.6rem)] md:-translate-x-[2.5%] md:pb-[clamp(3rem,8vh,5rem)] md:pt-[calc(var(--header-h)*0.9)]">
         {/* portrait only — the format takes the top of the frame */}
-        {/* Portrait puts these on the cream the ink blob does not reach, so
-            they are set in ink. The wide layout keeps everything inside the
-            blob, where they stay cream. */}
         <p
           data-anim="rise"
-          className="label max-w-[15ch] leading-[1.9] text-ink/45 md:hidden"
+          className="label max-w-[15ch] leading-[1.9] text-ink/70 md:hidden"
         >
           {EVENT.format}
         </p>
@@ -49,9 +46,8 @@ export default function Hero() {
         />
 
         <div className="flex flex-col gap-[clamp(1.1rem,2.6vh,1.75rem)] md:items-center md:gap-[clamp(1.5rem,3.4vh,2.6rem)]">
-          {/* portrait stacks the facts into their own column; a wide frame
-              keeps them on one line under the mark */}
-          <div className="label label-loose grid grid-cols-[auto_auto] justify-start gap-x-[clamp(1.25rem,6vw,2.5rem)] gap-y-[clamp(0.5rem,1.4vh,0.9rem)] text-ink/70 md:flex md:items-baseline md:gap-6 md:text-bone/80">
+          {/* Mobile facts sit directly above the register button over the dark ink mass */}
+          <div className="label label-loose grid grid-cols-[auto_auto] justify-start gap-x-[clamp(1.25rem,6vw,2.5rem)] gap-y-[clamp(0.5rem,1.4vh,0.9rem)] font-medium text-bone/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] md:flex md:items-baseline md:gap-6 md:font-normal md:text-bone/80 md:drop-shadow-none">
             <span data-anim="rise">{EVENT.date}</span>
             <span data-anim="rise" className="md:hidden">{EVENT.duration}</span>
             <span aria-hidden="true" className="hidden h-3 w-px bg-bone/30 md:block" />
