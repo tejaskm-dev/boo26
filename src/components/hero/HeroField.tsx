@@ -6,6 +6,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { subscribePointer } from "@/lib/pointer";
 import { HERO_FIELD, MOBILE_FIELD } from "@/lib/shapes";
 import { prefersReducedMotion } from "@/lib/motion";
+import { startLiquidFlow } from "@/lib/liquid";
 
 /**
  * The hero's environment. Black fields traced off the supplied comps
@@ -14,6 +15,11 @@ import { prefersReducedMotion } from "@/lib/motion";
  * watch out of them. Every layer drifts a different amount with the pointer —
  * that, plus the shadow each field casts onto the off-white, is where the depth
  * comes from. There is no image behind any of this.
+ *
+ * Beneath the pointer parallax sits an organic liquid flow engine: the ink and
+ * lime boundaries slowly and continuously deform like thick, viscous liquid,
+ * gently reacting to mouse inertia and scroll velocity without distorting the
+ * foreground assets.
  */
 export default function HeroField({ className = "" }: { className?: string }) {
   return (
@@ -25,9 +31,9 @@ export default function HeroField({ className = "" }: { className?: string }) {
 }
 
 /**
- * Shared defs: the glow the eyes sit in, and the light that keeps the black
- * fields from reading as flat cut-outs — a slow wash across the mass plus a
- * hairline catch along the top edge.
+ * Shared defs: the glow the eyes sit in, the wash/rim gradients, and the
+ * multi-speed SVG liquid deformation filters (background, midground, and
+ * foreground contour flow).
  */
 function FieldDefs({ ns }: { ns: string }) {
   return (
@@ -39,6 +45,10 @@ function FieldDefs({ ns }: { ns: string }) {
           <feMergeNode in="soft" />
           <feMergeNode in="SourceGraphic" />
         </feMerge>
+      </filter>
+      {/* GPU-cached static shadow filter — calculated once on load, never re-blurred per frame */}
+      <filter id={`${ns}-shadow-blur`} x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="15" />
       </filter>
       <radialGradient id={`${ns}-wash`} cx="46%" cy="34%" r="62%">
         <stop offset="0%" stopColor="#ffffff" stopOpacity="0.075" />
@@ -91,21 +101,26 @@ function DesktopField({ className = "" }: { className?: string }) {
   useEffect(() => {
     if (prefersReducedMotion()) return;
     const svg = root.current;
-    const nodes = svg?.querySelectorAll<SVGGElement>("[data-depth]");
-    if (!svg || !nodes?.length) return;
+    if (!svg) return;
 
     // pointer: each layer answers at its own rate, which is the depth cue
+    const nodes = svg.querySelectorAll<SVGGElement>("[data-depth]");
+    if (!nodes.length) return;
+
     const setters = [...nodes].map((n) => ({
       x: gsap.quickTo(n, "x", { duration: 1.3, ease: "power2.out" }),
       y: gsap.quickTo(n, "y", { duration: 1.3, ease: "power2.out" }),
-      s: gsap.quickTo(n, "scale", { duration: 1.6, ease: "power2.out" }),
+      sx: gsap.quickTo(n, "scaleX", { duration: 1.6, ease: "power2.out" }),
+      sy: gsap.quickTo(n, "scaleY", { duration: 1.6, ease: "power2.out" }),
       d: Number(n.dataset.depth) || 12,
     }));
-    const stop = subscribePointer((nx, ny) => {
+    const stopPointer = subscribePointer((nx, ny) => {
       setters.forEach((l) => {
         l.x(-nx * l.d);
         l.y(-ny * l.d * 0.62);
-        l.s(1 + (l.d / 1400) * (1 - Math.min(1, Math.hypot(nx, ny))) * 0.5 + l.d / 2600);
+        const s = 1 + (l.d / 1400) * (1 - Math.min(1, Math.hypot(nx, ny))) * 0.5 + l.d / 2600;
+        l.sx(s);
+        l.sy(s);
       });
     });
 
@@ -122,8 +137,17 @@ function DesktopField({ className = "" }: { className?: string }) {
       },
     });
 
+    // 60-120fps GPU Bezier liquid path morphing
+    const stopLiquid = startLiquidFlow({
+      svg,
+      shapes: HERO_FIELD.shapes,
+      ns: "hero",
+      isMobile: false,
+    });
+
     return () => {
-      stop();
+      stopPointer();
+      stopLiquid();
       drift.scrollTrigger?.kill();
       drift.kill();
     };
@@ -139,18 +163,24 @@ function DesktopField({ className = "" }: { className?: string }) {
     >
       <FieldDefs ns="hero" />
 
-      {/* hairlines ride just outside each field's edge */}
-      <g data-depth="54" className="field-breathe" style={{ ["--breathe" as string]: "64s", ["--breathe-delay" as string]: "-27s" }}>
-        <path
-          d={HERO_FIELD.shapes[0]}
+      {/* Morphing shape definitions: updated once per frame in JS, shared by all instances */}
+      <defs>
+        <path id="hero-flow-0" d={HERO_FIELD.shapes[0]} />
+        <path id="hero-flow-1" d={HERO_FIELD.shapes[1]} />
+      </defs>
+
+      {/* hairlines ride just outside each field's edge — deforming in unison with the ink mass */}
+      <g data-depth="54">
+        <use
+          href="#hero-flow-0"
           fill="none"
           stroke="var(--color-lime)"
           strokeWidth={2}
           transform="translate(-36 28)"
           opacity={0.9}
         />
-        <path
-          d={HERO_FIELD.shapes[1]}
+        <use
+          href="#hero-flow-1"
           fill="none"
           stroke="var(--color-lime)"
           strokeWidth={1.6}
@@ -159,36 +189,39 @@ function DesktopField({ className = "" }: { className?: string }) {
         />
       </g>
 
-      {/* the main field — the outer group drifts forever, the inner one
-          answers the pointer, so neither overwrites the other */}
-      <g data-depth="20" className="field-lift">
-        <g className="field-breathe" style={{ ["--breathe" as string]: "58s" }}>
-        <path d={HERO_FIELD.shapes[0]} fill="var(--color-ink)" />
-        <path d={HERO_FIELD.shapes[0]} fill="url(#hero-wash)" />
+      {/* Shadow underlay: static geometry so the 30px Gaussian blur is cached in GPU texture memory */}
+      <g data-depth="20" aria-hidden="true">
         <path
           d={HERO_FIELD.shapes[0]}
-          fill="none"
-          stroke="url(#hero-rim)"
-          strokeWidth={2.5}
+          fill="rgba(8, 8, 8, 0.26)"
+          transform="translate(0 16)"
+          filter="url(#hero-shadow-blur)"
         />
-        </g>
       </g>
 
-      {/* the cat-head silhouette in the corner */}
-      <g data-depth="38" className="field-lift">
-        <g className="field-breathe" style={{ ["--breathe" as string]: "71s", ["--breathe-delay" as string]: "-14s" }}>
-        <path d={HERO_FIELD.shapes[1]} fill="var(--color-ink)" />
-        <path d={HERO_FIELD.shapes[1]} fill="url(#hero-wash)" />
+      {/* The main field — zero filter re-rasterization overhead, instant 60-120fps vector path rendering */}
+      <g data-depth="20">
+        <use href="#hero-flow-0" fill="var(--color-ink)" />
+        <use href="#hero-flow-0" fill="url(#hero-wash)" stroke="url(#hero-rim)" strokeWidth={2.5} />
+      </g>
+
+      {/* Cat silhouette shadow underlay */}
+      <g data-depth="38" aria-hidden="true">
         <path
           d={HERO_FIELD.shapes[1]}
-          fill="none"
-          stroke="url(#hero-rim)"
-          strokeWidth={2}
+          fill="rgba(8, 8, 8, 0.26)"
+          transform="translate(0 16)"
+          filter="url(#hero-shadow-blur)"
         />
-        </g>
       </g>
 
-      {/* the eyes sit closer to the viewer, so they travel further */}
+      {/* The cat-head silhouette in the corner — midground organic deformation */}
+      <g data-depth="38">
+        <use href="#hero-flow-1" fill="var(--color-ink)" />
+        <use href="#hero-flow-1" fill="url(#hero-wash)" stroke="url(#hero-rim)" strokeWidth={2} />
+      </g>
+
+      {/* the eyes sit closer to the viewer and stay completely crisp */}
       <g data-depth="76">
         <Eyes x={1276} y={486} scale={1.28} rotate={-9} glow="hero-glow" />
       </g>
@@ -223,29 +256,89 @@ function DesktopField({ className = "" }: { className?: string }) {
  * lockup has a field to sit on and the off-white still frames it top and bottom.
  */
 function MobileField({ className = "" }: { className?: string }) {
+  const root = useRef<SVGSVGElement>(null);
+
+  useEffect(() => {
+    if (prefersReducedMotion()) return;
+    const svg = root.current;
+    if (!svg) return;
+
+    // Mobile pointer and gyro tilt parallax
+    const nodes = svg.querySelectorAll<SVGGElement>("[data-depth]");
+    const setters = [...nodes].map((n) => ({
+      x: gsap.quickTo(n, "x", { duration: 1.4, ease: "power2.out" }),
+      y: gsap.quickTo(n, "y", { duration: 1.4, ease: "power2.out" }),
+      d: Number(n.dataset.depth) || 8,
+    }));
+    const stopPointer = subscribePointer((nx, ny) => {
+      setters.forEach((l) => {
+        l.x(-nx * l.d);
+        l.y(-ny * l.d * 0.5);
+      });
+    });
+
+    const stopLiquid = startLiquidFlow({
+      svg,
+      shapes: MOBILE_FIELD.shapes,
+      ns: "mob",
+      isMobile: true,
+    });
+
+    return () => {
+      stopPointer();
+      stopLiquid();
+    };
+  }, []);
+
   return (
     <svg
+      ref={root}
       viewBox={MOBILE_FIELD.viewBox}
       preserveAspectRatio="xMidYMid slice"
       className={`absolute inset-0 h-full w-full ${className}`}
       aria-hidden="true"
     >
       <FieldDefs ns="mob" />
-      <path
-        d={MOBILE_FIELD.shapes[0]}
-        fill="none"
-        stroke="var(--color-lime)"
-        strokeWidth={1.4}
-        transform="translate(-13 9)"
-        opacity={0.85}
-      />
-      <g className="field-lift">
-        <path d={MOBILE_FIELD.shapes[0]} fill="var(--color-ink)" />
-        <path d={MOBILE_FIELD.shapes[1]} fill="var(--color-ink)" />
-        <path d={MOBILE_FIELD.shapes[0]} fill="url(#mob-wash)" />
-        <path d={MOBILE_FIELD.shapes[0]} fill="none" stroke="url(#mob-rim)" strokeWidth={1.6} />
+
+      {/* Morphing shape definitions */}
+      <defs>
+        <path id="mob-flow-0" d={MOBILE_FIELD.shapes[0]} />
+        <path id="mob-flow-1" d={MOBILE_FIELD.shapes[1]} />
+      </defs>
+
+      <g data-depth="16">
+        <use
+          href="#mob-flow-0"
+          fill="none"
+          stroke="var(--color-lime)"
+          strokeWidth={1.4}
+          transform="translate(-13 9)"
+          opacity={0.85}
+        />
       </g>
-      <Eyes x={292} y={172} scale={0.5} rotate={-8} glow="mob-glow" />
+      <g data-depth="8" aria-hidden="true">
+        <path
+          d={MOBILE_FIELD.shapes[0]}
+          fill="rgba(8, 8, 8, 0.22)"
+          transform="translate(0 10)"
+          filter="url(#mob-shadow-blur)"
+        />
+        <path
+          d={MOBILE_FIELD.shapes[1]}
+          fill="rgba(8, 8, 8, 0.22)"
+          transform="translate(0 10)"
+          filter="url(#mob-shadow-blur)"
+        />
+      </g>
+      <g data-depth="8">
+        <use href="#mob-flow-0" fill="var(--color-ink)" />
+        <use href="#mob-flow-1" fill="var(--color-ink)" />
+        <use href="#mob-flow-0" fill="url(#mob-wash)" stroke="url(#mob-rim)" strokeWidth={1.6} />
+      </g>
+      <g data-depth="22">
+        <Eyes x={292} y={172} scale={0.5} rotate={-8} glow="mob-glow" />
+      </g>
     </svg>
   );
 }
+

@@ -566,27 +566,10 @@ html[data-nav="open"] .scrollrail {
   }
 }
 
-/* The hero fields keep moving even when the pointer does not. Transform-box
-   keeps the origin on each group's own bounds rather than the viewBox. */
-@keyframes breathe {
-  0%   { transform: translate(0, 0) rotate(0deg) scale(1); }
-  30%  { transform: translate(-0.9%, 0.7%) rotate(0.5deg) scale(1.012); }
-  62%  { transform: translate(0.8%, -0.6%) rotate(-0.45deg) scale(0.994); }
-  100% { transform: translate(0, 0) rotate(0deg) scale(1); }
-}
-
+/* Continuous organic breathing and liquid flow is driven at 60-120fps by
+   the hardware-accelerated Bezier point deformation engine in liquid.ts. */
 .field-breathe {
-  transform-box: fill-box;
-  transform-origin: 50% 50%;
-  animation: breathe var(--breathe, 60s) ease-in-out infinite;
-  animation-delay: var(--breathe-delay, 0s);
   will-change: transform;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .field-breathe {
-    animation: none;
-  }
 }
 
 /* Scroll velocity, published by Lenis, leans the artwork into the movement. */

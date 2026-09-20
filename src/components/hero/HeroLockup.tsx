@@ -29,7 +29,7 @@ export default function HeroLockup({
     if (!el) return;
     const x = gsap.quickTo(el, "x", { duration: 1.2, ease: "power2.out" });
     const y = gsap.quickTo(el, "y", { duration: 1.2, ease: "power2.out" });
-    const r = gsap.quickTo(el, "rotate", { duration: 1.6, ease: "power2.out" });
+    const r = gsap.quickTo(el, "rotation", { duration: 1.6, ease: "power2.out" });
     return subscribePointer((nx, ny) => {
       x(nx * 30);
       y(ny * 18);
