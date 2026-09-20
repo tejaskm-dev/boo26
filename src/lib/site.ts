@@ -1,10 +1,4 @@
-/**
- * Every piece of copy on the site lives here.
- *
- * Only confirmed event information is filled in. Anything still unannounced is
- * marked `tba` so it renders as a deliberate placeholder rather than invented
- * marketing copy — swap the value and the section fills itself in.
- */
+import type { SpriteName } from "./sprites";
 
 export const EVENT = {
   name: "BOO!",
@@ -104,7 +98,91 @@ export const AFTER_DARK = [
   },
 ] as const;
 
-/** 05 — BUILD */
+/** 05 — THE PEOPLE */
+export interface TeamMember {
+  name: string;
+  role?: string;
+  tagline: string;
+  image: string;
+  imagePosition?: string;
+  linkedin?: string;
+  email?: string;
+  moniker?: string;
+  companion: SpriteName;
+  companionScale: number;
+  tilt: string;
+}
+
+export const TEAM: TeamMember[] = [
+  {
+    name: "Sufiyan Shiraj Mohammed",
+    tagline: "fueling the chaos.",
+    image: "/assets/team/sufiyan shiraj mohammed.jpg",
+    imagePosition: "center 25%",
+    linkedin: "https://linkedin.com",
+    email: "mailto:hello@boo2026.com",
+    companion: "cat-pop-jump",
+    companionScale: 0.35,
+    tilt: "-rotate-[2.2deg]",
+  },
+  {
+    name: "Tejas K M",
+    tagline: "building at 3am.",
+    image: "/assets/team/tejas km.PNG",
+    imagePosition: "center 20%",
+    linkedin: "https://linkedin.com",
+    email: "mailto:hello@boo2026.com",
+    companion: "cat-pop-coder",
+    companionScale: 0.35,
+    tilt: "rotate-[1.6deg]",
+  },
+  {
+    name: "Sreehari K A",
+    tagline: "gaming the system.",
+    image: "/assets/team/sreehari ka.png",
+    imagePosition: "center 20%",
+    linkedin: "https://linkedin.com",
+    email: "mailto:hello@boo2026.com",
+    companion: "cat-pop-gamer",
+    companionScale: 0.35,
+    tilt: "-rotate-[1.4deg]",
+  },
+  {
+    name: "Ram Madhav R Kammath",
+    tagline: "crafting the aesthetics.",
+    image: "/assets/team/ram madhav.jpg",
+    imagePosition: "center 22%",
+    linkedin: "https://linkedin.com",
+    email: "mailto:hello@boo2026.com",
+    companion: "cat-pop-artist",
+    companionScale: 0.35,
+    tilt: "rotate-[2.2deg]",
+  },
+  {
+    name: "Sreenanda K Sahajan",
+    tagline: "calm amidst the storm.",
+    image: "/assets/team/sreenanda k sahajan.jpg",
+    imagePosition: "center 30%",
+    linkedin: "https://linkedin.com",
+    email: "mailto:hello@boo2026.com",
+    companion: "cat-pop-sleepy",
+    companionScale: 0.35,
+    tilt: "-rotate-[1.8deg]",
+  },
+  {
+    name: "Rosphil Maria",
+    tagline: "debugging the universe.",
+    image: "/assets/team/rosphil mariya.jpg",
+    imagePosition: "center 20%",
+    linkedin: "https://linkedin.com",
+    email: "mailto:hello@boo2026.com",
+    companion: "cat-pop-detective",
+    companionScale: 0.35,
+    tilt: "rotate-[1.5deg]",
+  },
+];
+
+/** 06 — BUILD */
 export const BUILD_STEPS: { index: string; label: string; note: string; lime?: boolean }[] = [
   { index: "01", label: "Idea", note: "Start" },
   { index: "02", label: "Build", note: "Create" },
