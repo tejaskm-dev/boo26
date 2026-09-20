@@ -1,8 +1,8 @@
 import Section from "./Section";
 import Marquee from "@/components/fx/Marquee";
+import Countdown from "@/components/fx/Countdown";
 import Sprite from "@/components/ui/Sprite";
 import Words from "@/components/fx/Words";
-import RiseIn from "@/components/fx/RiseIn";
 import BlobButton from "@/components/ui/BlobButton";
 import { BAND, EVENT, NOTES } from "@/lib/site";
 
@@ -32,7 +32,7 @@ export default function Ready() {
           </Words>
         </div>
 
-        <div className="mt-[clamp(1.5rem,4vh,2.5rem)] flex flex-wrap items-center justify-center gap-[clamp(1.25rem,4vw,3rem)]">
+        <div data-scrub="up" data-scrub-amount="9" className="mt-[clamp(1.5rem,4vh,2.5rem)] flex flex-wrap items-center justify-center gap-[clamp(1.25rem,4vw,3rem)]">
           <BlobButton data-anim="rise" href={EVENT.registerHref} size="lg">
             Register now
           </BlobButton>
@@ -41,6 +41,12 @@ export default function Ready() {
           </p>
         </div>
 
+        {/* The one thing on the page that is different every time you look.
+            It fills the measure under the heading with information rather than
+            ornament, and it is the reason to come back. */}
+        <div className="mt-[clamp(2rem,6vh,3.5rem)] flex justify-center">
+          <Countdown target={EVENT.startsAt} className="justify-center text-bone" />
+        </div>
       </div>
 
       {/* the facts, running — the measure under the call to action was the
@@ -52,11 +58,6 @@ export default function Ready() {
           className="display text-[clamp(1.6rem,4.4vw,3.4rem)] leading-none text-bone/70"
         />
       </div>
-
-      {/* coming up over the bottom edge */}
-      <RiseIn from="bottom" className="absolute -bottom-[clamp(1.5rem,4vw,3.5rem)] left-[6%] z-10 md:left-[12%]" start="top 92%">
-        <Sprite name="cat-peek" scale={0.76} drift={14} idle={6} />
-      </RiseIn>
       <Sprite name="star" scale={0.15} drift={28} className="absolute right-[22%] top-[58%] hidden md:block" />
     </Section>
   );

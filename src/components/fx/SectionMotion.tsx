@@ -22,8 +22,15 @@ export default function SectionMotion() {
     gsap.registerPlugin(ScrollTrigger);
 
     const ctx = gsap.context(() => {
-      // layers that travel at their own rate through a section
-      gsap.utils.toArray<HTMLElement>("[data-scrub]").forEach((el) => {
+      // Layers that travel at their own rate through a section.
+      //
+      // Desktop only. A scrubbed layer moves without reserving the space it
+      // moves out of, which is invisible in a two-column composition and a
+      // collision in a stacked one — on a phone the 20 Hours timeline slid
+      // straight up over the note above it.
+      const wide = window.matchMedia("(min-width: 1024px)").matches;
+
+      if (wide) gsap.utils.toArray<HTMLElement>("[data-scrub]").forEach((el) => {
         const dir = el.dataset.scrub ?? "up";
         const amt = Number(el.dataset.scrubAmount ?? 14);
         const axis = dir === "left" || dir === "right" ? "xPercent" : "yPercent";

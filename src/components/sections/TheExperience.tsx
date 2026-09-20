@@ -134,7 +134,7 @@ export default function TheExperience() {
         </ul>
       </div>
 
-      <div className="mt-[clamp(2.5rem,6vh,4rem)] flex items-end justify-between gap-6 px-[var(--edge)]">
+      <div data-scrub="up" data-scrub-amount="8" className="mt-[clamp(2.5rem,6vh,4rem)] flex items-end justify-between gap-6 px-[var(--edge)]">
         <p className="label label-loose whitespace-pre-line text-bone/45">
           Same people.{"\n"}Brighter ideas.
         </p>

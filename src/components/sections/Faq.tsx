@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Section, { SectionLabel } from "./Section";
 import Sprite from "@/components/ui/Sprite";
+import RowMark from "@/components/ui/RowMark";
 import Words from "@/components/fx/Words";
 import BlobButton from "@/components/ui/BlobButton";
 import { EVENT, FAQ, NOTES } from "@/lib/site";
@@ -71,13 +72,14 @@ export default function Faq() {
                       aria-expanded={isOpen}
                       aria-controls={`faq-panel-${i}`}
                       id={`faq-button-${i}`}
-                      className="group flex w-full items-center gap-[clamp(0.75rem,2vw,1.5rem)] py-[clamp(0.9rem,2.2vh,1.4rem)] text-left outline-none"
+                      className="group relative flex w-full items-center gap-[clamp(0.75rem,2vw,1.5rem)] py-[clamp(0.9rem,2.2vh,1.4rem)] text-left outline-none"
                     >
-                      <span className="label shrink-0 text-ink/35 transition-colors duration-300 group-hover:text-ink/60">
+                      <RowMark seed={i} />
+                      <span className="row-index label relative shrink-0 text-ink/35">
                         {String(i + 1).padStart(2, "0")}
                       </span>
                       <span
-                        className={`display flex-1 text-[clamp(0.98rem,1.55vw,1.28rem)] leading-tight transition-colors duration-300 ${
+                        className={`display relative flex-1 text-[clamp(0.98rem,1.55vw,1.28rem)] leading-tight transition-colors duration-300 ${
                           isOpen ? "text-ink" : "text-ink/75 group-hover:text-ink"
                         }`}
                       >
@@ -105,7 +107,7 @@ export default function Faq() {
                     id={`faq-panel-${i}`}
                     role="region"
                     aria-labelledby={`faq-button-${i}`}
-                    className="grid transition-[grid-template-rows] duration-500 ease-[var(--ease-out-soft)]"
+                    className="grid transition-[grid-template-rows] duration-[420ms] ease-[var(--ease-out-soft)] [contain:layout_paint]"
                     style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
                   >
                     <div className="overflow-hidden">

@@ -52,7 +52,7 @@ export default function Build() {
       </div>
 
       {/* the four steps */}
-      <ol data-stagger
+      <ol data-stagger data-scrub="up" data-scrub-amount="5"
         className="mt-[clamp(2.5rem,6vh,4rem)] grid border-y border-ink/15 sm:grid-cols-2 lg:grid-cols-4">
         {BUILD_STEPS.map((step, i) => (
           <li

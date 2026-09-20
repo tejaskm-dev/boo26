@@ -20,25 +20,49 @@ export default function Hero() {
       <Sparkle className="pointer-events-none absolute right-[16%] top-[22%] hidden w-[clamp(1.5rem,2.4vw,2.6rem)] text-lime md:block" />
       <Sparkle className="pointer-events-none absolute left-[7%] top-[34%] w-[clamp(1rem,3.4vw,1.6rem)] text-lime md:left-[10%] md:top-[64%]" />
 
-      <div className="relative z-10 flex min-h-svh flex-col items-center justify-center gap-[clamp(1.5rem,3.4vh,2.6rem)] px-[var(--edge)] pt-[calc(var(--header-h)*0.9)] pb-[clamp(3rem,8vh,5rem)] md:-translate-x-[2.5%]">
+      {/*
+        Two compositions, not one squashed.
+
+        A wide frame wants the lockup centred with the details gathered under
+        it. A tall one does not: the same stack in the middle of a phone leaves
+        a third of the screen empty above and below and reads as an accident.
+        Portrait spreads the same material across the full height instead —
+        what it is at the top, the mark in the middle, when and where at the
+        bottom — so the frame is used deliberately end to end.
+      */}
+      <div className="relative z-10 flex min-h-svh flex-col justify-between gap-[clamp(1.25rem,3vh,2rem)] px-[var(--edge)] pb-[clamp(4.5rem,11vh,6rem)] pt-[calc(var(--header-h)+clamp(1.25rem,4vh,2.5rem))] md:items-center md:justify-center md:gap-[clamp(1.5rem,3.4vh,2.6rem)] md:-translate-x-[2.5%] md:pb-[clamp(3rem,8vh,5rem)] md:pt-[calc(var(--header-h)*0.9)]">
+        {/* portrait only — the format takes the top of the frame */}
+        {/* Portrait puts these on the cream the ink blob does not reach, so
+            they are set in ink. The wide layout keeps everything inside the
+            blob, where they stay cream. */}
+        <p
+          data-anim="rise"
+          className="label max-w-[15ch] leading-[1.9] text-ink/45 md:hidden"
+        >
+          {EVENT.format}
+        </p>
+
         {/* oversized on purpose — it runs wider than any column on the page */}
         <HeroLockup
           data-anim="fade"
-          className="w-[min(96vw,34rem)] md:w-[clamp(30rem,53vw,54rem)]"
+          className="w-[min(86vw,34rem)] md:w-[clamp(30rem,53vw,54rem)]"
         />
 
-        <p
-          data-anim="rise"
-          className="label label-loose flex items-baseline gap-4 text-bone/80 md:gap-6"
-        >
-          <span>{EVENT.date}</span>
-          <span aria-hidden="true" className="h-3 w-px bg-bone/30" />
-          <span>{EVENT.venue}</span>
-        </p>
+        <div className="flex flex-col gap-[clamp(1.1rem,2.6vh,1.75rem)] md:items-center md:gap-[clamp(1.5rem,3.4vh,2.6rem)]">
+          {/* portrait stacks the facts into their own column; a wide frame
+              keeps them on one line under the mark */}
+          <div className="label label-loose grid grid-cols-[auto_auto] justify-start gap-x-[clamp(1.25rem,6vw,2.5rem)] gap-y-[clamp(0.5rem,1.4vh,0.9rem)] text-ink/70 md:flex md:items-baseline md:gap-6 md:text-bone/80">
+            <span data-anim="rise">{EVENT.date}</span>
+            <span data-anim="rise" className="md:hidden">{EVENT.duration}</span>
+            <span aria-hidden="true" className="hidden h-3 w-px bg-bone/30 md:block" />
+            <span data-anim="rise">{EVENT.venue}</span>
+            <span data-anim="rise" className="md:hidden">{EVENT.team}</span>
+          </div>
 
-        <BlobButton data-anim="rise" href={EVENT.registerHref} size="lg">
-          Register now
-        </BlobButton>
+          <BlobButton data-anim="rise" href={EVENT.registerHref} size="lg">
+            Register now
+          </BlobButton>
+        </div>
       </div>
 
       <p className="label absolute bottom-[clamp(1.1rem,2.4vh,2rem)] left-1/2 z-10 hidden -translate-x-1/2 text-ink/45 md:block">

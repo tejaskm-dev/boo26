@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Archivo, Bagel_Fat_One, Caveat, Space_Grotesk } from "next/font/google";
 import Grain from "@/components/fx/Grain";
+import Drift from "@/components/fx/Drift";
+import IdleGuard from "@/components/fx/IdleGuard";
+import Tilt from "@/components/fx/Tilt";
 import SmoothScroll from "@/components/fx/SmoothScroll";
 import FieldTone from "@/components/site/FieldTone";
 import Reveal from "@/components/fx/Reveal";
@@ -68,6 +71,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
         <SmoothScroll />
+        <Tilt />
+        <Drift />
+        <IdleGuard />
         <Reveal />
         <SectionMotion />
         <FieldTone />

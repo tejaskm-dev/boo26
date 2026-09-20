@@ -1,5 +1,6 @@
 import Section, { SectionLabel } from "./Section";
 import Sprite from "@/components/ui/Sprite";
+import GhostIndex from "@/components/ui/GhostIndex";
 import Words from "@/components/fx/Words";
 import RiseIn from "@/components/fx/RiseIn";
 import { EVENT, FACTS, NOTES } from "@/lib/site";
@@ -27,7 +28,9 @@ export default function TheNight() {
         <SectionLabel index="01">The Night</SectionLabel>
       </div>
 
-      <div className="mt-[clamp(2rem,5vh,3.5rem)] grid items-end gap-[clamp(2rem,5vw,4.5rem)] lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
+      <GhostIndex className="left-[46%] top-[6%] hidden text-[clamp(10rem,26vw,24rem)] lg:block">01</GhostIndex>
+
+        <div data-scrub="down" data-scrub-amount="6" className="mt-[clamp(2rem,5vh,3.5rem)] grid items-end gap-[clamp(2rem,5vw,4.5rem)] lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]">
         {/* oversized, and deliberately hanging off the left edge */}
         <div className="min-w-0">
           <Words

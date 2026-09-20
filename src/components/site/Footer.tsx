@@ -156,7 +156,7 @@ export default function Footer() {
         </div>
 
         {/* band 2 — the links, on their own clear ground */}
-        <div className="mt-[clamp(3rem,8vh,5rem)] grid gap-x-[clamp(1.5rem,3vw,3rem)] gap-y-[clamp(2rem,5vh,3rem)] border-t border-bone/12 pt-[clamp(2rem,5vh,3rem)] sm:grid-cols-2 lg:grid-cols-4">
+        <div data-stagger className="mt-[clamp(3rem,8vh,5rem)] grid gap-x-[clamp(1.5rem,3vw,3rem)] gap-y-[clamp(2rem,5vh,3rem)] border-t border-bone/12 pt-[clamp(2rem,5vh,3rem)] sm:grid-cols-2 lg:grid-cols-4">
           {FOOTER_NAV.map((col) => (
             <nav key={col.title} aria-label={col.title}>
               <h3 className="label text-bone/40">{col.title}</h3>

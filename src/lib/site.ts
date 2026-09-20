@@ -17,6 +17,10 @@ export const EVENT = {
   duration: "20 HOURS",
   team: "2 PER TEAM",
   host: "MULEARN @ ASIET",
+  /* 06 PM on the day, which is when the timeline's first stop opens the doors.
+     Kerala is UTC+5:30 and the offset is written out so the countdown means
+     the same thing from anywhere. */
+  startsAt: "2026-10-24T18:00:00+05:30",
   registerHref: "#register",
   discordHref: "#",
 } as const;

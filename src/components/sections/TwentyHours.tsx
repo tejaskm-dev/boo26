@@ -27,15 +27,20 @@ export default function TwentyHours() {
     gsap.registerPlugin(ScrollTrigger);
 
     const ctx = gsap.context(() => {
-      // The numeral is held while the night runs past it. How far it can be
-      // held depends on how much taller the list is than the screen, and on a
-      // short viewport that can come out at nothing — a pin whose end equals
-      // its start throws rather than doing nothing, so it is only created when
-      // there is a real run to hold it for.
+      // The numeral is held while the night runs past it — but only where the
+      // numeral and the night are side by side. `pinSpacing: false` holds the
+      // numeral without reserving its space, so in the stacked single-column
+      // layout the timeline scrolls straight up underneath it and lands on the
+      // note. It is a two-column device and it stays in the two-column layout.
+      //
+      // How far it can be held depends on how much taller the list is than the
+      // screen, and on a short viewport that can come out at nothing — a pin
+      // whose end equals its start throws rather than doing nothing.
+      const wide = window.matchMedia("(min-width: 1024px)").matches;
       const runway = () =>
         (list.current?.offsetHeight ?? 0) - window.innerHeight * 0.62;
       const pin =
-        runway() > 120
+        wide && runway() > 120
           ? ScrollTrigger.create({
               trigger: root.current,
               start: "top 12%",
@@ -46,20 +51,47 @@ export default function TwentyHours() {
             })
           : null;
 
-      // the thread draws itself over the same stretch
+      // The thread draws itself as the night is travelled. The path declares
+      // pathLength={1}, so the whole reveal is 1 -> 0 and needs no measuring.
+      //
+      // The range is set in pixels rather than from the list's own top and
+      // bottom. Anchoring it to the element gave a window of about 740px —
+      // less than one screen — so a single flick on a phone crossed the entire
+      // draw and it only ever looked finished. This spans the list plus most of
+      // a viewport, which is long enough to watch.
       const line = path.current;
       if (line) {
+        // Both values in the path's own user units. That only works because
+        // the stroke is no longer non-scaling: with it, dashes were measured
+        // in screen units while getTotalLength() reported user units, and the
+        // pathLength workaround for that produced a unitless dasharray against
+        // a px dashoffset — two different unit systems, so the offset barely
+        // shifted the pattern and the line read as all-or-nothing.
         const len = line.getTotalLength();
         gsap.set(line, { strokeDasharray: len, strokeDashoffset: len });
         gsap.to(line, {
           strokeDashoffset: 0,
           ease: "none",
-          scrollTrigger: { trigger: list.current, start: "top 78%", end: "bottom 82%", scrub: 0.5 },
+          scrollTrigger: {
+            trigger: list.current,
+            start: "top 90%",
+            end: () =>
+              `+=${Math.round((list.current?.offsetHeight ?? 0) + window.innerHeight * 0.75)}`,
+            scrub: 0.6,
+            invalidateOnRefresh: true,
+          },
         });
       }
 
-      // each stop arrives from behind the thread, and its cat a beat later
-      gsap.utils.toArray<HTMLElement>("[data-stop]").forEach((el) => {
+      // Each stop arrives from behind the thread, and its cat a beat later.
+      //
+      // It also holds the hour it is on. Only one stop is `current` at a time,
+      // so scrolling the section reads as moving through the night rather than
+      // past a list: the bead fills, the time goes lime, the cat sits up. The
+      // state is an attribute and the look is CSS, so the scroll handler does
+      // no style work of its own.
+      const stops = gsap.utils.toArray<HTMLElement>("[data-stop]");
+      stops.forEach((el) => {
         const tl = gsap.timeline({
           scrollTrigger: { trigger: el, start: "top 88%", once: true },
         });
@@ -73,17 +105,56 @@ export default function TwentyHours() {
           { xPercent: 26, autoAlpha: 0, rotate: 6, duration: 0.8, ease: "back.out(1.5)" },
           0.12,
         );
+
       });
 
-      // the numeral keeps drifting while it is held
-      const art = root.current?.querySelector("[data-numeral-art]");
-      if (art) {
-        gsap.to(art, {
-          yPercent: -7,
-          ease: "none",
-          scrollTrigger: { trigger: root.current, start: "top bottom", end: "bottom top", scrub: 0.7 },
+      // Exactly one stop is current, always. A trigger per stop leaves gaps
+      // between short rows and marks two at once where they overlap, so the
+      // choice is made in one place.
+      //
+      // The measuring happens on refresh, not on scroll. Reading
+      // getBoundingClientRect for every stop on every scroll frame forces the
+      // browser to flush layout sixty times a second for information that only
+      // changes when the page is re-laid out — which is what made this section
+      // drag. Per frame this is now arithmetic on cached numbers, and one
+      // attribute write when the answer actually changes.
+      let centres: number[] = [];
+      let current = -1;
+
+      const measure = () => {
+        const top = window.scrollY;
+        centres = stops.map((el) => {
+          const r = el.getBoundingClientRect();
+          return top + r.top + r.height / 2;
         });
-      }
+      };
+
+      const markCurrent = () => {
+        if (!centres.length) return;
+        const line = window.scrollY + window.innerHeight * 0.44;
+        let best = 0;
+        let bestDist = Infinity;
+        for (let i = 0; i < centres.length; i++) {
+          const d = Math.abs(centres[i] - line);
+          if (d < bestDist) { bestDist = d; best = i; }
+        }
+        if (best === current) return;
+        if (current >= 0) stops[current].dataset.current = "false";
+        stops[best].dataset.current = "true";
+        current = best;
+      };
+
+      ScrollTrigger.create({
+        trigger: list.current,
+        start: "top bottom",
+        end: "bottom top",
+        onUpdate: markCurrent,
+        onRefresh: () => { measure(); current = -1; markCurrent(); },
+      });
+
+      // The numeral used to carry its own scrubbed drift on top of the pin and
+      // the list's parallax — three scrubbed things fighting over one section.
+      // It is held by the pin already, which is the effect that matters.
 
       return () => pin?.kill();
     }, root);
@@ -143,7 +214,7 @@ export default function TwentyHours() {
           </div>
 
           {/* the night */}
-          <ol ref={list} className="relative pl-[clamp(2.5rem,5vw,4.5rem)]">
+          <ol ref={list} data-scrub="up" data-scrub-amount="7" className="relative pl-[clamp(2.5rem,5vw,4.5rem)]">
             {/* the thread every stop hangs from */}
             <svg
               viewBox="0 0 120 900"
@@ -153,12 +224,16 @@ export default function TwentyHours() {
             >
               <path
                 ref={path}
+                /* No non-scaling-stroke: it forces the dash pattern into screen
+                   units while getTotalLength() reports user units, which is
+                   what stopped this drawing. The stroke scales with the viewBox
+                   instead, so the width is set in user units to land at about
+                   4px once the clamped column compresses x by a third. */
                 d="M96 8C62 96 30 150 34 236C38 322 96 350 94 436C92 522 26 548 30 634C34 720 92 748 88 892"
                 fill="none"
                 stroke="var(--color-lime)"
-                strokeWidth={4}
+                strokeWidth={11}
                 strokeLinecap="round"
-                vectorEffect="non-scaling-stroke"
               />
             </svg>
 
@@ -173,14 +248,15 @@ export default function TwentyHours() {
                   i > 0 ? "border-t border-ink/12" : ""
                 }`}
               >
-                {/* the bead the thread threads through */}
+                {/* the bead the thread threads through — it swells and throws
+                    a halo while its hour is the one being read */}
                 <span
                   aria-hidden="true"
-                  className="absolute top-[calc(clamp(1.5rem,4.2vh,2.75rem)+0.5em)] h-[0.62rem] w-[0.62rem] -translate-x-1/2 rounded-full bg-lime ring-[3px] ring-bone"
+                  className="stop-bead"
                   style={{ left: `calc(clamp(2.5rem,5vw,4.5rem) * ${i % 2 === 0 ? -0.22 : -0.74})` }}
                 />
                 <div data-stop-copy>
-                  <p className="display text-[clamp(1.05rem,1.6vw,1.35rem)] leading-none">{stop.time}</p>
+                  <p className="stop-time display text-[clamp(1.05rem,1.6vw,1.35rem)] leading-none">{stop.time}</p>
                 <Words as="h3" className="brush mt-2 text-[clamp(1.5rem,3.1vw,2.5rem)] leading-none" stagger={0.06}>
                   {stop.label}
                   </Words>

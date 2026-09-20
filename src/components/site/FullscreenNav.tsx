@@ -10,18 +10,26 @@ import Wordmark from "@/components/ui/Wordmark";
 import { GlowEyes, Sparkle } from "@/components/ui/Glyphs";
 import { EVENT, NAV, SOCIALS } from "@/lib/site";
 import { prefersReducedMotion } from "@/lib/motion";
+import { getLenis } from "@/lib/lenis";
 import SocialIcon from "@/components/ui/SocialIcon";
 import BouncyWord from "@/components/ui/BouncyWord";
 
 /**
- * The menu is cut out of a blob that grows from the trigger. The path is a unit
- * shape around the origin and GSAP scales it about the trigger's own pixel
- * position, so the wipe lands in the right corner at any viewport size.
+ * The menu is cut out of a blob that grows from the trigger. The shape is drawn
+ * around the origin and GSAP scales it about the trigger's own pixel position,
+ * so the wipe lands in the right corner at any viewport size.
+ *
+ * The geometry is drawn at a thousand units rather than one, and the animated
+ * scale is divided to match. Same motion — but at the closed end of the wipe
+ * the path's coordinates sit near 0.1 user units instead of 0.0001, which is
+ * the difference between a clean edge and the torn one the rasteriser produces
+ * when it runs out of precision.
  */
+const UNIT = 1000;
 const CLIP_INK =
-  "M0.864 -0.046C0.83 0.155 0.79 0.39 0.688 0.553C0.585 0.716 0.469 0.875 0.25 0.934C0.03 0.992 -0.443 1.017 -0.629 0.905C-0.815 0.794 -0.827 0.469 -0.866 0.264C-0.906 0.06 -0.93 -0.158 -0.866 -0.322C-0.802 -0.486 -0.648 -0.584 -0.481 -0.72C-0.314 -0.856 -0.094 -1.149 0.134 -1.137C0.363 -1.126 0.769 -0.835 0.891 -0.653C1.012 -0.471 0.898 -0.247 0.864 -0.046Z";
+  "M864 -46C830 155 790 390 688 553C585 716 469 875 250 934C30 992 -443 1017 -629 905C-815 794 -827 469 -866 264C-906 60 -930 -158 -866 -322C-802 -486 -648 -584 -481 -720C-314 -856 -94 -1149 134 -1137C363 -1126 769 -835 891 -653C1012 -471 898 -247 864 -46Z";
 const CLIP_BONE =
-  "M1.054 -0.005C1.032 0.223 0.786 0.432 0.654 0.587C0.521 0.741 0.451 0.856 0.258 0.922C0.064 0.988 -0.302 1.082 -0.509 0.981C-0.716 0.88 -0.905 0.542 -0.985 0.317C-1.065 0.091 -1.06 -0.184 -0.987 -0.372C-0.914 -0.56 -0.733 -0.685 -0.549 -0.812C-0.364 -0.938 -0.1 -1.136 0.122 -1.132C0.343 -1.127 0.628 -0.972 0.783 -0.785C0.938 -0.597 1.075 -0.234 1.054 -0.005Z";
+  "M1054 -5C1032 223 786 432 654 587C521 741 451 856 258 922C64 988 -302 1082 -509 981C-716 880 -905 542 -985 317C-1065 91 -1060 -184 -987 -372C-914 -560 -733 -685 -549 -812C-364 -938 -100 -1136 122 -1132C343 -1127 628 -972 783 -785C938 -597 1075 -234 1054 -5Z";
 
 /**
  * Each item is set differently — width axis, size and indent — so the index
@@ -78,7 +86,7 @@ export default function FullscreenNav({
     // only its scale ever animates
     const at = { x, y, transformOrigin: "50% 50%" };
     const shut = { ...at, scale: 0.0001 };
-    const wide = { ...at, scale: radius };
+    const wide = { ...at, scale: radius / UNIT };
 
     if (first.current) {
       first.current = false;
@@ -88,6 +96,18 @@ export default function FullscreenNav({
         return;
       }
     }
+
+    // The scroll engine has to be told, not just the body.
+    //
+    // `overflow: hidden` on the body does not stop Lenis — it keeps running its
+    // own loop and writing scroll positions to a document whose scrollable
+    // height the lock has just changed underneath it. The two then disagree
+    // every frame, which is the flicker between the menu and the page behind
+    // it. Stopping Lenis is the actual lock; the body attribute is only the
+    // fallback for when JS has not started.
+    const lenis = getLenis();
+    if (open) lenis?.stop();
+    else lenis?.start();
 
     document.body.dataset.lock = String(open);
     document.documentElement.dataset.nav = open ? "open" : "closed";
@@ -236,6 +256,7 @@ export default function FullscreenNav({
     () => () => {
       delete document.body.dataset.lock;
       delete document.documentElement.dataset.nav;
+      getLenis()?.start();
     },
     [],
   );
