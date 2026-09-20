@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Section, { SectionLabel } from "./Section";
 import Sprite from "@/components/ui/Sprite";
@@ -8,6 +9,63 @@ import RiseIn from "@/components/fx/RiseIn";
 import { TEAM, type TeamMember } from "@/lib/site";
 
 export default function ThePeople() {
+  const [activeCard, setActiveCard] = useState<number | null>(null);
+  const [poppedCards, setPoppedCards] = useState<Record<number, boolean>>({});
+
+  useEffect(() => {
+    // Detect mobile or touch device
+    const isTouchOrMobile = () =>
+      typeof window !== "undefined" &&
+      (window.matchMedia("(hover: none) and (pointer: coarse)").matches ||
+        window.innerWidth < 1024);
+
+    const cards = document.querySelectorAll<HTMLElement>("[data-polaroid-card]");
+    if (!cards.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const idx = Number(entry.target.getAttribute("data-index"));
+          if (!isNaN(idx) && entry.isIntersecting) {
+            setPoppedCards((prev) => (prev[idx] ? prev : { ...prev, [idx]: true }));
+          }
+        });
+      },
+      {
+        rootMargin: "0px 0px -8% 0px",
+        threshold: 0.15,
+      }
+    );
+
+    const syncObserver = () => {
+      if (isTouchOrMobile()) {
+        cards.forEach((card) => observer.observe(card));
+      } else {
+        observer.disconnect();
+      }
+    };
+
+    syncObserver();
+    window.addEventListener("resize", syncObserver);
+
+    // Dismiss active card on tap outside
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("[data-polaroid-card]")) {
+        setActiveCard(null);
+      }
+    };
+
+    document.addEventListener("click", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside, { passive: true });
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", syncObserver);
+      document.removeEventListener("click", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, []);
   return (
     <Section
       id="team"
@@ -106,16 +164,31 @@ export default function ThePeople() {
             </div>
           </div>
         </div>
+
+        {/* Mobile tap hint */}
+        <div className="mt-4 flex items-center justify-center gap-2 md:hidden">
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-lime animate-pulse" />
+          <p className="font-mono text-[0.72rem] tracking-wider uppercase text-ink/55">
+            Tap a card to develop &amp; reveal
+          </p>
+        </div>
       </div>
 
       {/* Gallery Grid: Cascading Staggered Entrance */}
-      <div className="relative mt-[clamp(3.5rem,7vh,5.5rem)] px-[var(--edge)]">
+      <div className="relative mt-[clamp(3rem,6vh,5rem)] px-[var(--edge)]">
         <div
           data-stagger
           className="grid grid-cols-2 gap-x-3.5 gap-y-36 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-40 lg:grid-cols-6 lg:gap-3.5 xl:gap-4.5 pt-28 sm:pt-36 lg:pt-40"
         >
           {TEAM.map((member, i) => (
-            <PolaroidCard key={member.name} member={member} index={i} />
+            <PolaroidCard
+              key={member.name}
+              member={member}
+              index={i}
+              isActive={activeCard === i}
+              isPopped={!!poppedCards[i]}
+              onCardClick={(idx) => setActiveCard((prev) => (prev === idx ? null : idx))}
+            />
           ))}
         </div>
       </div>
@@ -210,16 +283,51 @@ function PushPin({ className = "" }: { className?: string }) {
  * - Recessed photo well with diagonal glossy Mylar film glare.
  * - Multi-layer micro-interactions on hover with companion mascots.
  */
-function PolaroidCard({ member, index }: { member: TeamMember; index: number }) {
+function PolaroidCard({
+  member,
+  index,
+  isActive,
+  isPopped,
+  onCardClick,
+}: {
+  member: TeamMember;
+  index: number;
+  isActive: boolean;
+  isPopped: boolean;
+  onCardClick: (index: number) => void;
+}) {
   const uid = `pol-${index}`;
 
   return (
     <div
-      className={`group relative z-10 flex flex-col transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:z-30 hover:-translate-y-3 hover:rotate-0 hover:shadow-[0_24px_50px_rgba(8,8,8,0.18),0_8px_16px_rgba(8,8,8,0.08)] ${member.tilt}`}
+      data-polaroid-card
+      data-index={index}
+      data-active={isActive ? "true" : undefined}
+      data-popped={isPopped ? "true" : undefined}
+      role="button"
+      tabIndex={0}
+      aria-label={`${member.name}, ${member.tagline}`}
+      aria-expanded={isActive}
+      onClick={() => onCardClick(index)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onCardClick(index);
+        }
+      }}
+      className={`group relative z-10 flex flex-col cursor-pointer select-none transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:z-30 hover:-translate-y-3 hover:rotate-0 hover:shadow-[0_24px_50px_rgba(8,8,8,0.18),0_8px_16px_rgba(8,8,8,0.08)] ${
+        isActive
+          ? "!z-30 !-translate-y-3 !rotate-0 shadow-[0_24px_50px_rgba(8,8,8,0.18),0_8px_16px_rgba(8,8,8,0.08)]"
+          : ""
+      } ${member.tilt}`}
     >
       {/* 1. Bespoke Mascot Companion Pop-Up — 100% Fully Visible & Sitting on the Top Rim */}
       <div
-        className="pointer-events-none absolute bottom-[calc(100%-8px)] left-1/2 -translate-x-1/2 z-40 transition-all duration-400 ease-[cubic-bezier(0.34,1.56,0.64,1)] translate-y-8 opacity-0 scale-75 group-hover:translate-y-0 group-hover:opacity-100 group-hover:scale-100"
+        className={`polaroid-cat-popup pointer-events-none absolute bottom-[calc(100%-8px)] left-1/2 -translate-x-1/2 z-40 transition-all duration-400 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
+          isPopped || isActive
+            ? "!translate-y-0 !opacity-100 !scale-100"
+            : "translate-y-8 opacity-0 scale-75 group-hover:translate-y-0 group-hover:opacity-100 group-hover:scale-100"
+        }`}
         aria-hidden="true"
       >
         <div className="relative filter drop-shadow-[0_12px_24px_rgba(0,0,0,0.38)] drop-shadow-[0_2px_6px_rgba(0,0,0,0.2)]">
@@ -447,7 +555,9 @@ function PolaroidCard({ member, index }: { member: TeamMember; index: number }) 
               fill
               sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 16vw"
               style={{ objectPosition: member.imagePosition || "center" }}
-              className="object-cover grayscale contrast-[1.12] brightness-[0.95] transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+              className={`object-cover grayscale contrast-[1.12] brightness-[0.95] transition-transform duration-500 ease-out group-hover:scale-[1.04] ${
+                isActive ? "!scale-[1.04]" : ""
+              }`}
             />
 
             {/* 2. Developing Full-Color Print — Liquid Chemical Emulsion Arc Expansion */}
@@ -458,10 +568,16 @@ function PolaroidCard({ member, index }: { member: TeamMember; index: number }) 
                 fill
                 sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 16vw"
                 style={{ objectPosition: member.imagePosition || "center" }}
-                className="object-cover contrast-[1.06] brightness-[1.02] saturate-[1.14] transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+                className={`object-cover contrast-[1.06] brightness-[1.02] saturate-[1.14] transition-transform duration-500 ease-out group-hover:scale-[1.04] ${
+                  isActive ? "!scale-[1.04]" : ""
+                }`}
               />
               {/* Chemical reaction warm bloom at the developing wavefront */}
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-lime/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div
+                className={`pointer-events-none absolute inset-0 bg-gradient-to-t from-lime/20 via-transparent to-transparent transition-opacity duration-300 ${
+                  isActive ? "!opacity-100" : "opacity-0 group-hover:opacity-100"
+                }`}
+              />
             </div>
 
             {/* 3. Photochemical Laser Sweep Glint across the photo surface */}
@@ -477,17 +593,27 @@ function PolaroidCard({ member, index }: { member: TeamMember; index: number }) 
 
             {/* 4. Diagonal Glossy Mylar Film Reflection */}
             <div
-              className="pointer-events-none absolute inset-0 z-25 opacity-30 group-hover:opacity-65 transition-opacity duration-500 [background:linear-gradient(135deg,rgba(255,255,255,0.45)_0%,rgba(255,255,255,0.1)_28%,transparent_55%)]"
+              className={`pointer-events-none absolute inset-0 z-25 transition-opacity duration-500 [background:linear-gradient(135deg,rgba(255,255,255,0.45)_0%,rgba(255,255,255,0.1)_28%,transparent_55%)] ${
+                isActive ? "!opacity-65" : "opacity-30 group-hover:opacity-65"
+              }`}
               aria-hidden="true"
             />
           </div>
 
           {/* Name & Tagline (Positioned on the chin below the developer pod seam) */}
           <div className="mt-3.5 sm:mt-4 flex flex-col">
-            <h3 className="font-display text-[clamp(0.88rem,0.98vw,1.05rem)] font-black tracking-tight text-ink leading-tight group-hover:text-black transition-colors">
+            <h3
+              className={`font-display text-[clamp(0.88rem,0.98vw,1.05rem)] font-black tracking-tight leading-tight transition-colors ${
+                isActive ? "!text-black" : "text-ink group-hover:text-black"
+              }`}
+            >
               {member.name}
             </h3>
-            <p className="font-hand mt-0.5 text-[0.82rem] sm:text-[0.88rem] font-bold text-ink/70 group-hover:text-ink leading-tight transition-colors">
+            <p
+              className={`font-hand mt-0.5 text-[0.82rem] sm:text-[0.88rem] font-bold leading-tight transition-colors ${
+                isActive ? "!text-ink" : "text-ink/70 group-hover:text-ink"
+              }`}
+            >
               &ldquo;{member.tagline}&rdquo;
             </p>
           </div>
@@ -501,6 +627,7 @@ function PolaroidCard({ member, index }: { member: TeamMember; index: number }) 
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={`${member.name} on LinkedIn`}
+                  onClick={(e) => e.stopPropagation()}
                   className="p-1 -m-1 text-ink/40 hover:text-ink hover:bg-lime/40 rounded-xs transition-colors"
                 >
                   <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-current" aria-hidden="true">
@@ -512,6 +639,7 @@ function PolaroidCard({ member, index }: { member: TeamMember; index: number }) 
                 <a
                   href={member.email}
                   aria-label={`Email ${member.name}`}
+                  onClick={(e) => e.stopPropagation()}
                   className="p-1 -m-1 text-ink/40 hover:text-ink hover:bg-lime/40 rounded-xs transition-colors"
                 >
                   <svg
@@ -527,7 +655,11 @@ function PolaroidCard({ member, index }: { member: TeamMember; index: number }) 
             </div>
 
             {/* Subtle Index / Moniker Pill with Lime Highlight */}
-            <span className="font-mono text-[0.68rem] tracking-wider text-ink/40 group-hover:text-ink group-hover:bg-lime/30 px-1.5 py-0.5 rounded-xs transition-all duration-200 ml-1">
+            <span
+              className={`font-mono text-[0.68rem] tracking-wider px-1.5 py-0.5 rounded-xs transition-all duration-200 ml-1 ${
+                isActive ? "!text-ink !bg-lime/30" : "text-ink/40 group-hover:text-ink group-hover:bg-lime/30"
+              }`}
+            >
               0{index + 1}
             </span>
           </div>

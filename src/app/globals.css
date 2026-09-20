@@ -632,7 +632,8 @@ footer[data-field] {
   will-change: clip-path;
 }
 
-.group:hover .polaroid-color-reveal {
+.group:hover .polaroid-color-reveal,
+.group[data-active="true"] .polaroid-color-reveal {
   clip-path: circle(160% at 50% 115%);
 }
 
@@ -642,8 +643,15 @@ footer[data-field] {
   will-change: transform;
 }
 
-.group:hover .polaroid-glint {
+.group:hover .polaroid-glint,
+.group[data-active="true"] .polaroid-glint {
   transform: translateX(240%) skewX(-25deg);
+}
+
+.group[data-active="true"] .polaroid-cat-popup,
+.group[data-popped="true"] .polaroid-cat-popup {
+  transform: translate(-50%, 0) scale(1) !important;
+  opacity: 1 !important;
 }
 
 
