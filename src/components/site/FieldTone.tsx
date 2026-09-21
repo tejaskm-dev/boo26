@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { gsap } from "gsap";
 import { isNavActive } from "@/lib/navState";
 
 /**
@@ -45,7 +46,7 @@ export default function FieldTone() {
   useEffect(() => {
     const root = document.documentElement;
     let bands: Band[] = [];
-    let queued = false;
+    let dirty = false;
     let cachedHeaderH = 40;
     let cachedEdge = 24;
 
@@ -115,7 +116,6 @@ export default function FieldTone() {
     };
 
     const apply = () => {
-      queued = false;
       const h = cachedHeaderH;
       const edge = cachedEdge;
 
@@ -125,19 +125,29 @@ export default function FieldTone() {
       if (root.dataset.toneRight !== right) root.dataset.toneRight = right;
     };
 
+    // Asked at the very start of the frame, ahead of Lenis and every tween.
+    // isPointInFill needs current layout, and asked later — once the scroll
+    // and the scrubbed animations had written — it forced a whole style and
+    // layout flush on every scroll frame just to answer. Here nothing has
+    // written yet, so the answer comes from the layout the last frame drew.
     const onScroll = () => {
-      if (queued || isNavActive()) return;
-      queued = true;
-      requestAnimationFrame(apply);
+      dirty = true;
+    };
+    const tick = () => {
+      if (!dirty || isNavActive()) return;
+      dirty = false;
+      apply();
     };
 
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(document.body);
     window.addEventListener("scroll", onScroll, { passive: true });
+    gsap.ticker.add(tick, false, true);
     return () => {
       ro.disconnect();
       window.removeEventListener("scroll", onScroll);
+      gsap.ticker.remove(tick);
     };
   }, []);
 

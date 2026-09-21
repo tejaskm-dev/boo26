@@ -42,7 +42,12 @@ export default function SmoothScroll() {
     setLenis(lenis);
     lenis.on("scroll", ScrollTrigger.update);
     const tick = (time: number) => lenis.raf(time * 1000);
-    gsap.ticker.add(tick);
+    // At the front of the ticker, ahead of GSAP's own render. Behind it, every
+    // frame's scroll landed on styles the tweens had just written, and moving
+    // the page forced a full style and layout flush to do it. In front, the
+    // scroll lands on the layout the last frame drew, and the scrubbed tweens
+    // then render against this frame's position rather than the one before.
+    gsap.ticker.add(tick, false, true);
 
     return () => {
       gsap.ticker.remove(tick);
