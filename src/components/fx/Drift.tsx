@@ -6,13 +6,12 @@
  * section, and clipping a soft gradient produces exactly the hard grey edge it
  * was supposed to avoid. Fixed and full-viewport, there is no box to be cut by.
  *
- * `overlay` means one layer works over both fields: it lightens the ink and
- * darkens the bone, so the same drift reads on a black screen and a cream one
- * without ever being tinted wrong.
+ * `screen` means one layer works over both fields: it lifts the ink and all
+ * but vanishes on the bone, so the same drift reads on a black screen and a
+ * cream one without ever being tinted wrong.
  *
- * Two children on long mismatched periods, transform only, so the whole thing
- * is a pair of composited layers the GPU moves and nothing repaints or ticks
- * in JS. It stops completely under prefers-reduced-motion.
+ * Two still gradients, painted once; nothing repaints or ticks in JS (see
+ * globals.css for why they no longer move).
  */
 export default function Drift() {
   return (

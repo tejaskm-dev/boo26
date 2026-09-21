@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useFinePointer } from "@/lib/motion";
-import { scrollPageTo } from "@/lib/lenis";
+import { getLenis, scrollPageTo } from "@/lib/lenis";
 
 const MIN_THUMB = 52;
 
@@ -48,7 +48,10 @@ export default function Scrollbar() {
 
     const paint = () => {
       queued = 0;
-      const top = window.scrollY;
+      // Lenis already holds the position it just scrolled to. Asking the
+      // window instead — after the frame's animations have written — made the
+      // browser flush style and layout just to answer.
+      const top = getLenis()?.scroll ?? window.scrollY;
       const progress = Math.min(1, Math.max(0, top / maxScroll));
       const y = progress * (railH - thumbH);
 

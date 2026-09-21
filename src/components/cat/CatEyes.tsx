@@ -51,23 +51,22 @@ export default function CatEyes({ art, track = false, excited = false, className
       y: gsap.quickTo(g, "y", { duration: 0.7, ease: "power3.out" }),
     }));
 
-    let rect = el.getBoundingClientRect();
-    let queued = false;
-    const measure = () => {
-      rect = el.getBoundingClientRect();
-      queued = false;
+    // Where the eyes are on screen, read when the pointer has actually moved.
+    // Re-reading it on every scroll frame forced a style and layout flush
+    // mid-frame — for the hero's cat and the menu's alike, mouse still or
+    // not — so scrolling only marks it stale now.
+    let rect: DOMRect | null = null;
+    const stale = () => {
+      rect = null;
     };
-    const remeasure = () => {
-      if (queued) return;
-      queued = true;
-      requestAnimationFrame(measure);
-    };
-    window.addEventListener("resize", remeasure, { passive: true });
-    window.addEventListener("scroll", remeasure, { passive: true });
+    window.addEventListener("resize", stale, { passive: true });
+    window.addEventListener("scroll", stale, { passive: true });
 
     // viewBox units per CSS pixel, so travel stays constant on screen
     const stop = subscribePointer((nx, ny) => {
-      if (!rect.width || isNavActive()) return;
+      if (isNavActive()) return;
+      rect ??= el.getBoundingClientRect();
+      if (!rect.width) return;
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
       const px = ((nx + 1) / 2) * window.innerWidth;
@@ -87,8 +86,8 @@ export default function CatEyes({ art, track = false, excited = false, className
 
     return () => {
       stop();
-      window.removeEventListener("resize", remeasure);
-      window.removeEventListener("scroll", remeasure);
+      window.removeEventListener("resize", stale);
+      window.removeEventListener("scroll", stale);
       setters.forEach((s) => {
         s.x(0);
         s.y(0);

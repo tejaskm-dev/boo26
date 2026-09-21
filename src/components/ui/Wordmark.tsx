@@ -16,6 +16,7 @@ export default function Wordmark({
   return (
     <a
       href={href}
+      data-wordmark
       aria-label={href === "#top" ? `${EVENT.name} ${EVENT.year} — top of page` : `${EVENT.name} ${EVENT.year} — home`}
       className={`group relative inline-flex flex-col items-start gap-0.5 outline-none md:flex-row md:items-baseline md:gap-[0.5em] ${className}`}
     >
