@@ -50,7 +50,7 @@ export default function ThePeople() {
           {/* Left annotation: scrubs down with scroll */}
           <div data-scrub="down" data-scrub-amount="6" className="hidden lg:block w-[14ch] shrink-0">
             <p className="hand -rotate-[3deg] text-[clamp(1.15rem,1.4vw,1.45rem)] font-bold leading-[1.18] text-ink/60 select-none">
-              {"SAME\nPEOPLE.\nBRIGHTER\nIDEAS."}
+              {"NOT\nSCARY.\nMOSTLY."}
             </p>
           </div>
 
@@ -103,7 +103,7 @@ export default function ThePeople() {
           <div data-scrub="up" data-scrub-amount="8" className="flex items-center gap-6 lg:w-[22rem] lg:justify-end">
             <div className="hidden md:block max-w-[20ch] text-left">
               <p className="label label-loose text-[clamp(0.66rem,0.72vw,0.78rem)] leading-relaxed text-ink/50">
-                THE DREAMERS, BUILDERS, OVERTHINKERS AND CHAOS ENABLERS.
+                THE BOO! CORE TEAM. BUILDERS, OVERTHINKERS AND CHAOS ENABLERS.
               </p>
               <span className="mt-2.5 block h-[2px] w-9 bg-lime" />
             </div>
@@ -116,10 +116,10 @@ export default function ThePeople() {
               </div>
               <div className="bg-[#ded5c2] border border-[#beaf95] shadow-[0_8px_24px_rgba(8,8,8,0.12)] px-5 py-6 rounded-[2px] w-40 text-center transform rotate-[-1deg]">
                 <p className="hand font-bold text-[1.12rem] leading-[1.28] text-ink/85">
-                  IDEAS<br />
-                  HAPPEN<br />
-                  BETTER<br />
-                  TOGETHER.<br />
+                  SEE<br />
+                  YOU<br />
+                  AFTER<br />
+                  DARK.<br />
                   <span className="text-base font-normal">:)</span>
                 </p>
               </div>

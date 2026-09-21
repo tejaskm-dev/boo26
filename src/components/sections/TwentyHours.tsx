@@ -14,7 +14,7 @@ import type { SpriteName } from "@/lib/sprites";
  * 03 — an oversized "20" holding the left, and the night running down the right
  * on a lime thread that draws itself as you scroll. Each stop has its own cat,
  * sitting on the thread rather than beside it: excited at the doors, playful
- * when it gets weird, confused at 2am, asleep at 6, boxed up at ship.
+ * at midnight, confused at 3am, asleep at 6, popping out of a box at the end.
  */
 export default function TwentyHours() {
   const root = useRef<HTMLDivElement>(null);
@@ -176,7 +176,7 @@ export default function TwentyHours() {
         <div className="flex items-start justify-between gap-6">
           <SectionLabel index="03" className="lg:text-bone">The 20 Hours</SectionLabel>
           <p className="hand hidden max-w-[10ch] whitespace-pre-line text-right text-[clamp(1rem,1.5vw,1.4rem)] text-ink/55 md:block">
-            {NOTES.night}
+            {NOTES.hoursAside}
           </p>
         </div>
 

@@ -108,7 +108,7 @@ export default function TheExperience() {
 
           <p className="mt-[clamp(1.75rem,4.5vh,2.75rem)] flex items-center gap-3 px-[var(--edge)]">
             <span className="label label-loose whitespace-pre-line text-bone/70">
-              Ideas hit different{"\n"}at night.
+              Part hackathon.{"\n"}Part Halloween night.
             </span>
           </p>
         </div>
@@ -136,7 +136,7 @@ export default function TheExperience() {
 
       <div data-scrub="up" data-scrub-amount="8" className="mt-[clamp(2.5rem,6vh,4rem)] flex items-end justify-between gap-6 px-[var(--edge)]">
         <p className="label label-loose whitespace-pre-line text-bone/45">
-          Same people.{"\n"}Brighter ideas.
+          Build. Wander off.{"\n"}Get spooked. Come back.
         </p>
         <p className="hand whitespace-pre-line text-right text-[clamp(1rem,1.5vw,1.4rem)] text-bone/55">
           {NOTES.survive}

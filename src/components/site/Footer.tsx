@@ -93,7 +93,7 @@ export default function Footer() {
         <div className="grid items-start gap-[clamp(2rem,5vw,4.5rem)] lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
           <div>
             <p className="label label-loose whitespace-pre-line text-bone/40">
-              Scroll{"\n"}build{"\n"}haunt{"\n"}repeat.
+              Build{"\n"}break{"\n"}haunt{"\n"}repeat.
             </p>
 
             <h2 className="brush mt-[clamp(1.5rem,4vh,2.5rem)] -rotate-[1.3deg] select-none text-[clamp(2.6rem,8.5vw,7rem)] leading-[0.88]">
@@ -105,7 +105,7 @@ export default function Footer() {
             </h2>
 
             <p className="label label-loose mt-[clamp(1.25rem,3vh,2rem)] whitespace-pre-line text-bone/45">
-              Same people.{"\n"}Brighter ideas.
+              Come make{"\n"}someone react.
             </p>
           </div>
 
@@ -205,7 +205,7 @@ export default function Footer() {
               {[
                 ["Where", EVENT.venueLong],
                 ["When", EVENT.dateLong],
-                ["Runs for", "20 hours"],
+                ["Runs for", "20 hours, from 2 PM"],
                 ["Teams", "2 per team"],
               ].map(([k, v]) => (
                 <div key={k}>
@@ -244,8 +244,8 @@ export default function Footer() {
               />
             </span>
             <p className="label whitespace-pre-line text-bone/40">
-              A hackathon by{"\n"}
-              {EVENT.host}
+              A hackathon by the {EVENT.name} core team{"\n"}
+              under the {EVENT.host} banner
             </p>
           </div>
 

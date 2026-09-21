@@ -46,7 +46,7 @@ const spaceGrotesk = Space_Grotesk({
 
 export const metadata: Metadata = {
   title: `${EVENT.name} ${EVENT.year} — ${EVENT.date}, ${EVENT.venue}`,
-  description: `${EVENT.format}. ${EVENT.dateLong} at ASIET, Kalady.`,
+  description: `A Halloween-night creative technology hackathon at ASIET, Kalady. One challenge: build something that makes someone react. ${EVENT.dateLong}.`,
   icons: {
     icon: [
       { url: "/favicon.ico" },
@@ -56,7 +56,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: `${EVENT.name} ${EVENT.year}`,
-    description: `${EVENT.format} — ${EVENT.dateLong}, ASIET Kalady.`,
+    description: `Most hackathons start with a problem. ${EVENT.name} starts with a reaction. ${EVENT.dateLong}, ASIET Kalady.`,
     type: "website",
   },
 };

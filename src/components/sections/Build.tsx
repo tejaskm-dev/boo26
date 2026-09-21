@@ -18,7 +18,7 @@ export default function Build() {
       <div className="flex items-start justify-between gap-6 px-[var(--edge)]">
         <SectionLabel index="06">The Hackathon</SectionLabel>
         <p className="label whitespace-pre-line text-right text-ink/45">
-          Your idea.{"\n"}Your stack.{"\n"}20 hours.
+          Your idea.{"\n"}Any stack.{"\n"}One night.
         </p>
       </div>
 
@@ -42,9 +42,15 @@ export default function Build() {
 
       <div className="mt-[clamp(0.5rem,2vh,1.5rem)] flex flex-wrap items-end gap-x-6 gap-y-3 px-[var(--edge)]">
         <p className="brush -rotate-[3deg] text-[clamp(1.6rem,4vw,3rem)] leading-none">
+          {/* four short lines, not two long ones: on a phone the peeking cat
+              sits over the right half of this row */}
           Something
           <br />
-          weird.
+          that makes
+          <br />
+          someone
+          <br />
+          react.
         </p>
         <Sprite name="squiggle-lime" scale={0.39} className="mb-2" />
 

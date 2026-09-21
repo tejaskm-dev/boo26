@@ -46,7 +46,7 @@ export default function TheNight() {
 
         <div data-scrub="up" data-scrub-amount="10" className="px-[var(--edge)] lg:pl-0 lg:pr-[var(--edge)]">
           <p data-anim="rise" className="display max-w-[16ch] text-[clamp(1.35rem,2.6vw,2.15rem)] leading-[1.12]">
-            {EVENT.name} is a 20-hour creative technology hackathon.
+            Most hackathons start with a problem. {EVENT.name}&nbsp;starts with a reaction.
           </p>
 
           <dl data-stagger
