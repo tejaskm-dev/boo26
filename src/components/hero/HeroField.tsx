@@ -7,6 +7,7 @@ import { subscribePointer } from "@/lib/pointer";
 import { HERO_FIELD, MOBILE_FIELD } from "@/lib/shapes";
 import { prefersReducedMotion } from "@/lib/motion";
 import { startLiquidFlow } from "@/lib/liquid";
+import { isNavActive, subscribeNavActive } from "@/lib/navState";
 
 /**
  * The hero's environment. Black fields traced off the supplied comps
@@ -125,7 +126,7 @@ function DesktopField({ className = "" }: { className?: string }) {
     io.observe(heroSec);
 
     const stopPointer = subscribePointer((nx, ny) => {
-      if (!isIntersecting) return;
+      if (!isIntersecting || isNavActive()) return;
       setters.forEach((l) => {
         l.x(-nx * l.d);
         l.y(-ny * l.d * 0.62);
@@ -133,6 +134,13 @@ function DesktopField({ className = "" }: { className?: string }) {
         l.sx(s);
         l.sy(s);
       });
+    });
+
+    // Freeze in-flight parallax tweens immediately when nav opens/closes
+    const unsubNav = subscribeNavActive((active) => {
+      if (active) {
+        gsap.killTweensOf(nodes);
+      }
     });
 
     // scroll: the whole field lags the content leaving the viewport
@@ -158,6 +166,7 @@ function DesktopField({ className = "" }: { className?: string }) {
 
     return () => {
       io.disconnect();
+      unsubNav();
       stopPointer();
       stopLiquid();
       drift.scrollTrigger?.kill();
@@ -170,7 +179,7 @@ function DesktopField({ className = "" }: { className?: string }) {
       ref={root}
       viewBox={HERO_FIELD.viewBox}
       preserveAspectRatio="xMidYMid slice"
-      className={`absolute inset-0 h-full w-full ${className}`}
+      className={`pointer-events-none absolute inset-0 h-full w-full ${className}`}
       aria-hidden="true"
     >
       <FieldDefs ns="hero" />
@@ -291,11 +300,18 @@ function MobileField({ className = "" }: { className?: string }) {
     io.observe(heroSec);
 
     const stopPointer = subscribePointer((nx, ny) => {
-      if (!isIntersecting) return;
+      if (!isIntersecting || isNavActive()) return;
       setters.forEach((l) => {
         l.x(-nx * l.d);
         l.y(-ny * l.d * 0.5);
       });
+    });
+
+    // Freeze in-flight parallax tweens immediately when nav opens/closes
+    const unsubNav = subscribeNavActive((active) => {
+      if (active) {
+        gsap.killTweensOf(nodes);
+      }
     });
 
     const stopLiquid = startLiquidFlow({
@@ -307,6 +323,7 @@ function MobileField({ className = "" }: { className?: string }) {
 
     return () => {
       io.disconnect();
+      unsubNav();
       stopPointer();
       stopLiquid();
     };
@@ -317,7 +334,7 @@ function MobileField({ className = "" }: { className?: string }) {
       ref={root}
       viewBox={MOBILE_FIELD.viewBox}
       preserveAspectRatio="xMidYMid slice"
-      className={`absolute inset-0 h-full w-full ${className}`}
+      className={`pointer-events-none absolute inset-0 h-full w-full ${className}`}
       aria-hidden="true"
     >
       <FieldDefs ns="mob" isMobile={true} />

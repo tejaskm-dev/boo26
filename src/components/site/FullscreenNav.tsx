@@ -13,6 +13,7 @@ import { prefersReducedMotion } from "@/lib/motion";
 import { getLenis } from "@/lib/lenis";
 import SocialIcon from "@/components/ui/SocialIcon";
 import BouncyWord from "@/components/ui/BouncyWord";
+import { setNavActive } from "@/lib/navState";
 
 /**
  * The menu is cut out of a blob that grows from the trigger. The shape is drawn
@@ -106,16 +107,18 @@ export default function FullscreenNav({
         if (inkEl) inkEl.style.clipPath = clipShut;
         if (boneEl) boneEl.style.clipPath = clipShut;
         gsap.set(el, { autoAlpha: 0 });
+        setNavActive(false);
         return;
       }
     }
 
     const lenis = getLenis();
     if (open) lenis?.stop();
-    else lenis?.start();
 
+    // Freeze background animations immediately upon opening or closing
+    setNavActive(true);
     document.body.dataset.lock = String(open);
-    document.documentElement.dataset.nav = open ? "open" : "closed";
+    document.documentElement.dataset.nav = open ? "opening" : "closing";
     const targets = items.current.filter(Boolean);
     const chars = targets.flatMap((li) => [...li.querySelectorAll<HTMLElement>("[data-char]")]);
     const numbers = targets.flatMap((li) => [...li.querySelectorAll<HTMLElement>("[data-nav-index]")]);
@@ -128,6 +131,9 @@ export default function FullscreenNav({
       gsap.set([targets, chars, numbers, aside.current, cat.current], {
         autoAlpha: open ? 1 : 0, x: 0, y: 0, yPercent: 0, rotate: 0,
       });
+      document.documentElement.dataset.nav = open ? "open" : "closed";
+      setNavActive(open);
+      if (!open) lenis?.start();
       return;
     }
 
@@ -142,7 +148,11 @@ export default function FullscreenNav({
     const charStart = mobile ? 0.3 : 0.44;
 
     if (open) {
-      const tl = gsap.timeline();
+      const tl = gsap.timeline({
+        onComplete: () => {
+          document.documentElement.dataset.nav = "open";
+        },
+      });
       tl.set(el, { autoAlpha: 1 })
         // animate clipPath string directly — GSAP interpolates the numeric radius
         .fromTo(
@@ -185,7 +195,15 @@ export default function FullscreenNav({
         )
         .fromTo(aside.current, { autoAlpha: 0, y: 22 }, { autoAlpha: 1, y: 0, duration: 0.7 }, charStart + 0.3);
     } else {
-      const tl = gsap.timeline({ onComplete: () => gsap.set(el, { autoAlpha: 0 }) });
+      const tl = gsap.timeline({
+        onComplete: () => {
+          gsap.set(el, { autoAlpha: 0 });
+          document.documentElement.dataset.nav = "closed";
+          delete document.body.dataset.lock;
+          setNavActive(false);
+          lenis?.start();
+        },
+      });
       const closeDur = mobile ? 0.22 : 0.28;
       tl.to([chars, numbers, aside.current], { autoAlpha: 0, y: -18, duration: closeDur, stagger: { each: 0.006 }, ease: "power2.in" })
         .to(cat.current, { yPercent: mobile ? 20 : 38, autoAlpha: 0, duration: closeDur + 0.07, ease: "power2.in" }, 0)
@@ -280,6 +298,8 @@ export default function FullscreenNav({
     () => () => {
       delete document.body.dataset.lock;
       delete document.documentElement.dataset.nav;
+      delete document.documentElement.dataset.navActive;
+      setNavActive(false);
       getLenis()?.start();
     },
     [],

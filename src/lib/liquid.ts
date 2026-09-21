@@ -4,6 +4,7 @@ import { prefersReducedMotion } from "@/lib/motion";
 import { subscribePointer } from "@/lib/pointer";
 import { getLenis } from "@/lib/lenis";
 import { gsap } from "gsap";
+import { isNavActive } from "@/lib/navState";
 
 export interface PrecomputedPoint {
   baseX: number;
@@ -193,7 +194,7 @@ export function startLiquidFlow({ svg, shapes, ns, isMobile = false }: LiquidSet
   let hasPointer = false;
 
   const unsubscribePointer = subscribePointer((nx, ny) => {
-    if (!isIntersecting) return;
+    if (!isIntersecting || isNavActive()) return;
     if (!hasPointer) {
       hasPointer = true;
       prevPointerX = nx;
@@ -246,7 +247,7 @@ export function startLiquidFlow({ svg, shapes, ns, isMobile = false }: LiquidSet
 
   const tick = (_time: number, deltaTime: number) => {
     // 1. Guard against inactive or hidden states
-    if (document.hidden || root.dataset.idle === "true" || !isIntersecting) {
+    if (document.hidden || root.dataset.idle === "true" || isNavActive() || !isIntersecting) {
       return;
     }
 
