@@ -246,8 +246,17 @@ export function startLiquidFlow({ svg, shapes, ns, isMobile = false }: LiquidSet
   const root = document.documentElement;
 
   const tick = (_time: number, deltaTime: number) => {
-    // 1. Guard against inactive or hidden states
-    if (document.hidden || root.dataset.idle === "true" || isNavActive() || !isIntersecting) {
+    // 1. Guard against inactive or hidden states — including the page wipe
+    //    and preloader, which cover the field while the next page is busy
+    //    starting and need every frame they can get
+    if (
+      document.hidden ||
+      root.dataset.idle === "true" ||
+      isNavActive() ||
+      !isIntersecting ||
+      root.dataset.wipe ||
+      root.dataset.wiping
+    ) {
       return;
     }
 

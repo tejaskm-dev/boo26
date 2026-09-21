@@ -59,7 +59,8 @@ export default function ComingSoon() {
           </div>
 
           <div className="mt-[clamp(1.75rem,4.5vh,2.75rem)] flex flex-wrap items-center justify-center gap-[clamp(1.25rem,4vw,3rem)]">
-            <BlobButton data-anim="rise" href="/" size="lg">
+            {/* arriving here, the page wipe closes into the way back */}
+            <BlobButton data-anim="rise" data-wipe-origin href="/" size="lg">
               Back to BOO!
             </BlobButton>
             <p className="hand max-w-[12ch] whitespace-pre-line text-[clamp(1.05rem,1.6vw,1.5rem)] text-bone/60">

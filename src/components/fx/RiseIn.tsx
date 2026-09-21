@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { prefersReducedMotion } from "@/lib/motion";
+import { prefersReducedMotion, whenOpen } from "@/lib/motion";
 
 /**
  * A cat coming up from behind a section boundary.
@@ -30,18 +30,25 @@ export default function RiseIn({
     if (!el || prefersReducedMotion()) return;
     gsap.registerPlugin(ScrollTrigger);
 
-    const ctx = gsap.context(() => {
-      gsap.from(el, {
-        yPercent: from === "top" ? -72 : 72,
-        rotate: from === "top" ? -7 : 5,
-        autoAlpha: 0,
-        duration: 1.15,
-        ease: "back.out(1.35)",
-        scrollTrigger: { trigger: el, start, once: true },
-        clearProps: "transform,willChange",
-      });
-    }, el);
-    return () => ctx.revert();
+    let ctx: gsap.Context | undefined;
+    // a cat already on screen at load waits for the preloader to open
+    const stop = whenOpen(() => {
+      ctx = gsap.context(() => {
+        gsap.from(el, {
+          yPercent: from === "top" ? -72 : 72,
+          rotate: from === "top" ? -7 : 5,
+          autoAlpha: 0,
+          duration: 1.15,
+          ease: "back.out(1.35)",
+          scrollTrigger: { trigger: el, start, once: true },
+          clearProps: "transform,willChange",
+        });
+      }, el);
+    });
+    return () => {
+      stop();
+      ctx?.revert();
+    };
   }, [from, start]);
 
   return (

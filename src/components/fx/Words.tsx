@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { prefersReducedMotion } from "@/lib/motion";
+import { prefersReducedMotion, whenOpen } from "@/lib/motion";
 
 /**
  * The house heading reveal: each word rises out of its own clip, slightly
@@ -42,29 +42,37 @@ export default function Words({
     }
 
     gsap.registerPlugin(ScrollTrigger);
-    const ctx = gsap.context(() => {
-      gsap.fromTo(
-        words,
-        { yPercent: 116, rotate: 4, autoAlpha: 0 },
-        {
-          yPercent: 0,
-          rotate: 0,
-          autoAlpha: 1,
-          duration: 1,
-          ease: "power4.out",
-          stagger,
-          clearProps: "willChange",
-          scrollTrigger: { trigger: el, start: "top 86%", once: true },
-          onComplete: () => {
-            const clips = el.querySelectorAll<HTMLElement>("[data-clip]");
-            clips.forEach((c) => {
-              c.style.clipPath = "none";
-            });
+    let ctx: gsap.Context | undefined;
+    // a heading already on screen at load waits for the preloader to open,
+    // so it rises in view rather than under the cover
+    const stop = whenOpen(() => {
+      ctx = gsap.context(() => {
+        gsap.fromTo(
+          words,
+          { yPercent: 116, rotate: 4, autoAlpha: 0 },
+          {
+            yPercent: 0,
+            rotate: 0,
+            autoAlpha: 1,
+            duration: 1,
+            ease: "power4.out",
+            stagger,
+            clearProps: "willChange",
+            scrollTrigger: { trigger: el, start: "top 86%", once: true },
+            onComplete: () => {
+              const clips = el.querySelectorAll<HTMLElement>("[data-clip]");
+              clips.forEach((c) => {
+                c.style.clipPath = "none";
+              });
+            },
           },
-        },
-      );
-    }, el);
-    return () => ctx.revert();
+        );
+      }, el);
+    });
+    return () => {
+      stop();
+      ctx?.revert();
+    };
   }, [stagger]);
 
   const lines = children.split("\n");

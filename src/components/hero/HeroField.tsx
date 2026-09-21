@@ -5,7 +5,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { subscribePointer } from "@/lib/pointer";
 import { HERO_FIELD, MOBILE_FIELD } from "@/lib/shapes";
-import { prefersReducedMotion } from "@/lib/motion";
+import { MD, prefersReducedMotion } from "@/lib/motion";
 import { startLiquidFlow } from "@/lib/liquid";
 import { isNavActive, subscribeNavActive } from "@/lib/navState";
 
@@ -102,8 +102,8 @@ function DesktopField({ className = "" }: { className?: string }) {
   const root = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
-    // Only run on desktop screens (>= 768px)
-    if (prefersReducedMotion() || window.innerWidth < 768) return;
+    // only where the CSS is showing this composition (md and up)
+    if (prefersReducedMotion() || !window.matchMedia(MD).matches) return;
     const svg = root.current;
     if (!svg) return;
 
@@ -280,8 +280,8 @@ function MobileField({ className = "" }: { className?: string }) {
   const root = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
-    // Only run on mobile screens (< 768px)
-    if (prefersReducedMotion() || window.innerWidth >= 768) return;
+    // only where the CSS is showing this composition (below md)
+    if (prefersReducedMotion() || window.matchMedia(MD).matches) return;
     const svg = root.current;
     if (!svg) return;
 

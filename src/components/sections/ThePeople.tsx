@@ -11,6 +11,15 @@ import { TEAM, type TeamMember } from "@/lib/site";
 
 export default function ThePeople() {
   const [activeCard, setActiveCard] = useState<number | null>(null);
+  /*
+   * Hover is tracked here as well as in CSS. Tailwind's hover variants only
+   * apply where the browser reports `(hover: hover)`, and plenty of Windows
+   * touchscreen laptops report `hover: none` even with a mouse in hand — so
+   * the lift, the zoom and the cat never came up there. Pointer events say
+   * which device is actually over the card, so a mouse or pen lights it on
+   * any machine, while a finger still goes through the tap toggle.
+   */
+  const [hoveredCard, setHoveredCard] = useState<number | null>(null);
 
   useEffect(() => {
     // Dismiss active card on tap outside
@@ -148,8 +157,10 @@ export default function ThePeople() {
               key={member.name}
               member={member}
               index={i}
-              isActive={activeCard === i}
+              isActive={activeCard === i || hoveredCard === i}
+              isOpen={activeCard === i}
               onCardClick={(idx) => setActiveCard((prev) => (prev === idx ? null : idx))}
+              onHoverChange={(idx, on) => setHoveredCard((prev) => (on ? idx : prev === idx ? null : prev))}
             />
           ))}
         </div>
@@ -249,12 +260,18 @@ function PolaroidCard({
   member,
   index,
   isActive,
+  isOpen,
   onCardClick,
+  onHoverChange,
 }: {
   member: TeamMember;
   index: number;
+  /** lit: tapped open, or under a mouse or pen */
   isActive: boolean;
+  /** tapped open — what aria-expanded reports */
+  isOpen: boolean;
   onCardClick: (index: number) => void;
+  onHoverChange: (index: number, on: boolean) => void;
 }) {
   const uid = `pol-${index}`;
 
@@ -266,8 +283,14 @@ function PolaroidCard({
       role="button"
       tabIndex={0}
       aria-label={`${member.name}, ${member.tagline}`}
-      aria-expanded={isActive}
+      aria-expanded={isOpen}
       onClick={() => onCardClick(index)}
+      onPointerEnter={(e) => {
+        if (e.pointerType !== "touch") onHoverChange(index, true);
+      }}
+      onPointerLeave={(e) => {
+        if (e.pointerType !== "touch") onHoverChange(index, false);
+      }}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
@@ -498,8 +521,11 @@ function PolaroidCard({
               <svg viewBox="0 0 24 24" className="pointer-events-none absolute -right-2.5 top-8 w-5 h-5 z-30 text-ink stroke-current stroke-2 fill-none -rotate-12">
                 <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
               </svg>
-              {/* Handwritten callout on bottom right */}
-              <span className="pointer-events-none absolute -right-22 -bottom-2 hidden 2xl:block font-hand font-bold text-[0.82rem] text-ink/70 rotate-6 leading-tight w-20">
+              {/* Handwritten callout on bottom right, in the page margin. The
+                  margin (--edge) is 55–72px on the screens that show this, so
+                  the note is sized to it — drawn at w-20 / -right-22 it ran
+                  17–34px off the edge of every one of them. */}
+              <span className="pointer-events-none absolute -right-[calc(var(--edge)-0.25rem)] -bottom-2 hidden 2xl:block font-hand font-bold text-[0.82rem] text-ink/70 rotate-6 leading-tight w-[calc(var(--edge)-0.5rem)]">
                 MAKES THINGS HAPPEN.
               </span>
             </>

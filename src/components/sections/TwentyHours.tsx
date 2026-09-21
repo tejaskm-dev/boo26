@@ -7,7 +7,7 @@ import Section, { SectionLabel } from "./Section";
 import Sprite from "@/components/ui/Sprite";
 import Words from "@/components/fx/Words";
 import { EVENT, NOTES, TIMELINE } from "@/lib/site";
-import { prefersReducedMotion } from "@/lib/motion";
+import { LG, prefersReducedMotion } from "@/lib/motion";
 import type { SpriteName } from "@/lib/sprites";
 
 /**
@@ -36,7 +36,7 @@ export default function TwentyHours() {
       // How far it can be held depends on how much taller the list is than the
       // screen, and on a short viewport that can come out at nothing — a pin
       // whose end equals its start throws rather than doing nothing.
-      const wide = window.matchMedia("(min-width: 1024px)").matches;
+      const wide = window.matchMedia(LG).matches;
       const runway = () =>
         (list.current?.offsetHeight ?? 0) - window.innerHeight * 0.62;
       const pin =
@@ -90,10 +90,19 @@ export default function TwentyHours() {
       // past a list: the bead fills, the time goes lime, the cat sits up. The
       // state is an attribute and the look is CSS, so the scroll handler does
       // no style work of its own.
+      //
+      // Deliberately not `once: true`. A trigger on a timeline waits a tick
+      // before measuring itself, and any trigger created in that tick forces it
+      // to measure early. Reloaded from lower down the page, these five are
+      // already past, and with `once` they killed themselves inside that forced
+      // refresh — several at a time, while GSAP's loop over its triggers only
+      // allows for one removal. It read past the end of its own list and threw
+      // ("reading 'end'"), taking the page down. The default toggleActions
+      // ("play none none none") already play once and never reverse.
       const stops = gsap.utils.toArray<HTMLElement>("[data-stop]");
       stops.forEach((el) => {
         const tl = gsap.timeline({
-          scrollTrigger: { trigger: el, start: "top 88%", once: true },
+          scrollTrigger: { trigger: el, start: "top 88%" },
         });
         tl.from(el.querySelector("[data-stop-copy]"), {
           xPercent: 9,

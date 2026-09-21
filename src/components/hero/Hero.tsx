@@ -58,7 +58,8 @@ export default function Hero() {
               <span data-anim="rise" className="md:hidden">{EVENT.team}</span>
             </div>
 
-            <BlobButton data-anim="rise" href={EVENT.registerHref} size="lg">
+            {/* coming back from /register, the page wipe closes into this */}
+            <BlobButton data-anim="rise" data-wipe-origin href={EVENT.registerHref} size="lg">
               Register now
             </BlobButton>
           </div>
