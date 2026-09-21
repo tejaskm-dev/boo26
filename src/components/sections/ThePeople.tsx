@@ -10,44 +10,8 @@ import { TEAM, type TeamMember } from "@/lib/site";
 
 export default function ThePeople() {
   const [activeCard, setActiveCard] = useState<number | null>(null);
-  const [poppedCards, setPoppedCards] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
-    // Detect mobile or touch device
-    const isTouchOrMobile = () =>
-      typeof window !== "undefined" &&
-      (window.matchMedia("(hover: none) and (pointer: coarse)").matches ||
-        window.innerWidth < 1024);
-
-    const cards = document.querySelectorAll<HTMLElement>("[data-polaroid-card]");
-    if (!cards.length) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          const idx = Number(entry.target.getAttribute("data-index"));
-          if (!isNaN(idx) && entry.isIntersecting) {
-            setPoppedCards((prev) => (prev[idx] ? prev : { ...prev, [idx]: true }));
-          }
-        });
-      },
-      {
-        rootMargin: "0px 0px -8% 0px",
-        threshold: 0.15,
-      }
-    );
-
-    const syncObserver = () => {
-      if (isTouchOrMobile()) {
-        cards.forEach((card) => observer.observe(card));
-      } else {
-        observer.disconnect();
-      }
-    };
-
-    syncObserver();
-    window.addEventListener("resize", syncObserver);
-
     // Dismiss active card on tap outside
     const handleClickOutside = (e: MouseEvent | TouchEvent) => {
       const target = e.target as HTMLElement;
@@ -60,8 +24,6 @@ export default function ThePeople() {
     document.addEventListener("touchstart", handleClickOutside, { passive: true });
 
     return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", syncObserver);
       document.removeEventListener("click", handleClickOutside);
       document.removeEventListener("touchstart", handleClickOutside);
     };
@@ -186,7 +148,6 @@ export default function ThePeople() {
               member={member}
               index={i}
               isActive={activeCard === i}
-              isPopped={!!poppedCards[i]}
               onCardClick={(idx) => setActiveCard((prev) => (prev === idx ? null : idx))}
             />
           ))}
@@ -287,13 +248,11 @@ function PolaroidCard({
   member,
   index,
   isActive,
-  isPopped,
   onCardClick,
 }: {
   member: TeamMember;
   index: number;
   isActive: boolean;
-  isPopped: boolean;
   onCardClick: (index: number) => void;
 }) {
   const uid = `pol-${index}`;
@@ -303,7 +262,6 @@ function PolaroidCard({
       data-polaroid-card
       data-index={index}
       data-active={isActive ? "true" : undefined}
-      data-popped={isPopped ? "true" : undefined}
       role="button"
       tabIndex={0}
       aria-label={`${member.name}, ${member.tagline}`}
@@ -324,7 +282,7 @@ function PolaroidCard({
       {/* 1. Bespoke Mascot Companion Pop-Up — 100% Fully Visible & Sitting on the Top Rim */}
       <div
         className={`polaroid-cat-popup pointer-events-none absolute bottom-[calc(100%-8px)] left-1/2 -translate-x-1/2 z-40 transition-all duration-400 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
-          isPopped || isActive
+          isActive
             ? "!translate-y-0 !opacity-100 !scale-100"
             : "translate-y-8 opacity-0 scale-75 group-hover:translate-y-0 group-hover:opacity-100 group-hover:scale-100"
         }`}

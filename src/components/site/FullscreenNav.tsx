@@ -25,11 +25,24 @@ import BouncyWord from "@/components/ui/BouncyWord";
  * the difference between a clean edge and the torn one the rasteriser produces
  * when it runs out of precision.
  */
-const UNIT = 1000;
-const CLIP_INK =
-  "M864 -46C830 155 790 390 688 553C585 716 469 875 250 934C30 992 -443 1017 -629 905C-815 794 -827 469 -866 264C-906 60 -930 -158 -866 -322C-802 -486 -648 -584 -481 -720C-314 -856 -94 -1149 134 -1137C363 -1126 769 -835 891 -653C1012 -471 898 -247 864 -46Z";
-const CLIP_BONE =
-  "M1054 -5C1032 223 786 432 654 587C521 741 451 856 258 922C64 988 -302 1082 -509 981C-716 880 -905 542 -985 317C-1065 91 -1060 -184 -987 -372C-914 -560 -733 -685 -549 -812C-364 -938 -100 -1136 122 -1132C343 -1127 628 -972 783 -785C938 -597 1075 -234 1054 -5Z";
+/**
+ * Build the CSS circle() clip-path string for a given radius.
+ * origin is expressed in px for the open state and 0px for the closed state.
+ */
+function circleClip(r: number, x: number, y: number) {
+  return `circle(${r}px at ${x}px ${y}px)`;
+}
+
+/** where the blob starts from, and how big it has to get to cover the page */
+function wipe() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const trigger = document.querySelector(".menu-trigger")?.getBoundingClientRect();
+  const ox = trigger ? trigger.left + trigger.width / 2 : w * 0.93;
+  const oy = trigger ? trigger.top + trigger.height / 2 : h * 0.07;
+  const reach = Math.max(ox, w - ox) ** 2 + Math.max(oy, h - oy) ** 2;
+  return { x: ox, y: oy, radius: Math.sqrt(reach) * 1.45 };
+}
 
 /**
  * Each item is set differently — width axis, size and indent — so the index
@@ -50,17 +63,6 @@ const ITEM = [
   { wdth: 125, size: 1.5, indent: 7.5, tilt: 1.8 },  // FAQ
 ];
 
-/** where the blob starts from, and how big it has to get to cover the page */
-function wipe() {
-  const w = window.innerWidth;
-  const h = window.innerHeight;
-  const trigger = document.querySelector(".menu-trigger")?.getBoundingClientRect();
-  const ox = trigger ? trigger.left + trigger.width / 2 : w * 0.93;
-  const oy = trigger ? trigger.top + trigger.height / 2 : h * 0.07;
-  const reach = Math.max(ox, w - ox) ** 2 + Math.max(oy, h - oy) ** 2;
-  return { x: ox, y: oy, radius: Math.sqrt(reach) * 1.45 };
-}
-
 export default function FullscreenNav({
   open,
   onClose,
@@ -69,13 +71,20 @@ export default function FullscreenNav({
   onClose: () => void;
 }) {
   const root = useRef<HTMLDivElement>(null);
-  const ink = useRef<SVGPathElement>(null);
-  const bone = useRef<SVGPathElement>(null);
+  const inkDiv = useRef<HTMLDivElement>(null);
+  const boneDiv = useRef<HTMLDivElement>(null);
   const items = useRef<HTMLLIElement[]>([]);
   const aside = useRef<HTMLDivElement>(null);
   const cat = useRef<HTMLDivElement>(null);
   const [hovered, setHovered] = useState<number | null>(null);
   const first = useRef(true);
+  // true on touch/low-DPR devices — prefer simpler animations
+  const isMobile = useRef(false);
+  useEffect(() => {
+    isMobile.current =
+      window.matchMedia("(hover: none) and (pointer: coarse)").matches ||
+      window.innerWidth < 768;
+  }, []);
 
   // open / close
   useEffect(() => {
@@ -83,29 +92,24 @@ export default function FullscreenNav({
     if (!el) return;
     const reduced = prefersReducedMotion();
     const { x, y, radius } = wipe();
-    // the blob is a unit shape at the origin: park it on the trigger, then
-    // only its scale ever animates
-    const at = { x, y, transformOrigin: "50% 50%" };
-    const shut = { ...at, scale: 0.0001 };
-    const wide = { ...at, scale: radius / UNIT };
+
+    // CSS clip-path: circle() — GPU composited on all modern browsers.
+    // A 0px circle at the trigger origin is invisible; radius * 1px fills the viewport.
+    const clipShut = circleClip(0, x, y);
+    const clipWide = circleClip(radius, x, y);
+    const inkEl = inkDiv.current;
+    const boneEl = boneDiv.current;
 
     if (first.current) {
       first.current = false;
       if (!open) {
-        gsap.set([ink.current, bone.current], shut);
+        if (inkEl) inkEl.style.clipPath = clipShut;
+        if (boneEl) boneEl.style.clipPath = clipShut;
         gsap.set(el, { autoAlpha: 0 });
         return;
       }
     }
 
-    // The scroll engine has to be told, not just the body.
-    //
-    // `overflow: hidden` on the body does not stop Lenis — it keeps running its
-    // own loop and writing scroll positions to a document whose scrollable
-    // height the lock has just changed underneath it. The two then disagree
-    // every frame, which is the flicker between the menu and the page behind
-    // it. Stopping Lenis is the actual lock; the body attribute is only the
-    // fallback for when JS has not started.
     const lenis = getLenis();
     if (open) lenis?.stop();
     else lenis?.start();
@@ -115,26 +119,44 @@ export default function FullscreenNav({
     const targets = items.current.filter(Boolean);
     const chars = targets.flatMap((li) => [...li.querySelectorAll<HTMLElement>("[data-char]")]);
     const numbers = targets.flatMap((li) => [...li.querySelectorAll<HTMLElement>("[data-nav-index]")]);
-    gsap.killTweensOf([ink.current, bone.current, targets, chars, numbers, aside.current, cat.current]);
+    gsap.killTweensOf([inkEl, boneEl, targets, chars, numbers, aside.current, cat.current]);
 
     if (reduced) {
       gsap.set(el, { autoAlpha: open ? 1 : 0 });
-      gsap.set([ink.current, bone.current], open ? wide : shut);
+      if (inkEl) inkEl.style.clipPath = open ? clipWide : clipShut;
+      if (boneEl) boneEl.style.clipPath = open ? clipWide : clipShut;
       gsap.set([targets, chars, numbers, aside.current, cat.current], {
         autoAlpha: open ? 1 : 0, x: 0, y: 0, yPercent: 0, rotate: 0,
       });
       return;
     }
 
+    // Animate clip-path via GSAP on the element's style — browsers promote
+    // clip-path: circle() to the compositor, so this runs on the GPU thread.
+    const mobile = isMobile.current;
+    // shorter durations + simpler stagger on mobile to stay in frame budget
+    const wipeDur = mobile ? 0.55 : 1.0;
+    const boneDelay = mobile ? 0.08 : 0.17;
+    const charDur = mobile ? 0.5 : 0.78;
+    const charStagger = mobile ? 0.022 : 0.016;
+    const charStart = mobile ? 0.3 : 0.44;
+
     if (open) {
       const tl = gsap.timeline();
       tl.set(el, { autoAlpha: 1 })
-        .fromTo(ink.current, shut, { ...wide, duration: 1, ease: "power3.inOut" })
-        .fromTo(bone.current, shut, { ...wide, duration: 0.95, ease: "power3.inOut" }, 0.17)
+        // animate clipPath string directly — GSAP interpolates the numeric radius
+        .fromTo(
+          inkEl,
+          { clipPath: clipShut },
+          { clipPath: clipWide, duration: wipeDur, ease: "power3.inOut" },
+        )
+        .fromTo(
+          boneEl,
+          { clipPath: clipShut },
+          { clipPath: clipWide, duration: wipeDur * 0.95, ease: "power3.inOut" },
+          boneDelay,
+        )
         .set(targets, { autoAlpha: 1 })
-        // y as well as yPercent: closing lifts the letters with `y`, and an
-        // open that only resets `yPercent` leaves every letter 18px high from
-        // the second time the menu is used onwards
         .fromTo(
           chars,
           { yPercent: 155, y: 0, rotate: (i: number) => (i % 2 ? 9 : -9), autoAlpha: 0 },
@@ -143,31 +165,32 @@ export default function FullscreenNav({
             y: 0,
             rotate: 0,
             autoAlpha: 1,
-            duration: 0.78,
+            duration: charDur,
             ease: "back.out(1.5)",
-            stagger: { each: 0.016 },
+            stagger: { each: charStagger },
           },
-          0.44,
+          charStart,
         )
         .fromTo(
           numbers,
           { autoAlpha: 0, y: 10 },
           { autoAlpha: 1, y: 0, duration: 0.5, stagger: 0.05, ease: "power2.out" },
-          0.72,
+          charStart + 0.28,
         )
         .fromTo(
           cat.current,
-          { yPercent: 44, autoAlpha: 0 },
-          { yPercent: 0, autoAlpha: 1, duration: 0.95, ease: "back.out(1.5)" },
-          0.6,
+          { yPercent: mobile ? 20 : 44, autoAlpha: 0 },
+          { yPercent: 0, autoAlpha: 1, duration: mobile ? 0.55 : 0.95, ease: "back.out(1.5)" },
+          charStart + 0.16,
         )
-        .fromTo(aside.current, { autoAlpha: 0, y: 22 }, { autoAlpha: 1, y: 0, duration: 0.7 }, 0.74);
+        .fromTo(aside.current, { autoAlpha: 0, y: 22 }, { autoAlpha: 1, y: 0, duration: 0.7 }, charStart + 0.3);
     } else {
       const tl = gsap.timeline({ onComplete: () => gsap.set(el, { autoAlpha: 0 }) });
-      tl.to([chars, numbers, aside.current], { autoAlpha: 0, y: -18, duration: 0.28, stagger: { each: 0.006 }, ease: "power2.in" })
-        .to(cat.current, { yPercent: 38, autoAlpha: 0, duration: 0.35, ease: "power2.in" }, 0)
-        .to(bone.current, { ...shut, duration: 0.68, ease: "power3.inOut" }, 0.1)
-        .to(ink.current, { ...shut, duration: 0.7, ease: "power3.inOut" }, 0.2);
+      const closeDur = mobile ? 0.22 : 0.28;
+      tl.to([chars, numbers, aside.current], { autoAlpha: 0, y: -18, duration: closeDur, stagger: { each: 0.006 }, ease: "power2.in" })
+        .to(cat.current, { yPercent: mobile ? 20 : 38, autoAlpha: 0, duration: closeDur + 0.07, ease: "power2.in" }, 0)
+        .to(boneEl, { clipPath: clipShut, duration: mobile ? 0.42 : 0.68, ease: "power3.inOut" }, closeDur * 0.4)
+        .to(inkEl, { clipPath: clipShut, duration: mobile ? 0.45 : 0.7, ease: "power3.inOut" }, closeDur * 0.4 + 0.1);
     }
   }, [open]);
 
@@ -270,23 +293,17 @@ export default function FullscreenNav({
       aria-hidden={!open}
       inert={!open}
     >
-      <svg width="0" height="0" className="absolute" aria-hidden="true">
-        <defs>
-          <clipPath id="nav-clip-ink" clipPathUnits="userSpaceOnUse">
-            <path ref={ink} d={CLIP_INK} />
-          </clipPath>
-          <clipPath id="nav-clip-bone" clipPathUnits="userSpaceOnUse">
-            <path ref={bone} d={CLIP_BONE} />
-          </clipPath>
-        </defs>
-      </svg>
-
-      {/* ink leads, off-white follows — one organic shape opening across the page */}
-      <div className="absolute inset-0 bg-ink" style={{ clipPath: "url(#nav-clip-ink)" }} />
+      {/* CSS circle clip-path wipe — GPU composited, zero SVG rasterise overhead */}
+      <div
+        ref={inkDiv}
+        className="absolute inset-0 bg-ink will-change-[clip-path]"
+        style={{ clipPath: "circle(0px at 95% 5%)" }}
+      />
 
       <div
-        className="absolute inset-0 overflow-hidden bg-bone"
-        style={{ clipPath: "url(#nav-clip-bone)" }}
+        ref={boneDiv}
+        className="absolute inset-0 overflow-hidden bg-bone will-change-[clip-path]"
+        style={{ clipPath: "circle(0px at 95% 5%)" }}
       >
         <NavBase />
 
