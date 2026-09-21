@@ -169,7 +169,8 @@ export const TEAM: TeamMember[] = [
     image: "/assets/team/ram madhav.jpg",
     imagePosition: "center 22%",
     linkedin: "https://www.linkedin.com/in/ram-madhav-r-kammath-b21150349/",
-    // no Instagram: the account is deactivated
+    // deactivated for now; he's reactivating it before the event
+    instagram: "https://www.instagram.com/m_dh_v.r_m/",
     companion: "cat-pop-artist",
     companionScale: 0.35,
     tilt: "rotate-[2.2deg]",
@@ -264,6 +265,8 @@ export const NOTES = {
   hours: "A hackathon\nthat stays\nup late.",
   hoursAside: "Ideas sleep\nlater here.",
   survive: "Good ideas\nsurvive.",
+  /** offered beside the Experience queue to a reader who stops mid-stack */
+  more: "Keep scrolling",
   afterDark: "Meanwhile,\nthe campus\nwakes up.",
   build: "Weird ideas\nwelcome.",
   faq: "Questions?\nWe got you.",

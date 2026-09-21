@@ -10,15 +10,34 @@ import RiseIn from "@/components/fx/RiseIn";
 import { EXPERIENCE, NOTES } from "@/lib/site";
 import { LG, prefersReducedMotion } from "@/lib/motion";
 
+/** Hand-placed: each beat sits a little off the one before it. */
+const OFFSET = [0, 3.5, 1.5]; // vw
+const TILT = [-0.6, 0.8, -0.4]; // deg
+
+/** Share of each handover's scroll spent filling the next title. */
+const FILL = 0.58;
+/** How long a reader can stand still mid-stack before the note offers a way on. */
+const NUDGE_AFTER = 1600;
+
+/**
+ * Scroll per handover. Most of a screen, but capped: it is wheel clicks the
+ * reader pays in, and a tall monitor shouldn't make the wait longer.
+ */
+const step = () => Math.min(window.innerHeight * 0.8, 720);
+
 /**
  * 02 — black field. The heading fills the left half at billboard scale and the
  * curious cat crawls over the top of it, which is the composition the comp
  * uses. The three beats are a hairline-ruled list, not cards.
  *
- * This is the section that takes the screen: it pins, and the three beats are
- * handed over one at a time while the heading holds. The scroll is spent on
- * the list rather than on moving the page, so the reader arrives at each beat
- * instead of passing it.
+ * On a wide screen this is the section that takes the screen: it pins, and the
+ * beats are handed over one at a time while the heading holds. A pin on its
+ * own reads as the page stopping — a visitor scrolled into it, saw nothing
+ * move, and took it for the end of the site. So the stack shows its hand. The
+ * beats still to come wait underneath as hollow titles, and scrolling fills
+ * the next one with lime from the bottom — the fill the preloader counts up
+ * with — until it takes over. No stretch of the pin is dead scroll, and anyone
+ * who stops anyway is told to keep going.
  */
 export default function TheExperience() {
   const root = useRef<HTMLDivElement>(null);
@@ -38,41 +57,166 @@ export default function TheExperience() {
     // two extra screens buys nothing and costs the reader two screens.
     mm.add(LG, () => {
       const beats = gsap.utils.toArray<HTMLElement>("[data-beat]", el);
-      if (beats.length < 2) return;
+      const box = el.querySelector<HTMLElement>("[data-queue-box]");
+      const queue = gsap.utils.toArray<HTMLElement>("[data-queue]", el);
+      const fills = gsap.utils.toArray<HTMLElement>("[data-fill]", el);
+      const nudge = el.querySelector<HTMLElement>("[data-nudge]");
+      const handovers = beats.length - 1;
+      if (!box || handovers < 1 || queue.length !== handovers || fills.length !== handovers) return;
 
-      // one screen of scroll per beat after the first
+      // Someone who stops mid-stack anyway gets a note beside the filling
+      // title. It waits until they are still, goes the moment they scroll, and
+      // retires once they have been through to the end.
+      let st: ScrollTrigger | undefined;
+      let idle = 0;
+      let seen = false;
+      const hush = () => {
+        window.clearTimeout(idle);
+        if (nudge?.dataset.show) delete nudge.dataset.show;
+      };
+      const watch = () => {
+        hush();
+        if (!nudge || !st || seen || st.end <= st.start) return;
+        const y = st.scroll();
+        const t = ((y - st.start) / (st.end - st.start)) * handovers;
+        if (t >= handovers) {
+          seen = true;
+          return;
+        }
+        // only inside the pin, and only while a title is still waiting
+        if (y < st.start - 2 || t > handovers - 1 + FILL) return;
+        idle = window.setTimeout(() => {
+          // it sits just after whichever title is at the front of the queue
+          const front = queue[Math.min(handovers - 1, Math.max(0, Math.floor(t + 1 - FILL)))];
+          nudge.style.left = `${front.offsetLeft + front.offsetWidth}px`;
+          nudge.dataset.show = "true";
+        }, NUDGE_AFTER);
+      };
+
+      // Every row of the queue is one line of the same type, so a slot is a
+      // row plus the gap. Read from layout, which the transforms don't touch.
+      const slot = () =>
+        queue.length > 1 ? queue[1].offsetTop - queue[0].offsetTop : queue[0].offsetHeight;
+      // The beats are hand-placed at different indents; the queue follows the
+      // one on screen, so it always reads as the rest of that list.
+      const indent = (i: number) => parseFloat(getComputedStyle(beats[i]).marginLeft) || 0;
+
+      // Every tween says where it starts rather than reading the page, so a
+      // refresh from halfway down the pin lands in the same place.
+      //
+      // Only the first tween on each element draws its start straight away,
+      // and that is what sets the opening frame. It is also what GSAP writes
+      // down as the element's own styles, so when the screen drops below lg
+      // everything goes back to the plain list. Starting the elements with
+      // gsap.set instead let GSAP's revert settle on the opening frame — the
+      // later beats hidden — and a window narrowed past lg, or a tablet turned
+      // upright, showed one beat and nothing after it. The rest wait for the
+      // playhead: two tweens on one element both drawing their start at once
+      // would leave the later one's showing.
+      const started = new Set<Element>();
+      const first = (target: Element) => {
+        const isFirst = !started.has(target);
+        started.add(target);
+        return isFirst;
+      };
+
       const tl = gsap.timeline({
-        defaults: { ease: "power3.out" },
         scrollTrigger: {
           trigger: sec,
           start: "top top",
-          end: () => `+=${window.innerHeight * (beats.length - 1)}`,
+          end: () => `+=${step() * handovers}`,
           pin: sec,
           pinSpacing: true,
-          scrub: 0.35,
+          scrub: 0.5,
           invalidateOnRefresh: true,
+          onRefresh: (self) => {
+            st = self;
+            watch();
+          },
         },
       });
+      st = tl.scrollTrigger;
 
-      // Each beat holds for most of its screen and then hands over quickly.
-      // Fading the first one out the moment the pin engages means the reader
-      // never gets to rest on it; and because the beats share a grid cell, the
-      // out and the in must not overlap or one set of words prints through the
-      // other.
-      const OUT = 0.22;
-      beats.forEach((beat, i) => {
-        if (i === 0) return;
-        tl.to(beats[i - 1], { autoAlpha: 0, yPercent: -22, duration: OUT }, i - 2 * OUT)
-          .fromTo(
-            beat,
-            { autoAlpha: 0, yPercent: 26 },
-            { autoAlpha: 1, yPercent: 0, duration: OUT },
-            i - OUT,
+      for (let s = 1; s <= handovers; s++) {
+        const at = s - 1;
+        const out = at + FILL;
+
+        // The next title fills as the reader scrolls, from the moment the pin
+        // takes hold. Linear, so the level is the scroll.
+        tl.fromTo(
+          fills[s - 1],
+          { clipPath: "inset(100% 0% 0% 0%)" },
+          { clipPath: "inset(0% 0% 0% 0%)", ease: "none", duration: FILL, immediateRender: first(fills[s - 1]) },
+          at,
+        );
+
+        // Full, it takes over. The beat on screen lifts away, and the filled
+        // title goes up after it...
+        tl.fromTo(
+          beats[s - 1],
+          { autoAlpha: 1, yPercent: 0 },
+          { autoAlpha: 0, yPercent: -18, ease: "power1.in", duration: 0.2, immediateRender: first(beats[s - 1]) },
+          out,
+        ).fromTo(
+          queue[s - 1],
+          { y: () => -at * slot(), autoAlpha: 1 },
+          {
+            y: () => -(at + 0.6) * slot(),
+            autoAlpha: 0,
+            ease: "power1.in",
+            duration: 0.2,
+            immediateRender: first(queue[s - 1]),
+          },
+          out,
+        );
+
+        // ...the rest of the queue moves up a place, under the new beat...
+        queue.slice(s).forEach((row, j) => {
+          tl.fromTo(
+            row,
+            { y: () => -at * slot(), autoAlpha: 0.4 },
+            {
+              y: () => -s * slot(),
+              autoAlpha: j === 0 ? 1 : 0.4,
+              ease: "power2.inOut",
+              duration: 0.3,
+              immediateRender: first(row),
+            },
+            out + 0.06,
           );
-      });
+        });
+        tl.fromTo(
+          box,
+          { x: () => indent(at) },
+          { x: () => indent(s), ease: "power2.inOut", duration: 0.3, immediateRender: first(box) },
+          out + 0.06,
+        );
 
-      gsap.set(beats.slice(1), { autoAlpha: 0, yPercent: 26 });
-      return () => tl.scrollTrigger?.kill();
+        // ...and the new beat rises in. It waits for the last one to be gone:
+        // they share a grid cell, and any overlap prints one set of words
+        // through the other. The rise is short, so it never dips into the
+        // queue below it.
+        tl.fromTo(
+          beats[s],
+          { autoAlpha: 0, yPercent: 12 },
+          {
+            autoAlpha: 1,
+            yPercent: 0,
+            ease: "power3.out",
+            duration: 1 - FILL - 0.2,
+            immediateRender: first(beats[s]),
+          },
+          out + 0.2,
+        );
+      }
+
+      window.addEventListener("scroll", watch, { passive: true });
+
+      return () => {
+        window.removeEventListener("scroll", watch);
+        hush();
+        tl.scrollTrigger?.kill();
+      };
     });
     return () => mm.revert();
   }, []);
@@ -113,27 +257,73 @@ export default function TheExperience() {
           </p>
         </div>
 
-        {/* the beats are laid on top of one another and handed over in turn —
-            but only while the script doing the handing over is running; the
-            stacking lives in globals.css under the same conditions */}
-        <ul className="relative grid gap-2 px-[var(--edge)] lg:gap-0 lg:pl-0 lg:pr-[var(--edge)]">
-          {EXPERIENCE.map((e, i) => (
-            <li
-              key={e.label}
-              data-beat
-              style={{ marginLeft: `${[0, 3.5, 1.5][i] ?? 0}vw`, rotate: `${[-0.6, 0.8, -0.4][i] ?? 0}deg` }}
-              className="border-l-2 border-lime/70 py-[clamp(1.5rem,4vh,2.5rem)] pl-[clamp(1.25rem,2.5vw,2.25rem)]"
+        {/* The beats are laid on top of one another and handed over in turn,
+            with the ones still to come queued underneath — but only while the
+            script doing the handing over is running. The stacking and the
+            queue live in globals.css under the same conditions; without them
+            this is an ordinary list. */}
+        <div className="relative grid min-w-0">
+          <ul className="relative grid gap-2 px-[var(--edge)] lg:gap-0 lg:pl-0 lg:pr-[var(--edge)]">
+            {EXPERIENCE.map((e, i) => (
+              <li
+                key={e.label}
+                data-beat
+                style={{ marginLeft: `${OFFSET[i] ?? 0}vw`, rotate: `${TILT[i] ?? 0}deg` }}
+                className="border-l-2 border-lime/70 py-[clamp(1.5rem,4vh,2.5rem)] pl-[clamp(1.25rem,2.5vw,2.25rem)]"
+              >
+                <span className="label text-lime">{e.index}</span>
+                <h3 className="brush mt-3 text-[clamp(2.6rem,6.4vw,5rem)] leading-[0.92] text-bone">
+                  {e.label}
+                </h3>
+                <p className="body-copy mt-4 max-w-[30ch] text-[clamp(1rem,1.5vw,1.3rem)] text-bone/65">
+                  {e.note}
+                </p>
+              </li>
+            ))}
+          </ul>
+
+          {/* the queue is a picture of what's coming — the list above is the
+              content, so this is kept from assistive tech */}
+          <div
+            aria-hidden="true"
+            data-queue-box
+            className="beat-queue pointer-events-none absolute left-0 top-full mt-[clamp(0.35rem,1.4vh,0.9rem)] flex-col items-start gap-[clamp(0.35rem,1.1vh,0.7rem)] pl-[calc(clamp(1.25rem,2.5vw,2.25rem)+2px)]"
+          >
+            {EXPERIENCE.slice(1).map((e, i) => (
+              <div
+                key={e.label}
+                data-queue
+                style={{ rotate: `${TILT[i + 1] ?? 0}deg` }}
+                className="flex items-baseline gap-[0.9rem]"
+              >
+                <span className="label text-lime/80">{e.index}</span>
+                <span className="brush relative text-[clamp(1.5rem,2.5vw,2.4rem)] leading-[0.92]">
+                  <span className="beat-hollow">{e.label}</span>
+                  <span data-fill className="beat-fill absolute inset-0 text-lime">
+                    {e.label}
+                  </span>
+                </span>
+              </div>
+            ))}
+
+            <p
+              data-nudge
+              className="beat-nudge hand absolute left-0 top-0 ml-[clamp(1rem,2vw,1.75rem)] flex -rotate-[2deg] items-center gap-2 whitespace-nowrap text-[clamp(1rem,1.4vw,1.3rem)] text-bone/60"
             >
-              <span className="label text-lime">{e.index}</span>
-              <h3 className="brush mt-3 text-[clamp(2.6rem,6.4vw,5rem)] leading-[0.92] text-bone">
-                {e.label}
-              </h3>
-              <p className="body-copy mt-4 max-w-[30ch] text-[clamp(1rem,1.5vw,1.3rem)] text-bone/65">
-                {e.note}
-              </p>
-            </li>
-          ))}
-        </ul>
+              {NOTES.more}
+              <svg
+                viewBox="0 0 16 30"
+                className="h-[1.2em] w-[0.65em]"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.6}
+                strokeLinecap="round"
+              >
+                <path d="M8 1v26M2.5 21.5 8 28l5.5-6.5" />
+              </svg>
+            </p>
+          </div>
+        </div>
       </div>
 
       <div data-scrub="up" data-scrub-amount="8" className="mt-[clamp(2.5rem,6vh,4rem)] flex items-end justify-between gap-6 px-[var(--edge)]">
