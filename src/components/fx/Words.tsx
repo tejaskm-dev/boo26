@@ -22,7 +22,7 @@ export default function Words({
   children: string;
   className?: string;
   stagger?: number;
-  as?: "span" | "h2" | "h3" | "p";
+  as?: "span" | "h1" | "h2" | "h3" | "p";
 }) {
   const root = useRef<HTMLElement>(null);
 

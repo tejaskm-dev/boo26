@@ -10,15 +10,17 @@ export const EVENT = {
   format: "HALLOWEEN-NIGHT CREATIVE TECHNOLOGY HACKATHON",
   duration: "20 HOURS",
   team: "2 PER TEAM",
-  /* Written out rather than as μLearn: every place this is set uppercases it,
-     and an uppercased μ is the Greek capital, which reads as a plain M. */
-  host: "MULEARN ASIET",
+  /* The µ is U+00B5, the micro sign: it is in the Latin subset the fonts load
+     and the Greek mu is not. Anywhere the type is uppercased it has to go
+     through <Micro>, or it renders as a plain M. */
+  host: "µLearn ASIET",
   /* 02 PM on the day, which is when the timeline's first stop opens the doors.
      Kerala is UTC+5:30 and the offset is written out so the countdown means
      the same thing from anywhere. */
   startsAt: "2026-10-24T14:00:00+05:30",
-  registerHref: "#register",
-  discordHref: "#",
+  /* Registration isn't open yet, so every register CTA lands on the
+     coming-soon page. Point this at the real form when it exists. */
+  registerHref: "/register",
 } as const;
 
 /**
@@ -30,7 +32,7 @@ export const BAND = [
   "ASIET, KALADY",
   "20 HOURS",
   "2 PER TEAM",
-  "MULEARN ASIET",
+  "µLEARN ASIET",
 ] as const;
 
 export type NavItem = { label: string; index: string; href: string };
@@ -45,12 +47,17 @@ export const NAV: NavItem[] = [
   { label: "FAQ", index: "07", href: "#faq" },
 ];
 
-export const SOCIALS = [
-  { label: "Discord", href: "#", icon: "discord" },
-  { label: "Instagram", href: "#", icon: "instagram" },
-  { label: "LinkedIn", href: "#", icon: "linkedin" },
-  { label: "YouTube", href: "#", icon: "youtube" },
-] as const;
+/**
+ * BOO!'s own channels. None are live yet, so none has an href: without one,
+ * each shows the coming-soon toast instead of linking anywhere. Add the URL
+ * here when a channel goes live.
+ */
+export const SOCIALS: { label: string; icon: string; href?: string }[] = [
+  { label: "Discord", icon: "discord" },
+  { label: "Instagram", icon: "instagram" },
+  { label: "LinkedIn", icon: "linkedin" },
+  { label: "YouTube", icon: "youtube" },
+];
 
 /** 01 — THE NIGHT */
 export const FACTS = [
@@ -114,7 +121,8 @@ export interface TeamMember {
   image: string;
   imagePosition?: string;
   linkedin?: string;
-  email?: string;
+  /** left out for anyone without one, which drops the icon from their card */
+  instagram?: string;
   moniker?: string;
   companion: SpriteName;
   companionScale: number;
@@ -127,8 +135,8 @@ export const TEAM: TeamMember[] = [
     tagline: "fueling the chaos.",
     image: "/assets/team/sufiyan shiraj mohammed.jpg",
     imagePosition: "center 25%",
-    linkedin: "https://linkedin.com",
-    email: "mailto:hello@boo2026.com",
+    linkedin: "https://www.linkedin.com/in/sufiyan-shiraj-mohammed/",
+    instagram: "https://www.instagram.com/sufiyan.shiraj/",
     companion: "cat-pop-jump",
     companionScale: 0.35,
     tilt: "-rotate-[2.2deg]",
@@ -138,8 +146,8 @@ export const TEAM: TeamMember[] = [
     tagline: "building at 3am.",
     image: "/assets/team/tejas km.PNG",
     imagePosition: "center 20%",
-    linkedin: "https://linkedin.com",
-    email: "mailto:hello@boo2026.com",
+    linkedin: "https://www.linkedin.com/in/tejas-km-73436237b/",
+    instagram: "https://www.instagram.com/tejas_km_dev/",
     companion: "cat-pop-coder",
     companionScale: 0.35,
     tilt: "rotate-[1.6deg]",
@@ -149,8 +157,8 @@ export const TEAM: TeamMember[] = [
     tagline: "gaming the system.",
     image: "/assets/team/sreehari ka.png",
     imagePosition: "center 20%",
-    linkedin: "https://linkedin.com",
-    email: "mailto:hello@boo2026.com",
+    linkedin: "https://www.linkedin.com/in/sreehari-k-a-9310b7386/",
+    instagram: "https://www.instagram.com/_sreehari._13/",
     companion: "cat-pop-gamer",
     companionScale: 0.35,
     tilt: "-rotate-[1.4deg]",
@@ -160,8 +168,8 @@ export const TEAM: TeamMember[] = [
     tagline: "crafting the aesthetics.",
     image: "/assets/team/ram madhav.jpg",
     imagePosition: "center 22%",
-    linkedin: "https://linkedin.com",
-    email: "mailto:hello@boo2026.com",
+    linkedin: "https://www.linkedin.com/in/ram-madhav-r-kammath-b21150349/",
+    // no Instagram: the account is deactivated
     companion: "cat-pop-artist",
     companionScale: 0.35,
     tilt: "rotate-[2.2deg]",
@@ -171,8 +179,8 @@ export const TEAM: TeamMember[] = [
     tagline: "calm amidst the storm.",
     image: "/assets/team/sreenanda k sahajan.jpg",
     imagePosition: "center 30%",
-    linkedin: "https://linkedin.com",
-    email: "mailto:hello@boo2026.com",
+    linkedin: "https://www.linkedin.com/in/sreenanda-k-sahajan-484274375/",
+    instagram: "https://www.instagram.com/_sreenandaaa_/",
     companion: "cat-pop-sleepy",
     companionScale: 0.35,
     tilt: "-rotate-[1.8deg]",
@@ -182,8 +190,8 @@ export const TEAM: TeamMember[] = [
     tagline: "debugging the universe.",
     image: "/assets/team/rosphil mariya.jpg",
     imagePosition: "center 20%",
-    linkedin: "https://linkedin.com",
-    email: "mailto:hello@boo2026.com",
+    linkedin: "https://www.linkedin.com/in/rosphil-maria-ros310707/",
+    instagram: "https://www.instagram.com/rosphilmaria/",
     companion: "cat-pop-detective",
     companionScale: 0.35,
     tilt: "rotate-[1.5deg]",
@@ -198,18 +206,26 @@ export const BUILD_STEPS: { index: string; label: string; note: string; lime?: b
   { index: "04", label: "Ship", note: "Watch them react", lime: true },
 ];
 
-/** 07 — FAQ. Unconfirmed answers say so rather than guess. */
-export const FAQ: { q: string; a: string; tba?: boolean }[] = [
-  { q: "When and where is BOO! 2026?", a: "It starts at 2:00 PM on 24 October 2026 and runs through the night, wrapping up around 10–11 AM on 25 October. It happens at Adi Shankara Institute of Engineering and Technology (ASIET), Kalady, Kerala." },
-  { q: "Who can participate?", a: "Announced soon.", tba: true },
-  { q: "Team size?", a: "Two people per team. Pick someone you'd happily spend a strange night building with." },
-  { q: "What can we build?", a: "Anything that makes someone react. There's no problem statement, no required tech and no list of categories to pick from. A weird website, a game, an AI experience, a piece of hardware, an installation, or something that fits none of those. It can be scary, funny, strange or just unexpected. What matters is that someone reacts." },
-  { q: "Do we need to be from ASIET?", a: "Announced soon.", tba: true },
-  { q: "Is there a registration fee?", a: "Announced soon.", tba: true },
-  { q: "Will food and accommodation be provided?", a: "Breakfast is part of the morning. Everything else about food, and anything about accommodation, will be announced soon." },
-  { q: "What should we bring?", a: "Announced soon.", tba: true },
-  { q: "What else happens during the night?", a: "Around midnight there are spooky games and other Halloween activities. There's also a treasure hunt that runs inside a haunted house, so signing up for the hunt means going through the house. The rest stays under wraps for now." },
-  { q: "Any rules we should know?", a: "Announced soon.", tba: true },
+/**
+ * 07 — FAQ. A `tba` answer is set dimmed. An `action` without an href shows
+ * the coming-soon toast; give it the href once the page it points at exists.
+ */
+export const FAQ: { q: string; a: string; tba?: boolean; action?: { label: string; href?: string } }[] = [
+  { q: "When and where is BOO! 2026?", a: "BOO! 2026 takes place on October 24, 2026 at Adi Shankara Institute of Engineering and Technology, Kerala. The event kicks off at 2:00 PM and runs overnight into the morning of October 25." },
+  { q: "Who can participate?", a: "BOO! 2026 is currently open to students of Adi Shankara Institute of Engineering and Technology (ASIET)." },
+  { q: "Team size?", a: "Teams are made up of 2 people. Find your partner, pick your poison, and build something unforgettable." },
+  { q: "What can we build?", a: "Pretty much anything. Software, AI, games, hardware, robotics, electronics, interactive experiences, weird experiments... Build something that makes someone go “WHAT THE HELL?”, jump, freeze, laugh nervously, get curious, feel uneasy, or wonder how the hell you pulled it off." },
+  { q: "Do we need to be from ASIET?", a: "For the current edition, yes. BOO! 2026 is currently limited to ASIET students." },
+  { q: "Is there a registration fee?", a: "Yep. Registration is currently ₹200 per team of two. That's ₹100 each for a full night of questionable decisions." },
+  { q: "Will food and accommodation be provided?", a: "Food will be provided during the overnight event. Since BOO! takes place on campus and runs through the night, separate accommodation or sleeping facilities will not be provided. If you need a place to stay before the event, you'll need to make your own arrangements." },
+  { q: "What should we bring?", a: "Bring your laptop, charger, whatever hardware or tools your project needs, and anything else you need to survive a long night of building. Don't forget your ID and your teammate." },
+  { q: "What about the non-coding events?", a: "BOO! isn't just about sitting in a lab and staring at your screen. Throughout the night, there'll be a haunted house, a treasure hunt inside it, and spooky midnight activities to break up the build." },
+  {
+    q: "Where can we find the event guidelines?",
+    a: "Detailed event guidelines, judging criteria, submission requirements, safety information, and other important details will be available through the registration portal.",
+    // no href until the registration portal exists
+    action: { label: "View guidelines" },
+  },
 ];
 
 /** Footer navigation */
@@ -221,7 +237,7 @@ export const FOOTER_NAV = [
       { label: "The Night", href: "#night" },
       { label: "20 Hours", href: "#hours" },
       { label: "FAQ", href: "#faq" },
-      { label: "Register", href: "#register" },
+      { label: "Register", href: EVENT.registerHref },
     ],
   },
   {
@@ -234,11 +250,12 @@ export const FOOTER_NAV = [
   },
 ] as const;
 
-export const FOOTER_LEGAL = [
-  { label: "Privacy Policy", href: "#" },
-  { label: "Terms of Service", href: "#" },
-  { label: "Code of Conduct", href: "#" },
-] as const;
+/** None of these pages exist yet — without an href each shows the coming-soon toast. */
+export const FOOTER_LEGAL: { label: string; href?: string }[] = [
+  { label: "Privacy Policy" },
+  { label: "Terms of Service" },
+  { label: "Code of Conduct" },
+];
 
 /** Handwritten margin notes, kept in one place so they stay rationed. */
 export const NOTES = {

@@ -9,6 +9,7 @@ import FieldTone from "@/components/site/FieldTone";
 import Reveal from "@/components/fx/Reveal";
 import Scrollbar from "@/components/fx/Scrollbar";
 import SectionMotion from "@/components/fx/SectionMotion";
+import Toaster from "@/components/ui/Toaster";
 import { EVENT } from "@/lib/site";
 import "lenis/dist/lenis.css";
 import "./globals.css";
@@ -85,6 +86,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <SectionMotion />
         <FieldTone />
         {children}
+        <Toaster />
         <Scrollbar />
         <Grain />
       </body>

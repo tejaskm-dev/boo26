@@ -70,8 +70,8 @@ export default function Hero() {
       </p>
 
       <a
-        href="#about"
-        aria-label="Skip to about"
+        href="#night"
+        aria-label="Skip to The Night"
         className="absolute bottom-[clamp(1.5rem,3vh,2.5rem)] left-1/2 z-10 -translate-x-1/2 text-ink/45 outline-none transition-colors duration-300 hover:text-ink focus-visible:text-lime md:hidden"
       >
         <svg viewBox="0 0 16 30" className="h-[1.85rem] w-4 animate-[cue_2.2s_var(--ease-out-soft)_infinite]" fill="none" stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" aria-hidden="true">

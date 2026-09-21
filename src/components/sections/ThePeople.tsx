@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Section, { SectionLabel } from "./Section";
 import Sprite from "@/components/ui/Sprite";
+import SocialIcon from "@/components/ui/SocialIcon";
 import GhostIndex from "@/components/ui/GhostIndex";
 import RiseIn from "@/components/fx/RiseIn";
 import { TEAM, type TeamMember } from "@/lib/site";
@@ -593,21 +594,16 @@ function PolaroidCard({
                   </svg>
                 </a>
               )}
-              {member.email && (
+              {member.instagram && (
                 <a
-                  href={member.email}
-                  aria-label={`Email ${member.name}`}
+                  href={member.instagram}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`${member.name} on Instagram`}
                   onClick={(e) => e.stopPropagation()}
                   className="p-1 -m-1 text-ink/40 hover:text-ink hover:bg-lime/40 rounded-xs transition-colors"
                 >
-                  <svg
-                    viewBox="0 0 24 24"
-                    className="h-3.5 w-3.5 fill-none stroke-current stroke-[1.8] stroke-linecap-round stroke-linejoin-round"
-                    aria-hidden="true"
-                  >
-                    <rect width="20" height="16" x="2" y="4" rx="2" />
-                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                  </svg>
+                  <SocialIcon name="instagram" className="h-3.5 w-3.5" />
                 </a>
               )}
             </div>

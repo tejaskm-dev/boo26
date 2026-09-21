@@ -6,7 +6,11 @@ import Sprite from "@/components/ui/Sprite";
 import RowMark from "@/components/ui/RowMark";
 import Words from "@/components/fx/Words";
 import BlobButton from "@/components/ui/BlobButton";
-import { EVENT, FAQ, NOTES } from "@/lib/site";
+import SoonLink from "@/components/ui/SoonLink";
+import { FAQ, NOTES, SOCIALS } from "@/lib/site";
+import { comingSoon } from "@/lib/toast";
+
+const DISCORD = SOCIALS.find((s) => s.label === "Discord");
 
 /**
  * 06 — an editorial spread, not an accordion component. The word holds the
@@ -120,6 +124,34 @@ export default function Faq() {
                         >
                           {item.a}
                         </p>
+                        {/* the same underline-to-lime link as the After Dark
+                            scenes; out of the tab order while its row is shut */}
+                        {item.action ? (
+                          <SoonLink
+                            href={item.action.href}
+                            external
+                            tabIndex={isOpen ? undefined : -1}
+                            className="group label mt-[clamp(0.85rem,2vh,1.1rem)] inline-flex items-center gap-2 text-ink outline-none"
+                          >
+                            <span className="relative">
+                              {item.action.label}
+                              <span
+                                aria-hidden="true"
+                                className="absolute -bottom-1.5 left-0 h-px w-full origin-left scale-x-100 bg-ink/40 transition-transform duration-500 ease-[var(--ease-out-soft)] group-hover:scale-x-0"
+                              />
+                              <span
+                                aria-hidden="true"
+                                className="absolute -bottom-1.5 left-0 h-[2px] w-full origin-left scale-x-0 bg-lime transition-transform duration-500 ease-[var(--ease-out-soft)] group-hover:scale-x-100 group-focus-visible:scale-x-100"
+                              />
+                            </span>
+                            <span
+                              aria-hidden="true"
+                              className="transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+                            >
+                              ↗
+                            </span>
+                          </SoonLink>
+                        ) : null}
                       </div>
                     </div>
                   </div>
@@ -136,7 +168,19 @@ export default function Faq() {
               </p>
               <Sprite name="squiggle-lime" scale={0.28} className="mt-2 rotate-[8deg]" />
             </div>
-            <BlobButton href={EVENT.discordHref} tone="ink">
+            {/* Discord isn't live yet: the button says so rather than following "#" */}
+            <BlobButton
+              href={DISCORD?.href ?? "#"}
+              tone="ink"
+              {...(DISCORD?.href
+                ? { target: "_blank", rel: "noopener noreferrer" }
+                : {
+                    onClick: (e: React.MouseEvent) => {
+                      e.preventDefault();
+                      comingSoon("Discord");
+                    },
+                  })}
+            >
               Join our Discord
             </BlobButton>
           </div>
