@@ -4,12 +4,22 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Section, { SectionLabel } from "./Section";
 import Sprite from "@/components/ui/Sprite";
+import SocialIcon from "@/components/ui/SocialIcon";
 import GhostIndex from "@/components/ui/GhostIndex";
 import RiseIn from "@/components/fx/RiseIn";
 import { TEAM, type TeamMember } from "@/lib/site";
 
 export default function ThePeople() {
   const [activeCard, setActiveCard] = useState<number | null>(null);
+  /*
+   * Hover is tracked here as well as in CSS. Tailwind's hover variants only
+   * apply where the browser reports `(hover: hover)`, and plenty of Windows
+   * touchscreen laptops report `hover: none` even with a mouse in hand — so
+   * the lift, the zoom and the cat never came up there. Pointer events say
+   * which device is actually over the card, so a mouse or pen lights it on
+   * any machine, while a finger still goes through the tap toggle.
+   */
+  const [hoveredCard, setHoveredCard] = useState<number | null>(null);
 
   useEffect(() => {
     // Dismiss active card on tap outside
@@ -50,7 +60,7 @@ export default function ThePeople() {
           {/* Left annotation: scrubs down with scroll */}
           <div data-scrub="down" data-scrub-amount="6" className="hidden lg:block w-[14ch] shrink-0">
             <p className="hand -rotate-[3deg] text-[clamp(1.15rem,1.4vw,1.45rem)] font-bold leading-[1.18] text-ink/60 select-none">
-              {"SAME\nPEOPLE.\nBRIGHTER\nIDEAS."}
+              {"NOT\nSCARY.\nMOSTLY."}
             </p>
           </div>
 
@@ -103,7 +113,7 @@ export default function ThePeople() {
           <div data-scrub="up" data-scrub-amount="8" className="flex items-center gap-6 lg:w-[22rem] lg:justify-end">
             <div className="hidden md:block max-w-[20ch] text-left">
               <p className="label label-loose text-[clamp(0.66rem,0.72vw,0.78rem)] leading-relaxed text-ink/50">
-                THE DREAMERS, BUILDERS, OVERTHINKERS AND CHAOS ENABLERS.
+                THE BOO! CORE TEAM. BUILDERS, OVERTHINKERS AND CHAOS ENABLERS.
               </p>
               <span className="mt-2.5 block h-[2px] w-9 bg-lime" />
             </div>
@@ -116,10 +126,10 @@ export default function ThePeople() {
               </div>
               <div className="bg-[#ded5c2] border border-[#beaf95] shadow-[0_8px_24px_rgba(8,8,8,0.12)] px-5 py-6 rounded-[2px] w-40 text-center transform rotate-[-1deg]">
                 <p className="hand font-bold text-[1.12rem] leading-[1.28] text-ink/85">
-                  IDEAS<br />
-                  HAPPEN<br />
-                  BETTER<br />
-                  TOGETHER.<br />
+                  SEE<br />
+                  YOU<br />
+                  AFTER<br />
+                  DARK.<br />
                   <span className="text-base font-normal">:)</span>
                 </p>
               </div>
@@ -147,8 +157,10 @@ export default function ThePeople() {
               key={member.name}
               member={member}
               index={i}
-              isActive={activeCard === i}
+              isActive={activeCard === i || hoveredCard === i}
+              isOpen={activeCard === i}
               onCardClick={(idx) => setActiveCard((prev) => (prev === idx ? null : idx))}
+              onHoverChange={(idx, on) => setHoveredCard((prev) => (on ? idx : prev === idx ? null : prev))}
             />
           ))}
         </div>
@@ -248,12 +260,18 @@ function PolaroidCard({
   member,
   index,
   isActive,
+  isOpen,
   onCardClick,
+  onHoverChange,
 }: {
   member: TeamMember;
   index: number;
+  /** lit: tapped open, or under a mouse or pen */
   isActive: boolean;
+  /** tapped open — what aria-expanded reports */
+  isOpen: boolean;
   onCardClick: (index: number) => void;
+  onHoverChange: (index: number, on: boolean) => void;
 }) {
   const uid = `pol-${index}`;
 
@@ -265,8 +283,14 @@ function PolaroidCard({
       role="button"
       tabIndex={0}
       aria-label={`${member.name}, ${member.tagline}`}
-      aria-expanded={isActive}
+      aria-expanded={isOpen}
       onClick={() => onCardClick(index)}
+      onPointerEnter={(e) => {
+        if (e.pointerType !== "touch") onHoverChange(index, true);
+      }}
+      onPointerLeave={(e) => {
+        if (e.pointerType !== "touch") onHoverChange(index, false);
+      }}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
@@ -497,8 +521,11 @@ function PolaroidCard({
               <svg viewBox="0 0 24 24" className="pointer-events-none absolute -right-2.5 top-8 w-5 h-5 z-30 text-ink stroke-current stroke-2 fill-none -rotate-12">
                 <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
               </svg>
-              {/* Handwritten callout on bottom right */}
-              <span className="pointer-events-none absolute -right-22 -bottom-2 hidden 2xl:block font-hand font-bold text-[0.82rem] text-ink/70 rotate-6 leading-tight w-20">
+              {/* Handwritten callout on bottom right, in the page margin. The
+                  margin (--edge) is 55–72px on the screens that show this, so
+                  the note is sized to it — drawn at w-20 / -right-22 it ran
+                  17–34px off the edge of every one of them. */}
+              <span className="pointer-events-none absolute -right-[calc(var(--edge)-0.25rem)] -bottom-2 hidden 2xl:block font-hand font-bold text-[0.82rem] text-ink/70 rotate-6 leading-tight w-[calc(var(--edge)-0.5rem)]">
                 MAKES THINGS HAPPEN.
               </span>
             </>
@@ -593,21 +620,16 @@ function PolaroidCard({
                   </svg>
                 </a>
               )}
-              {member.email && (
+              {member.instagram && (
                 <a
-                  href={member.email}
-                  aria-label={`Email ${member.name}`}
+                  href={member.instagram}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`${member.name} on Instagram`}
                   onClick={(e) => e.stopPropagation()}
                   className="p-1 -m-1 text-ink/40 hover:text-ink hover:bg-lime/40 rounded-xs transition-colors"
                 >
-                  <svg
-                    viewBox="0 0 24 24"
-                    className="h-3.5 w-3.5 fill-none stroke-current stroke-[1.8] stroke-linecap-round stroke-linejoin-round"
-                    aria-hidden="true"
-                  >
-                    <rect width="20" height="16" x="2" y="4" rx="2" />
-                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                  </svg>
+                  <SocialIcon name="instagram" className="h-3.5 w-3.5" />
                 </a>
               )}
             </div>

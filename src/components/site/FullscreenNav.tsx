@@ -12,6 +12,7 @@ import { EVENT, NAV, SOCIALS } from "@/lib/site";
 import { prefersReducedMotion } from "@/lib/motion";
 import { getLenis } from "@/lib/lenis";
 import SocialIcon from "@/components/ui/SocialIcon";
+import SoonLink from "@/components/ui/SoonLink";
 import BouncyWord from "@/components/ui/BouncyWord";
 import { setNavActive } from "@/lib/navState";
 
@@ -423,13 +424,15 @@ export default function FullscreenNav({
           <ul className="flex items-center gap-5 md:gap-6">
             {SOCIALS.map((s) => (
               <li key={s.label}>
-                <a
+                <SoonLink
                   href={s.href}
+                  what={s.label}
+                  external
                   aria-label={s.label}
                   className="block text-ink/55 outline-none transition-colors duration-300 hover:text-lime focus-visible:text-lime md:text-bone/65"
                 >
                   <SocialIcon name={s.icon} className="h-[1.05rem] w-[1.05rem]" />
-                </a>
+                </SoonLink>
               </li>
             ))}
           </ul>

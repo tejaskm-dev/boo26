@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { prefersReducedMotion } from "@/lib/motion";
+import { prefersReducedMotion, whenOpen } from "@/lib/motion";
 
 /**
  * One reveal pass for the page. Anything inside [data-intro] plays on load as
@@ -23,39 +23,42 @@ export default function Reveal() {
 
     gsap.registerPlugin(ScrollTrigger);
     const mine = all.filter((el) => !el.closest("[data-stagger]"));
+    let ctx: gsap.Context | undefined;
 
-    const ctx = gsap.context(() => {
-      const intro = mine.filter((el) => el.closest("[data-intro]"));
-      const rest = mine.filter((el) => !el.closest("[data-intro]"));
+    const play = () => {
+      ctx = gsap.context(() => {
+        const intro = mine.filter((el) => el.closest("[data-intro]"));
+        const rest = mine.filter((el) => !el.closest("[data-intro]"));
 
-      gsap.to(intro, {
-        opacity: 1,
-        y: 0,
-        duration: 1.1,
-        stagger: 0.085,
-        ease: "power3.out",
-        delay: 0.12,
-        clearProps: "willChange",
+        gsap.to(intro, {
+          opacity: 1,
+          y: 0,
+          duration: 1.1,
+          stagger: 0.085,
+          ease: "power3.out",
+          delay: 0.12,
+          clearProps: "willChange",
+        });
+
+        ScrollTrigger.batch(rest, {
+          start: "top 88%",
+          once: true,
+          onEnter: (batch) =>
+            gsap.to(batch, {
+              opacity: 1,
+              y: 0,
+              duration: 0.95,
+              stagger: 0.07,
+              ease: "power3.out",
+              clearProps: "willChange",
+            }),
+        });
+
+        // triggers are measured before the art and web fonts land
+        ScrollTrigger.refresh();
+        document.fonts?.ready.then(() => ScrollTrigger.refresh());
       });
-
-      ScrollTrigger.batch(rest, {
-        start: "top 88%",
-        once: true,
-        onEnter: (batch) =>
-          gsap.to(batch, {
-            opacity: 1,
-            y: 0,
-            duration: 0.95,
-            stagger: 0.07,
-            ease: "power3.out",
-            clearProps: "willChange",
-          }),
-      });
-
-      // triggers are measured before the art and web fonts land
-      ScrollTrigger.refresh();
-      document.fonts?.ready.then(() => ScrollTrigger.refresh());
-    });
+    };
 
     /**
      * Last line of defence. The page is long and full of late-loading art, so
@@ -84,15 +87,22 @@ export default function Reveal() {
       idle = window.setTimeout(sweep, 400);
     };
 
-    window.addEventListener("scroll", settle, { passive: true });
-    window.addEventListener("resize", settle);
-    settle();
+    // Nothing plays under the preloader: the whole pass — the sweep included,
+    // which would otherwise snap the hero visible behind the cover — waits for
+    // the page to be uncovered, so its entrance is the first thing seen.
+    const stop = whenOpen(() => {
+      play();
+      window.addEventListener("scroll", settle, { passive: true });
+      window.addEventListener("resize", settle);
+      settle();
+    });
 
     return () => {
+      stop();
       window.clearTimeout(idle);
       window.removeEventListener("scroll", settle);
       window.removeEventListener("resize", settle);
-      ctx.revert();
+      ctx?.revert();
     };
   }, []);
 

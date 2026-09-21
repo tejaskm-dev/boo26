@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { prefersReducedMotion } from "@/lib/motion";
+import { LG, prefersReducedMotion } from "@/lib/motion";
 
 /**
  * The page-wide scroll behaviour, declared once with data attributes instead
@@ -28,7 +28,7 @@ export default function SectionMotion() {
       // moves out of, which is invisible in a two-column composition and a
       // collision in a stacked one — on a phone the 20 Hours timeline slid
       // straight up over the note above it.
-      const wide = window.matchMedia("(min-width: 1024px)").matches;
+      const wide = window.matchMedia(LG).matches;
 
       if (wide) gsap.utils.toArray<HTMLElement>("[data-scrub]").forEach((el) => {
         const dir = el.dataset.scrub ?? "up";

@@ -6,9 +6,12 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Sprite from "@/components/ui/Sprite";
 import SocialIcon from "@/components/ui/SocialIcon";
+import SoonLink from "@/components/ui/SoonLink";
+import Micro from "@/components/ui/Micro";
 import Words from "@/components/fx/Words";
 import { EVENT, FOOTER_LEGAL, FOOTER_NAV, NOTES, SOCIALS } from "@/lib/site";
 import { prefersReducedMotion } from "@/lib/motion";
+import { comingSoon } from "@/lib/toast";
 
 /**
  * The desk the night was built on.
@@ -20,7 +23,6 @@ import { prefersReducedMotion } from "@/lib/motion";
  */
 export default function Footer() {
   const [email, setEmail] = useState("");
-  const [sent, setSent] = useState(false);
   const root = useRef<HTMLElement>(null);
   const inner = useRef<HTMLDivElement>(null);
 
@@ -93,7 +95,7 @@ export default function Footer() {
         <div className="grid items-start gap-[clamp(2rem,5vw,4.5rem)] lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
           <div>
             <p className="label label-loose whitespace-pre-line text-bone/40">
-              Scroll{"\n"}build{"\n"}haunt{"\n"}repeat.
+              Build{"\n"}break{"\n"}haunt{"\n"}repeat.
             </p>
 
             <h2 className="brush mt-[clamp(1.5rem,4vh,2.5rem)] -rotate-[1.3deg] select-none text-[clamp(2.6rem,8.5vw,7rem)] leading-[0.88]">
@@ -105,7 +107,7 @@ export default function Footer() {
             </h2>
 
             <p className="label label-loose mt-[clamp(1.25rem,3vh,2rem)] whitespace-pre-line text-bone/45">
-              Same people.{"\n"}Brighter ideas.
+              Come make{"\n"}someone react.
             </p>
           </div>
 
@@ -114,7 +116,8 @@ export default function Footer() {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                if (email.trim()) setSent(true);
+                // sign-ups aren't live yet — say so rather than pretend to subscribe
+                if (email.trim()) comingSoon("Newsletter");
               }}
               className="mt-4 flex w-full items-center gap-2 rounded-full border border-bone/20 bg-bone/[0.04] p-1.5 transition-colors duration-300 focus-within:border-lime/60"
             >
@@ -126,10 +129,7 @@ export default function Footer() {
                 type="email"
                 required
                 value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  setSent(false);
-                }}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="Your email address"
                 className="body-copy min-w-0 flex-1 bg-transparent px-4 py-2 text-[0.95rem] text-bone outline-none placeholder:text-bone/40"
               />
@@ -143,10 +143,8 @@ export default function Footer() {
                 </svg>
               </button>
             </form>
-            <p aria-live="polite" className="body-copy mt-3 max-w-[42ch] text-[0.88rem] text-bone/50">
-              {sent
-                ? "You're on the list — watch your inbox."
-                : "Event updates, announcements and a few spooky surprises. No spam, promise."}
+            <p className="body-copy mt-3 max-w-[42ch] text-[0.88rem] text-bone/50">
+              Event updates, announcements and a few spooky surprises. No spam, promise.
             </p>
 
             <p className="hand mt-[clamp(1.5rem,4vh,2.5rem)] max-w-[14ch] whitespace-pre-line text-[clamp(1.05rem,1.5vw,1.4rem)] text-bone/45">
@@ -184,8 +182,10 @@ export default function Footer() {
             <ul className="mt-5 space-y-3">
               {SOCIALS.map((s) => (
                 <li key={s.label}>
-                  <a
+                  <SoonLink
                     href={s.href}
+                    what={s.label}
+                    external
                     className="group body-copy inline-flex items-center gap-3 text-[0.95rem] text-bone/80 outline-none transition-colors duration-300 hover:text-lime focus-visible:text-lime"
                   >
                     <SocialIcon name={s.icon} className="h-[1.05rem] w-[1.05rem] transition-transform duration-300 group-hover:-translate-y-0.5" />
@@ -193,7 +193,7 @@ export default function Footer() {
                     <span aria-hidden="true" className="text-[0.75em] opacity-60 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5">
                       ↗
                     </span>
-                  </a>
+                  </SoonLink>
                 </li>
               ))}
             </ul>
@@ -205,7 +205,7 @@ export default function Footer() {
               {[
                 ["Where", EVENT.venueLong],
                 ["When", EVENT.dateLong],
-                ["Runs for", "20 hours"],
+                ["Runs for", "20 hours, from 2 PM"],
                 ["Teams", "2 per team"],
               ].map(([k, v]) => (
                 <div key={k}>
@@ -244,20 +244,21 @@ export default function Footer() {
               />
             </span>
             <p className="label whitespace-pre-line text-bone/40">
-              A hackathon by{"\n"}
-              {EVENT.host}
+              A hackathon by the {EVENT.name} core team{"\n"}
+              under the <Micro>{EVENT.host}</Micro> banner
             </p>
           </div>
 
           <ul className="flex flex-wrap items-center gap-x-6 gap-y-2">
             {FOOTER_LEGAL.map((l) => (
               <li key={l.label}>
-                <a
+                <SoonLink
                   href={l.href}
+                  what={l.label}
                   className="body-copy text-[0.85rem] text-bone/50 outline-none transition-colors duration-300 hover:text-bone focus-visible:text-lime"
                 >
                   {l.label}
-                </a>
+                </SoonLink>
               </li>
             ))}
           </ul>

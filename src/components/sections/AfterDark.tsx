@@ -54,7 +54,7 @@ export default function AfterDark() {
 
         <div className="mt-[clamp(1.5rem,4vh,2.5rem)] flex flex-wrap items-end justify-between gap-6 px-[var(--edge)]">
           <p className="label label-loose whitespace-pre-line text-ink/45">
-            Same people.{"\n"}Different kind of chaos.
+            Leave the laptop.{"\n"}Come back different.
           </p>
         </div>
       </Section>
@@ -235,7 +235,7 @@ function MidnightGames() {
       </div>
 
       <p className="label label-loose mt-[clamp(2.5rem,6vh,4rem)] px-[var(--edge)] text-bone/40">
-        Night fuels better ideas.
+        Then, back to the build.
       </p>
     </Section>
   );

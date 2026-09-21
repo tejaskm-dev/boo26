@@ -8,7 +8,7 @@ import Sprite from "@/components/ui/Sprite";
 import Words from "@/components/fx/Words";
 import RiseIn from "@/components/fx/RiseIn";
 import { EXPERIENCE, NOTES } from "@/lib/site";
-import { prefersReducedMotion } from "@/lib/motion";
+import { LG, prefersReducedMotion } from "@/lib/motion";
 
 /**
  * 02 — black field. The heading fills the left half at billboard scale and the
@@ -36,7 +36,7 @@ export default function TheExperience() {
     // Only on a screen wide enough for the heading and the beats to sit side by
     // side. On a phone the column is nearly empty, so holding the viewport for
     // two extra screens buys nothing and costs the reader two screens.
-    mm.add("(min-width: 1024px)", () => {
+    mm.add(LG, () => {
       const beats = gsap.utils.toArray<HTMLElement>("[data-beat]", el);
       if (beats.length < 2) return;
 
@@ -108,19 +108,21 @@ export default function TheExperience() {
 
           <p className="mt-[clamp(1.75rem,4.5vh,2.75rem)] flex items-center gap-3 px-[var(--edge)]">
             <span className="label label-loose whitespace-pre-line text-bone/70">
-              Ideas hit different{"\n"}at night.
+              Part hackathon.{"\n"}Part Halloween night.
             </span>
           </p>
         </div>
 
-        {/* the beats are laid on top of one another and handed over in turn */}
+        {/* the beats are laid on top of one another and handed over in turn —
+            but only while the script doing the handing over is running; the
+            stacking lives in globals.css under the same conditions */}
         <ul className="relative grid gap-2 px-[var(--edge)] lg:gap-0 lg:pl-0 lg:pr-[var(--edge)]">
           {EXPERIENCE.map((e, i) => (
             <li
               key={e.label}
               data-beat
               style={{ marginLeft: `${[0, 3.5, 1.5][i] ?? 0}vw`, rotate: `${[-0.6, 0.8, -0.4][i] ?? 0}deg` }}
-              className="border-l-2 border-lime/70 py-[clamp(1.5rem,4vh,2.5rem)] pl-[clamp(1.25rem,2.5vw,2.25rem)] lg:col-start-1 lg:row-start-1 lg:self-center"
+              className="border-l-2 border-lime/70 py-[clamp(1.5rem,4vh,2.5rem)] pl-[clamp(1.25rem,2.5vw,2.25rem)]"
             >
               <span className="label text-lime">{e.index}</span>
               <h3 className="brush mt-3 text-[clamp(2.6rem,6.4vw,5rem)] leading-[0.92] text-bone">
@@ -136,7 +138,7 @@ export default function TheExperience() {
 
       <div data-scrub="up" data-scrub-amount="8" className="mt-[clamp(2.5rem,6vh,4rem)] flex items-end justify-between gap-6 px-[var(--edge)]">
         <p className="label label-loose whitespace-pre-line text-bone/45">
-          Same people.{"\n"}Brighter ideas.
+          Build. Wander off.{"\n"}Get spooked. Come back.
         </p>
         <p className="hand whitespace-pre-line text-right text-[clamp(1rem,1.5vw,1.4rem)] text-bone/55">
           {NOTES.survive}

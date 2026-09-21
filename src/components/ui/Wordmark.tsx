@@ -5,11 +5,18 @@ import { EVENT } from "@/lib/site";
  * The supplied drippy BOO! wordmark plus the year. Both tones are rendered and
  * crossfaded so the mark can sit over either field without a flash.
  */
-export default function Wordmark({ className = "" }: { className?: string }) {
+export default function Wordmark({
+  className = "",
+  href = "#top",
+}: {
+  className?: string;
+  /** off the home page the mark leads back to it rather than to the top */
+  href?: string;
+}) {
   return (
     <a
-      href="#top"
-      aria-label={`${EVENT.name} ${EVENT.year} — top of page`}
+      href={href}
+      aria-label={href === "#top" ? `${EVENT.name} ${EVENT.year} — top of page` : `${EVENT.name} ${EVENT.year} — home`}
       className={`group relative inline-flex flex-col items-start gap-0.5 outline-none md:flex-row md:items-baseline md:gap-[0.5em] ${className}`}
     >
       <span

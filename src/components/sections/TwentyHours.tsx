@@ -7,14 +7,14 @@ import Section, { SectionLabel } from "./Section";
 import Sprite from "@/components/ui/Sprite";
 import Words from "@/components/fx/Words";
 import { EVENT, NOTES, TIMELINE } from "@/lib/site";
-import { prefersReducedMotion } from "@/lib/motion";
+import { LG, prefersReducedMotion } from "@/lib/motion";
 import type { SpriteName } from "@/lib/sprites";
 
 /**
  * 03 — an oversized "20" holding the left, and the night running down the right
  * on a lime thread that draws itself as you scroll. Each stop has its own cat,
  * sitting on the thread rather than beside it: excited at the doors, playful
- * when it gets weird, confused at 2am, asleep at 6, boxed up at ship.
+ * at midnight, confused at 3am, asleep at 6, popping out of a box at the end.
  */
 export default function TwentyHours() {
   const root = useRef<HTMLDivElement>(null);
@@ -36,7 +36,7 @@ export default function TwentyHours() {
       // How far it can be held depends on how much taller the list is than the
       // screen, and on a short viewport that can come out at nothing — a pin
       // whose end equals its start throws rather than doing nothing.
-      const wide = window.matchMedia("(min-width: 1024px)").matches;
+      const wide = window.matchMedia(LG).matches;
       const runway = () =>
         (list.current?.offsetHeight ?? 0) - window.innerHeight * 0.62;
       const pin =
@@ -90,10 +90,19 @@ export default function TwentyHours() {
       // past a list: the bead fills, the time goes lime, the cat sits up. The
       // state is an attribute and the look is CSS, so the scroll handler does
       // no style work of its own.
+      //
+      // Deliberately not `once: true`. A trigger on a timeline waits a tick
+      // before measuring itself, and any trigger created in that tick forces it
+      // to measure early. Reloaded from lower down the page, these five are
+      // already past, and with `once` they killed themselves inside that forced
+      // refresh — several at a time, while GSAP's loop over its triggers only
+      // allows for one removal. It read past the end of its own list and threw
+      // ("reading 'end'"), taking the page down. The default toggleActions
+      // ("play none none none") already play once and never reverse.
       const stops = gsap.utils.toArray<HTMLElement>("[data-stop]");
       stops.forEach((el) => {
         const tl = gsap.timeline({
-          scrollTrigger: { trigger: el, start: "top 88%", once: true },
+          scrollTrigger: { trigger: el, start: "top 88%" },
         });
         tl.from(el.querySelector("[data-stop-copy]"), {
           xPercent: 9,
@@ -176,7 +185,7 @@ export default function TwentyHours() {
         <div className="flex items-start justify-between gap-6">
           <SectionLabel index="03" className="lg:text-bone">The 20 Hours</SectionLabel>
           <p className="hand hidden max-w-[10ch] whitespace-pre-line text-right text-[clamp(1rem,1.5vw,1.4rem)] text-ink/55 md:block">
-            {NOTES.night}
+            {NOTES.hoursAside}
           </p>
         </div>
 

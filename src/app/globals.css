@@ -229,6 +229,129 @@ html[data-idle="true"] .grain {
 }
 
 /* ------------------------------------------------------------------ *
+ * Page wipe + preloader (src/components/fx/PageWipe.tsx)
+ *
+ * The wipe is two discs, ink under bone, scaled with transforms: that runs
+ * on the compositor, so it stays smooth while the page underneath is busy.
+ *
+ * Every load starts covered — the inline script in the layout sets
+ * data-wipe before the first paint — and the cover doubles as the
+ * preloader. `load` is the first page of a visit and gets the full count,
+ * `reload` a quick one, and `arrive` (came in through the wipe) only shows
+ * the loader if the page is slow, so a quick hop is just the wipe.
+ * ------------------------------------------------------------------ */
+@property --p {
+  syntax: "<integer>";
+  inherits: true;
+  initial-value: 0;
+}
+
+.wipe-disc {
+  position: absolute;
+  border-radius: 50%;
+  transform: scale(0);
+}
+
+/* covered from the first paint, until the script knows where to close to */
+html[data-wipe] .wipe-disc {
+  left: calc(50% - 150vmax);
+  top: calc(50% - 150vmax);
+  width: 300vmax;
+  height: 300vmax;
+  transform: none;
+}
+
+/* nothing scrolls underneath the cover */
+html[data-wipe] {
+  overflow: hidden;
+}
+
+/* If the script never gets to open it, the cover fades itself out rather
+   than leave the page hidden. */
+html[data-wipe] [data-page-wipe] {
+  pointer-events: auto;
+  animation: wipe-failsafe 0.5s ease 7s forwards;
+}
+
+@keyframes wipe-failsafe {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+.preloader {
+  display: none;
+}
+
+html[data-wipe="load"] .preloader,
+html[data-wipe="reload"] .preloader,
+html[data-wipe="arrive"] .preloader {
+  display: block;
+}
+
+html[data-wipe="arrive"] .preloader {
+  opacity: 0;
+  animation: preloader-show 0.35s ease 0.45s forwards;
+}
+
+@keyframes preloader-show {
+  to {
+    opacity: 1;
+  }
+}
+
+/* The count and the fill share one integer, so they can never disagree.
+   It creeps up in CSS from the first paint; the script takes it over from
+   wherever it has got to once the page has hydrated. */
+html[data-wipe] .preloader-inner {
+  animation: preloader-creep 3.4s cubic-bezier(0.2, 0.7, 0.25, 1) forwards;
+}
+
+@keyframes preloader-creep {
+  to {
+    --p: 64;
+  }
+}
+
+/* the wordmark fills with ink from the bottom as the page loads */
+.preloader-fill {
+  clip-path: inset(calc(100% - var(--p) * 1%) 0 0 0);
+}
+
+.preloader-count::before {
+  counter-reset: pct var(--p);
+  content: counter(pct, decimal-leading-zero);
+}
+
+/* ------------------------------------------------------------------ *
+ * The Experience beats
+ *
+ * On a wide screen the three beats share one grid cell and a pinned
+ * ScrollTrigger hands them over one at a time. Stacking them is only safe
+ * while that script is running, so it is tied to the conditions the script
+ * runs under: motion welcome (data-js, set before first paint) and lg. With
+ * reduced motion or no script they stay an ordinary list — stacking them
+ * unconditionally is what printed all three on top of one another on
+ * machines with Windows' animation effects turned off.
+ *
+ * The two later beats are held back here as well, so nothing shows through
+ * before the script takes over; its inline styles win from then on.
+ * ------------------------------------------------------------------ */
+@media (width >= 64rem) {
+  html[data-js="true"] [data-beat] {
+    grid-column-start: 1;
+    grid-row-start: 1;
+    align-self: center;
+  }
+
+  html[data-js="true"] [data-beat]:not(:first-child) {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/* ------------------------------------------------------------------ *
  * The 20 Hours timeline
  *
  * One stop at a time is marked `current` by a ScrollTrigger, and everything
@@ -653,10 +776,38 @@ footer[data-field] {
   transform: translateX(240%) skewX(-25deg);
 }
 
+/* `translate` and `scale`, the properties Tailwind v4's utilities set — not
+   `transform`, which composes with them. Written as a transform this added a
+   second -50% on top of the utility's, so a tapped card's cat sat half its
+   own width off to the left. */
 .group[data-active="true"] .polaroid-cat-popup,
 .group[data-popped="true"] .polaroid-cat-popup {
-  transform: translate(-50%, 0) scale(1) !important;
+  translate: -50% 0 !important;
+  scale: 1 !important;
   opacity: 1 !important;
+}
+
+/* Reduced motion: the card still answers, as a fade — no pop, no bounce, no
+   wipe. The page-wide reduced-motion rule cuts every transition to nothing,
+   which left the cat blinking on and the colour snapping in. */
+@media (prefers-reduced-motion: reduce) {
+  .polaroid-cat-popup {
+    translate: -50% 0 !important;
+    scale: 1 !important;
+    transition: opacity 0.3s ease !important;
+  }
+
+  .polaroid-color-reveal {
+    clip-path: none;
+    opacity: 0;
+    transition: opacity 0.35s ease !important;
+  }
+
+  .group:hover .polaroid-color-reveal,
+  .group[data-active="true"] .polaroid-color-reveal {
+    clip-path: none;
+    opacity: 1;
+  }
 }
 
 

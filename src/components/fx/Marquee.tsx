@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
+import Micro from "@/components/ui/Micro";
 import { getLenis } from "@/lib/lenis";
 import { prefersReducedMotion } from "@/lib/motion";
 
@@ -74,7 +75,9 @@ export default function Marquee({
           <div key={copy} className="flex shrink-0 items-center">
             {run.map((item, i) => (
               <span key={`${copy}-${i}`} className="flex shrink-0 items-center">
-                <span className="whitespace-nowrap">{item}</span>
+                <span className="whitespace-nowrap">
+                  <Micro>{item}</Micro>
+                </span>
                 <span
                   aria-hidden="true"
                   className="mx-[clamp(1rem,2.6vw,2.75rem)] inline-block h-[0.34em] w-[0.34em] shrink-0 rotate-45 bg-lime"

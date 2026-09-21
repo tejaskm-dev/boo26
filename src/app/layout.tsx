@@ -9,6 +9,8 @@ import FieldTone from "@/components/site/FieldTone";
 import Reveal from "@/components/fx/Reveal";
 import Scrollbar from "@/components/fx/Scrollbar";
 import SectionMotion from "@/components/fx/SectionMotion";
+import Toaster from "@/components/ui/Toaster";
+import PageWipe from "@/components/fx/PageWipe";
 import { EVENT } from "@/lib/site";
 import "lenis/dist/lenis.css";
 import "./globals.css";
@@ -46,7 +48,7 @@ const spaceGrotesk = Space_Grotesk({
 
 export const metadata: Metadata = {
   title: `${EVENT.name} ${EVENT.year} — ${EVENT.date}, ${EVENT.venue}`,
-  description: `${EVENT.format}. ${EVENT.dateLong} at ASIET, Kalady.`,
+  description: `A Halloween-night creative technology hackathon at ASIET, Kalady. One challenge: build something that makes someone react. ${EVENT.dateLong}.`,
   icons: {
     icon: [
       { url: "/favicon.ico" },
@@ -56,7 +58,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: `${EVENT.name} ${EVENT.year}`,
-    description: `${EVENT.format} — ${EVENT.dateLong}, ASIET Kalady.`,
+    description: `Most hackathons start with a problem. ${EVENT.name} starts with a reaction. ${EVENT.dateLong}, ASIET Kalady.`,
     type: "website",
   },
 };
@@ -70,11 +72,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning className={`${archivo.variable} ${bagel.variable} ${caveat.variable} ${spaceGrotesk.variable}`}>
       <body>
-        {/* hide animated elements before first paint, but only when motion is welcome */}
+        {/* Before first paint, and only when motion is welcome: hide the
+            animated elements, and cover the page for PageWipe to open —
+            `arrive` if the last page just wiped over to this one (a fresh
+            flag only), `reload` if this visit has seen the preloader, else
+            `load` for the full count. */}
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "if(!matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.dataset.js='true'",
+              "if(!matchMedia('(prefers-reduced-motion: reduce)').matches){var d=document.documentElement,m='load';d.dataset.js='true';try{var t=+sessionStorage.getItem('boo:wipe');if(t&&Date.now()-t<10000)m='arrive';else if(sessionStorage.getItem('boo:seen'))m='reload'}catch(e){}d.dataset.wipe=m}",
           }}
         />
         <SmoothScroll />
@@ -85,6 +91,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <SectionMotion />
         <FieldTone />
         {children}
+        <Toaster />
+        <PageWipe />
         <Scrollbar />
         <Grain />
       </body>
