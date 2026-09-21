@@ -13,7 +13,7 @@ export default function Hero() {
       data-field="bone"
       data-field-right="ink"
       data-intro
-      className="relative isolate flex min-h-svh w-full flex-col overflow-hidden bg-bone"
+      className="relative isolate flex min-h-svh w-full flex-col overflow-hidden bg-bone [contain:paint] [transform:translateZ(0)]"
     >
       <HeroField />
 
@@ -47,8 +47,8 @@ export default function Hero() {
 
         <div className="flex flex-col gap-[clamp(1.1rem,2.6vh,1.75rem)] md:items-center md:gap-[clamp(1.5rem,3.4vh,2.6rem)]">
           {/* Mobile: dark pill wrapping facts + button so text is always readable regardless
-              of where the ink SVG field ends (it sometimes doesn't reach the bottom on short viewports) */}
-          <div className="rounded-2xl bg-ink/80 px-5 py-4 backdrop-blur-sm md:contents">
+              of where the ink SVG field ends */}
+          <div className="rounded-2xl bg-ink/95 px-5 py-4 md:contents">
             {/* Mobile facts sit directly above the register button over the dark ink mass */}
             <div className="label label-loose grid grid-cols-[auto_auto] justify-start gap-x-[clamp(1.25rem,6vw,2.5rem)] gap-y-[clamp(0.5rem,1.4vh,0.9rem)] font-medium text-bone/95 md:flex md:items-baseline md:gap-6 md:font-normal md:text-bone/80">
               <span data-anim="rise">{EVENT.date}</span>

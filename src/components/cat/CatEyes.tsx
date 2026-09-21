@@ -4,6 +4,7 @@ import { useEffect, useId, useRef } from "react";
 import { gsap } from "gsap";
 import { subscribePointer } from "@/lib/pointer";
 import { prefersReducedMotion } from "@/lib/motion";
+import { isNavActive } from "@/lib/navState";
 import type { CatEyeArt } from "@/lib/eyes";
 
 /**
@@ -66,7 +67,7 @@ export default function CatEyes({ art, track = false, excited = false, className
 
     // viewBox units per CSS pixel, so travel stays constant on screen
     const stop = subscribePointer((nx, ny) => {
-      if (!rect.width) return;
+      if (!rect.width || isNavActive()) return;
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
       const px = ((nx + 1) / 2) * window.innerWidth;
@@ -123,6 +124,10 @@ export default function CatEyes({ art, track = false, excited = false, className
 
     let timer: ReturnType<typeof setTimeout>;
     const blink = () => {
+      if (isNavActive()) {
+        timer = setTimeout(blink, 1000);
+        return;
+      }
       const tl = gsap.timeline();
       lid(tl, "closed", 0.07, "power2.in", "<");
       lid(tl, "open", 0.11, "power2.out", ">0.03");

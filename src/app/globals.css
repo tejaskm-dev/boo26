@@ -49,6 +49,11 @@ body {
 
 body[data-lock="true"] {
   overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+html[data-nav-active="true"] #top * {
+  animation-play-state: paused !important;
 }
 
 ::selection {

@@ -10,6 +10,8 @@
  * On desktop that source is the mouse. On mobile devices that source is device
  * tilt / gyroscope with adaptive baseline calibration and touch interaction.
  */
+import { isNavActive } from "@/lib/navState";
+
 type Listener = (x: number, y: number) => void;
 
 const listeners = new Set<Listener>();
@@ -62,6 +64,7 @@ function getOrientationAngle(): number {
 
 function flush() {
   frame = 0;
+  if (isNavActive()) return;
 
   if (hasSensorData) {
     // 1. First reading: seed baseline close to user's current posture

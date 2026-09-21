@@ -8,6 +8,7 @@ import CatEyes from "@/components/cat/CatEyes";
 import { LOCKUP_EYES } from "@/lib/eyes";
 import { subscribePointer } from "@/lib/pointer";
 import { prefersReducedMotion, useFinePointer } from "@/lib/motion";
+import { isNavActive, subscribeNavActive } from "@/lib/navState";
 
 /**
  * The supplied lockup, oversized, with its cat wired up. The image is never
@@ -28,14 +29,25 @@ export default function HeroLockup({
     const el = wrap.current;
     if (!el) return;
 
+    const unsubNav = subscribeNavActive((active) => {
+      if (active) {
+        gsap.killTweensOf(el);
+      }
+    });
+
     if (!fine) {
       // Mobile: pure GPU translate3d without rotation (rotation forces CPU redraw in iOS Safari)
       const x = gsap.quickTo(el, "x", { duration: 0.8, ease: "power2.out" });
       const y = gsap.quickTo(el, "y", { duration: 0.8, ease: "power2.out" });
-      return subscribePointer((nx, ny) => {
+      const unsubPointer = subscribePointer((nx, ny) => {
+        if (isNavActive()) return;
         x(nx * 12);
         y(ny * 8);
       });
+      return () => {
+        unsubNav();
+        unsubPointer();
+      };
     }
 
     // Desktop: full mouse travel and rotation
@@ -43,11 +55,16 @@ export default function HeroLockup({
     const y = gsap.quickTo(el, "y", { duration: 1.2, ease: "power2.out" });
     const r = gsap.quickTo(el, "rotation", { duration: 1.6, ease: "power2.out" });
 
-    return subscribePointer((nx, ny) => {
+    const unsubPointer = subscribePointer((nx, ny) => {
+      if (isNavActive()) return;
       x(nx * 30);
       y(ny * 18);
       r(nx * 1.1);
     });
+    return () => {
+      unsubNav();
+      unsubPointer();
+    };
   }, [fine]);
 
   // and it leaves the viewport a little ahead of everything behind it

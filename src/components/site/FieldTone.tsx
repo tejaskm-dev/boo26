@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { isNavActive } from "@/lib/navState";
 
 /**
  * Flips the header's ink to whatever is actually painted behind it.
@@ -49,6 +50,7 @@ export default function FieldTone() {
     let cachedEdge = 24;
 
     const measure = () => {
+      if (isNavActive()) return;
       const scrollY = window.scrollY;
       const header = document.querySelector("header");
       cachedHeaderH = (header?.offsetHeight ?? 72) * 0.55;
@@ -124,7 +126,7 @@ export default function FieldTone() {
     };
 
     const onScroll = () => {
-      if (queued) return;
+      if (queued || isNavActive()) return;
       queued = true;
       requestAnimationFrame(apply);
     };
