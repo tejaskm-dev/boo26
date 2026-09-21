@@ -264,6 +264,8 @@ export const NOTES = {
   hours: "A hackathon\nthat stays\nup late.",
   hoursAside: "Ideas sleep\nlater here.",
   survive: "Good ideas\nsurvive.",
+  /** offered beside the Experience queue to a reader who stops mid-stack */
+  more: "Keep scrolling",
   afterDark: "Meanwhile,\nthe campus\nwakes up.",
   build: "Weird ideas\nwelcome.",
   faq: "Questions?\nWe got you.",

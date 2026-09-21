@@ -337,7 +337,14 @@ html[data-wipe] .preloader-inner {
  *
  * The two later beats are held back here as well, so nothing shows through
  * before the script takes over; its inline styles win from then on.
+ *
+ * The queue under the stack is the same kind of thing: it only means
+ * anything while the handover is running, so it only exists then.
  * ------------------------------------------------------------------ */
+.beat-queue {
+  display: none;
+}
+
 @media (width >= 64rem) {
   html[data-js="true"] [data-beat] {
     grid-column-start: 1;
@@ -349,6 +356,57 @@ html[data-wipe] .preloader-inner {
     opacity: 0;
     visibility: hidden;
   }
+
+  html[data-js="true"] .beat-queue {
+    display: flex;
+  }
+}
+
+/* further back in the queue, further into the dark */
+[data-queue] + [data-queue] {
+  opacity: 0.4;
+}
+
+/* A queued title is an outline until it is scrolled full. text-fill-color
+   rather than color, for the reason given on .ghost-index. */
+.beat-hollow {
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 1.25px color-mix(in srgb, var(--color-bone) 55%, transparent);
+}
+
+@supports not (-webkit-text-stroke: 1px currentColor) {
+  .beat-hollow {
+    -webkit-text-fill-color: currentColor;
+    color: color-mix(in srgb, var(--color-bone) 22%, transparent);
+  }
+}
+
+/* The fill rises from the bottom, as the preloader's does. Starts empty here
+   so nothing flashes before the script takes the level over. */
+.beat-fill {
+  clip-path: inset(100% 0 0 0);
+  text-shadow: 0 0 1.1rem rgba(216, 255, 40, 0.3);
+}
+
+/* The note for a reader who has stopped mid-stack. Leaves quickly, arrives
+   slowly, and the arrow bobs a few times rather than forever. */
+.beat-nudge {
+  opacity: 0;
+  translate: -0.4rem 0;
+  transition:
+    opacity 0.2s ease,
+    translate 0.2s ease;
+}
+
+.beat-nudge[data-show="true"] {
+  opacity: 1;
+  translate: 0 0;
+  transition-duration: 0.55s, 0.7s;
+  transition-timing-function: var(--ease-out-soft);
+}
+
+.beat-nudge[data-show="true"] svg {
+  animation: cue 2.2s var(--ease-out-soft) 5;
 }
 
 /* ------------------------------------------------------------------ *
