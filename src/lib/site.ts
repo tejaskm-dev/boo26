@@ -169,7 +169,8 @@ export const TEAM: TeamMember[] = [
     image: "/assets/team/ram madhav.jpg",
     imagePosition: "center 22%",
     linkedin: "https://www.linkedin.com/in/ram-madhav-r-kammath-b21150349/",
-    // no Instagram: the account is deactivated
+    // deactivated for now; he's reactivating it before the event
+    instagram: "https://www.instagram.com/m_dh_v.r_m/",
     companion: "cat-pop-artist",
     companionScale: 0.35,
     tilt: "rotate-[2.2deg]",
