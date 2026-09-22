@@ -262,7 +262,7 @@ html[data-wipe] {
 }
 
 /* If the script never gets to open it, the cover fades itself out rather
-   than leave the page hidden. */
+   than leave the page hidden. PageWipe stands this down once it takes over. */
 html[data-wipe] [data-page-wipe] {
   pointer-events: auto;
   animation: wipe-failsafe 0.5s ease 7s forwards;
@@ -296,18 +296,10 @@ html[data-wipe="arrive"] .preloader {
   }
 }
 
-/* The count and the fill share one integer, so they can never disagree.
-   It creeps up in CSS from the first paint; the script takes it over from
-   wherever it has got to once the page has hydrated. */
-html[data-wipe] .preloader-inner {
-  animation: preloader-creep 3.4s cubic-bezier(0.2, 0.7, 0.25, 1) forwards;
-}
-
-@keyframes preloader-creep {
-  to {
-    --p: 64;
-  }
-}
+/* The count and the fill share one integer, so they can never disagree. The
+   script at the top of the page steps it once per frame drawn, from the first
+   paint (src/lib/wipe.ts). It used to be a CSS animation, whose clock runs on
+   through frames a busy phone never draws: the count went 00, then 100. */
 
 /* the wordmark fills with ink from the bottom as the page loads */
 .preloader-fill {
@@ -500,6 +492,17 @@ li[data-stop][data-current="true"] [data-stop-cat] {
 .group:focus-within .row-index {
   color: var(--color-lime);
   translate: 0 -0.15em;
+}
+
+/* The clause being read, in a legal page's contents (LegalToc), keeps the
+   stroke a row gets under the pointer: the same mark, meaning "this one". */
+.group[data-current="true"] > .row-mark {
+  opacity: 0.22;
+  scale: 1 1;
+}
+
+.group[data-current="true"] .row-index {
+  color: var(--color-ink);
 }
 
 @media (prefers-reduced-motion: reduce) {

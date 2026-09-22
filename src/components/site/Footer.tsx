@@ -9,7 +9,7 @@ import SocialIcon from "@/components/ui/SocialIcon";
 import SoonLink from "@/components/ui/SoonLink";
 import Micro from "@/components/ui/Micro";
 import Words from "@/components/fx/Words";
-import { EVENT, FOOTER_LEGAL, FOOTER_NAV, NOTES, SOCIALS } from "@/lib/site";
+import { EVENT, FOOTER_NAV, LEGAL, NOTES, SOCIALS } from "@/lib/site";
 import { prefersReducedMotion } from "@/lib/motion";
 import { comingSoon } from "@/lib/toast";
 
@@ -250,7 +250,7 @@ export default function Footer() {
           </div>
 
           <ul className="flex flex-wrap items-center gap-x-6 gap-y-2">
-            {FOOTER_LEGAL.map((l) => (
+            {LEGAL.map((l) => (
               <li key={l.label}>
                 <SoonLink
                   href={l.href}

@@ -5,6 +5,7 @@ import Image from "next/image";
 import { EVENT } from "@/lib/site";
 import { MD, OPEN_EVENT, prefersReducedMotion } from "@/lib/motion";
 import { getLenis } from "@/lib/lenis";
+import { STORAGE } from "@/lib/storage";
 
 /**
  * The page wipe, and the preloader it doubles as.
@@ -14,12 +15,17 @@ import { getLenis } from "@/lib/lenis";
  * the browser only navigates once the screen is covered. The next page is
  * prefetched while that plays.
  *
- * Arriving, and on every load: the inline script in the layout covers the page
- * before its first paint. The cover is the preloader — the wordmark filling
- * with ink and a count to 100 — and once the page is actually ready (fonts,
- * the images the load event waits on, a couple of settled frames) the discs
- * close, bone first, into the control that leads back ([data-wipe-origin]).
- * Entrances wait for that (see whenOpen), so they play where they're seen.
+ * Arriving, and on every load: the script at the top of <body> covers the page
+ * before its first paint and starts the count (src/lib/wipe.ts). The cover is
+ * the preloader — the wordmark filling with ink and a count to 100 — and once
+ * the page is actually ready (fonts, the images the load event waits on, a
+ * couple of settled frames) the count finishes and the discs close, bone
+ * first, into the control that leads back ([data-wipe-origin]). Entrances wait
+ * for that (see whenOpen), so they play where they're seen.
+ *
+ * The count is stepped per drawn frame, never on a clock, so it can't finish
+ * where nobody saw it: in a background tab or a prerendered page it waits to
+ * be on screen, and on a phone too busy to draw it pauses instead of skipping.
  *
  * The discs are scaled with transforms on the browser's animation clock
  * rather than tweened as clip-paths: transforms run on the compositor, so the
@@ -32,10 +38,7 @@ import { getLenis } from "@/lib/lenis";
  * mounted once per document, so a client-side route change would arrive at a
  * page nothing is animating.
  */
-const FLAG = "boo:wipe"; // left by a page on its way out, read by the next one's inline script
-const SEEN = "boo:seen"; // the full count plays once a visit
 const EASE = "cubic-bezier(0.76, 0, 0.24, 1)"; // GSAP's power3.inOut — the menu's wipe
-const EASE_OUT = "cubic-bezier(0.22, 1, 0.36, 1)"; // --ease-out-soft
 const EASE_IN = "cubic-bezier(0.64, 0, 0.78, 0)";
 
 /** The arrival runs once per document — React runs effects twice in development. */
@@ -90,13 +93,54 @@ function pageReady(cap: number) {
   return Promise.race([Promise.all([load, fonts]).then(frames), wait(cap)]);
 }
 
+/**
+ * Once the page is on screen: not a background tab, not a prerender waiting
+ * to be opened. Resolves true if it had to wait.
+ */
+function whenShown() {
+  const doc = document as Document & { prerendering?: boolean };
+  const on = () => doc.visibilityState === "visible" && !doc.prerendering;
+  if (on()) return Promise.resolve(false);
+  return new Promise<boolean>((resolve) => {
+    const check = () => {
+      if (!on()) return;
+      doc.removeEventListener("visibilitychange", check);
+      doc.removeEventListener("prerenderingchange", check);
+      resolve(true);
+    };
+    doc.addEventListener("visibilitychange", check);
+    doc.addEventListener("prerenderingchange", check);
+  });
+}
+
+/**
+ * Land on the part of the page the URL names — /#team, followed from another
+ * page. The browser makes that jump while the page is still arriving, before
+ * the pins and the art give it its full height, so by the time the cover
+ * lifts it can be screens short. A fresh navigation only: after a reload or a
+ * step back, the browser puts the reader back where they were, and that wins.
+ */
+function landOnHash() {
+  const nav = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
+  if (nav && nav.type !== "navigate") return;
+  let target: HTMLElement | null = null;
+  try {
+    const id = decodeURIComponent(window.location.hash.slice(1));
+    target = id ? document.getElementById(id) : null;
+  } catch {
+    /* a malformed hash names nothing */
+  }
+  if (!target) return;
+  const lenis = getLenis();
+  // Forced: Lenis is held still while the page is covered. Either way the
+  // target's scroll margin is respected (Lenis reads it itself).
+  if (lenis) lenis.scrollTo(target, { immediate: true, force: true });
+  else target.scrollIntoView();
+}
+
 /** phones get the menu's shorter timings */
 function compact() {
   return window.matchMedia("(hover: none) and (pointer: coarse)").matches || !window.matchMedia(MD).matches;
-}
-
-function readP(el: HTMLElement) {
-  return parseInt(getComputedStyle(el).getPropertyValue("--p"), 10) || 0;
 }
 
 export default function PageWipe() {
@@ -142,53 +186,60 @@ export default function PageWipe() {
       settle([a, b], (m ? 450 : 700) + 220 + 400).then(() => {
         cancel([...discs, innerEl, markEl, countEl, ...loaderEl.querySelectorAll("[data-bit]")]);
         innerEl.style.removeProperty("--p");
+        box.style.removeProperty("animation");
         box.style.pointerEvents = "";
         delete html.dataset.wiping;
       });
     };
 
+    /** hand the page back at once, without the wipe */
+    const release = () => {
+      window.__booCount?.stop();
+      cancel(discs);
+      delete html.dataset.wipe;
+      getLenis()?.start();
+      box.style.removeProperty("animation");
+      box.style.pointerEvents = "";
+      window.dispatchEvent(new Event(OPEN_EVENT));
+    };
+
     /** the preloader: count to 100 once the page is ready, see the loader off, open */
     const arrive = async () => {
       const mode = html.dataset.wipe; // load | reload | arrive
+      const count = window.__booCount;
       getLenis()?.stop();
       box.style.pointerEvents = "auto";
 
-      // The failsafe in globals.css fades the cover out at 7s in case this
-      // never runs. If it already has, tidy up without bringing it back.
-      if (performance.now() > 6500) {
-        cancel(discs);
-        delete html.dataset.wipe;
-        getLenis()?.start();
-        box.style.pointerEvents = "";
-        window.dispatchEvent(new Event(OPEN_EVENT));
-        return;
-      }
+      // The failsafe in globals.css fades the cover out in case this never
+      // runs. If it has started to, tidy up without bringing the cover back.
+      // If not, stand it down: from here this opens the cover, and it waits
+      // for the page to be on screen to do it, which a timer can't know about.
+      const failsafe = box
+        .getAnimations()
+        .find((a) => (a as CSSAnimation).animationName === "wipe-failsafe");
+      const delay = Number(failsafe?.effect?.getComputedTiming().delay ?? 0);
+      if (failsafe && Number(failsafe.currentTime ?? 0) >= delay) return release();
+      box.style.animation = "none";
 
-      // take the count over from the CSS creep, carrying on from where it is
-      let p = readP(innerEl);
-      innerEl.style.setProperty("--p", String(p));
-      innerEl.style.animation = "none";
-      const creep = innerEl.animate([{ "--p": p }, { "--p": 90 }], {
-        duration: 2600,
-        easing: "cubic-bezier(0.2, 0.6, 0.3, 1)",
-        fill: "forwards",
-      });
+      // the count carries on creeping while the page gets ready
+      void count?.go(90, 2600);
 
-      const minEnd = mode === "load" ? 1900 : mode === "reload" ? 650 : 0;
-      await pageReady(mode === "arrive" ? 2500 : 4500);
+      // Nothing is timed until the page is on screen. A tab opened in the
+      // background, or a page the browser prerendered, would otherwise spend
+      // its preloader where nobody could see it.
+      const origin = (await whenShown()) ? performance.now() : 0;
+      const minEnd = origin + (mode === "load" ? 1900 : mode === "reload" ? 650 : 0);
+      // and it doesn't hold the cover much past 7s on screen for a slow image
+      const cap = Math.min(mode === "arrive" ? 2500 : 4500, Math.max(600, origin + 7000 - performance.now()));
+      await pageReady(cap);
       await wait(Math.max(0, minEnd - performance.now()));
 
       const shown = mode !== "arrive" || +getComputedStyle(loaderEl).opacity > 0.05;
       if (shown) {
-        p = readP(innerEl);
-        innerEl.style.setProperty("--p", String(p));
-        creep.cancel();
-        const finish = innerEl.animate([{ "--p": p }, { "--p": 100 }], {
-          duration: p > 85 ? 260 : 480,
-          easing: EASE_OUT,
-          fill: "forwards",
-        });
-        await settle([finish], 800);
+        // The rest of the way is counted too, a frame at a time. The cap is
+        // for a device too starved to draw more than a few frames a second.
+        if (count) await Promise.race([count.go(100, count.p > 85 ? 260 : 480), wait(2400)]);
+        count?.stop();
         innerEl.style.setProperty("--p", "100");
         await wait(140);
 
@@ -210,21 +261,24 @@ export default function PageWipe() {
         );
         await wait(320);
       } else {
-        creep.cancel();
+        count?.stop();
       }
 
       try {
-        sessionStorage.setItem(SEEN, "1");
-        sessionStorage.removeItem(FLAG);
+        sessionStorage.setItem(STORAGE.seen, "1");
+        sessionStorage.removeItem(STORAGE.wipe);
       } catch {
         /* storage blocked — every load just gets the full count */
       }
+      // the page has its full height now, and is still covered
+      landOnHash();
       close(document.querySelector("[data-wipe-origin]"));
     };
 
     if (html.dataset.wipe && !arrived) {
       arrived = true;
-      void arrive();
+      // with the failsafe stood down, nothing else would lift the cover
+      arrive().catch(release);
     }
 
     const leave = (href: string, from: Element) => {
@@ -244,7 +298,7 @@ export default function PageWipe() {
       const b = scale(boneEl, 0, 1, m ? 520 : 860, m ? 80 : 150);
       settle([a, b], (m ? 600 : 1010) + 350).then(() => {
         try {
-          sessionStorage.setItem(FLAG, String(Date.now()));
+          sessionStorage.setItem(STORAGE.wipe, String(Date.now()));
         } catch {
           /* storage blocked — the next page just won't play its half */
         }
@@ -296,8 +350,10 @@ export default function PageWipe() {
       <div ref={bone} className="wipe-disc bg-bone" />
 
       <div ref={loader} className="preloader absolute inset-0">
+        {/* the count is on this element's style before React arrives */}
         <div
           ref={inner}
+          suppressHydrationWarning
           className="preloader-inner absolute inset-0 flex flex-col justify-between px-[var(--edge)] py-[clamp(1.25rem,3.4vh,2.25rem)] text-ink"
         >
           <div className="flex items-start justify-between gap-6">

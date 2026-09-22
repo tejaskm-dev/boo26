@@ -21,6 +21,9 @@ export const EVENT = {
   /* Registration isn't open yet, so every register CTA lands on the
      coming-soon page. Point this at the real form when it exists. */
   registerHref: "/register",
+  /* A temporary address until BOO! has its own. Change it here and the
+     legal pages follow. */
+  email: "boo26team@gmail.com",
 } as const;
 
 /**
@@ -251,12 +254,15 @@ export const FOOTER_NAV = [
   },
 ] as const;
 
-/** None of these pages exist yet — without an href each shows the coming-soon toast. */
-export const FOOTER_LEGAL: { label: string; href?: string }[] = [
-  { label: "Privacy Policy" },
-  { label: "Terms of Service" },
-  { label: "Code of Conduct" },
-];
+/** The fine print: the footer's legal line, and the close of each of these pages. */
+export const LEGAL = [
+  { label: "Privacy Policy", href: "/privacy" },
+  { label: "Terms of Service", href: "/terms" },
+  { label: "Code of Conduct", href: "/code-of-conduct" },
+] as const;
+
+/** the date on all three, until one of them changes on its own */
+export const LEGAL_UPDATED = "22 Sep 2026";
 
 /** Handwritten margin notes, kept in one place so they stay rationed. */
 export const NOTES = {

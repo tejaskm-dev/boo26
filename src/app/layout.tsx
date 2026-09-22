@@ -12,6 +12,7 @@ import SectionMotion from "@/components/fx/SectionMotion";
 import Toaster from "@/components/ui/Toaster";
 import PageWipe from "@/components/fx/PageWipe";
 import { EVENT } from "@/lib/site";
+import { WIPE_BOOT } from "@/lib/wipe";
 import "lenis/dist/lenis.css";
 import "./globals.css";
 
@@ -73,16 +74,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning className={`${archivo.variable} ${bagel.variable} ${caveat.variable} ${spaceGrotesk.variable}`}>
       <body>
         {/* Before first paint, and only when motion is welcome: hide the
-            animated elements, and cover the page for PageWipe to open —
-            `arrive` if the last page just wiped over to this one (a fresh
-            flag only), `reload` if this visit has seen the preloader, else
-            `load` for the full count. */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html:
-              "if(!matchMedia('(prefers-reduced-motion: reduce)').matches){var d=document.documentElement,m='load';d.dataset.js='true';try{var t=+sessionStorage.getItem('boo:wipe');if(t&&Date.now()-t<10000)m='arrive';else if(sessionStorage.getItem('boo:seen'))m='reload'}catch(e){}d.dataset.wipe=m}",
-          }}
-        />
+            animated elements, cover the page for PageWipe to open, and start
+            the preloader's count (src/lib/wipe.ts). */}
+        <script dangerouslySetInnerHTML={{ __html: WIPE_BOOT }} />
         <SmoothScroll />
         <Tilt />
         <Drift />
@@ -90,9 +84,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Reveal />
         <SectionMotion />
         <FieldTone />
+        {/* Ahead of the page in the markup, so on a slow connection the first
+            thing drawn is the cover rather than a glimpse of what it hides.
+            After SmoothScroll, whose Lenis it holds still while covered. */}
+        <PageWipe />
         {children}
         <Toaster />
-        <PageWipe />
         <Scrollbar />
         <Grain />
       </body>

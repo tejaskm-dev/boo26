@@ -11,6 +11,7 @@
  * tilt / gyroscope with adaptive baseline calibration and touch interaction.
  */
 import { isNavActive } from "@/lib/navState";
+import { STORAGE } from "@/lib/storage";
 
 type Listener = (x: number, y: number) => void;
 
@@ -149,7 +150,7 @@ export async function enableTilt(): Promise<boolean> {
         return false;
       }
       try {
-        sessionStorage.setItem("boo-tilt-granted", "true");
+        sessionStorage.setItem(STORAGE.tilt, "true");
       } catch {}
     } catch {
       // Gesture token missing or prompt dismissed; allow subsequent attempts
