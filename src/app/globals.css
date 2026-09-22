@@ -232,8 +232,8 @@ html[data-idle="true"] .grain {
  * Every load starts covered — the inline script in the layout sets
  * data-wipe before the first paint — and the cover doubles as the
  * preloader. `load` is the first page of a visit and gets the full count,
- * `reload` a quick one, and `arrive` (came in through the wipe) only shows
- * the loader if the page is slow, so a quick hop is just the wipe.
+ * `reload` a quick one, and `arrive` (came in through the wipe) none at all:
+ * moving around the site is only ever the wipe.
  * ------------------------------------------------------------------ */
 @property --p {
   syntax: "<integer>";
@@ -279,21 +279,13 @@ html[data-wipe] [data-page-wipe] {
   display: none;
 }
 
+/* Loading the site, not moving around it. A page arrived at through the
+   wipe used to fade the loader in if it wasn't ready 0.45s after the cover
+   landed, which on a phone is nearly every time: the hop went wipe, preloader,
+   wipe. Now the discs hold on their own until the page is ready. */
 html[data-wipe="load"] .preloader,
-html[data-wipe="reload"] .preloader,
-html[data-wipe="arrive"] .preloader {
+html[data-wipe="reload"] .preloader {
   display: block;
-}
-
-html[data-wipe="arrive"] .preloader {
-  opacity: 0;
-  animation: preloader-show 0.35s ease 0.45s forwards;
-}
-
-@keyframes preloader-show {
-  to {
-    opacity: 1;
-  }
 }
 
 /* The count and the fill share one integer, so they can never disagree. The

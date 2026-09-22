@@ -17,12 +17,14 @@ import { setLeave } from "@/lib/leave";
  * prefetched while that plays.
  *
  * Arriving, and on every load: the script at the top of <body> covers the page
- * before its first paint and starts the count (src/lib/wipe.ts). The cover is
- * the preloader — the wordmark filling with ink and a count to 100 — and once
- * the page is actually ready (fonts, the images the load event waits on, a
- * couple of settled frames) the count finishes and the discs close, bone
- * first, into the control that leads back ([data-wipe-origin]). Entrances wait
- * for that (see whenOpen), so they play where they're seen.
+ * before its first paint and starts the count (src/lib/wipe.ts). On a load the
+ * cover is the preloader — the wordmark filling with ink and a count to 100.
+ * Arriving through the wipe it's only the discs: the loader is for loading
+ * the site, never for moving around it. Once the page is actually ready
+ * (fonts, the images the load event waits on, a couple of settled frames) the
+ * discs close, bone first, into the control that leads back
+ * ([data-wipe-origin]). Entrances wait for that (see whenOpen), so they play
+ * where they're seen.
  *
  * The count is stepped per drawn frame, never on a clock, so it can't finish
  * where nobody saw it: in a background tab or a prerendered page it waits to
@@ -222,21 +224,22 @@ export default function PageWipe() {
       if (failsafe && Number(failsafe.currentTime ?? 0) >= delay) return release();
       box.style.animation = "none";
 
-      // the count carries on creeping while the page gets ready
-      void count?.go(90, 2600);
+      // the count carries on creeping while the page gets ready — a page
+      // arrived at through the wipe has none
+      if (mode !== "arrive") void count?.go(90, 2600);
 
       // Nothing is timed until the page is on screen. A tab opened in the
       // background, or a page the browser prerendered, would otherwise spend
       // its preloader where nobody could see it.
       const origin = (await whenShown()) ? performance.now() : 0;
       const minEnd = origin + (mode === "load" ? 1900 : mode === "reload" ? 650 : 0);
-      // and it doesn't hold the cover much past 7s on screen for a slow image
-      const cap = Math.min(mode === "arrive" ? 2500 : 4500, Math.max(600, origin + 7000 - performance.now()));
+      // It doesn't hold the cover much past 7s on screen for a slow image, and
+      // a hop, with nothing on the cover to watch, lets go sooner still.
+      const cap = Math.min(mode === "arrive" ? 1500 : 4500, Math.max(600, origin + 7000 - performance.now()));
       await pageReady(cap);
       await wait(Math.max(0, minEnd - performance.now()));
 
-      const shown = mode !== "arrive" || +getComputedStyle(loaderEl).opacity > 0.05;
-      if (shown) {
+      if (mode !== "arrive") {
         // The rest of the way is counted too, a frame at a time. The cap is
         // for a device too starved to draw more than a few frames a second.
         if (count) await Promise.race([count.go(100, count.p > 85 ? 260 : 480), wait(2400)]);
