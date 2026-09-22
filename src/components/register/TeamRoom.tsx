@@ -3,15 +3,17 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { gsap } from "gsap";
+import { ScrambleTextPlugin } from "gsap/ScrambleTextPlugin";
 import Section from "@/components/sections/Section";
 import Sprite from "@/components/ui/Sprite";
 import BlobButton from "@/components/ui/BlobButton";
 import Words from "@/components/fx/Words";
 import RiseIn from "@/components/fx/RiseIn";
 import Qr from "./Qr";
-import { showCode } from "@/lib/register/code";
+import LiveGhost from "./LiveGhost";
+import { CODE_ALPHABET, showCode } from "@/lib/register/code";
 import type { TeamView } from "@/lib/register/store";
-import { prefersReducedMotion } from "@/lib/motion";
+import { prefersReducedMotion, whenOpen } from "@/lib/motion";
 import { toast } from "@/lib/toast";
 import { EVENT } from "@/lib/site";
 
@@ -45,6 +47,9 @@ export default function TeamRoom({
   // how this visit began, kept once the address has been tidied
   const [landed] = useState(arrived);
   const seat = useRef<HTMLLIElement>(null);
+  const heading = useRef<HTMLHeadingElement>(null);
+  const codeLine = useRef<HTMLParagraphElement>(null);
+  const qr = useRef<HTMLDivElement>(null);
   const wasFull = useRef(team.full);
   const cheered = useRef(false);
   const code = showCode(team.code);
@@ -56,6 +61,33 @@ export default function TeamRoom({
   useEffect(() => {
     if (arrived) router.replace(pathname, { scroll: false });
   }, [arrived, pathname, router]);
+
+  // The code lands like a departure board, and the QR turns to face you —
+  // both once the page is uncovered, so neither is spent under the preloader.
+  useEffect(() => {
+    if (prefersReducedMotion()) return;
+    gsap.registerPlugin(ScrambleTextPlugin);
+    return whenOpen(() => {
+      if (codeLine.current) {
+        gsap.to(codeLine.current, {
+          duration: 1.1,
+          ease: "none",
+          scrambleText: { text: code, chars: CODE_ALPHABET, speed: 0.7, revealDelay: 0.25 },
+        });
+      }
+      if (qr.current) {
+        gsap.from(qr.current, {
+          rotateY: 65,
+          autoAlpha: 0,
+          duration: 0.9,
+          ease: "power3.out",
+          delay: 0.25,
+          transformPerspective: 700,
+          transformOrigin: "50% 50%",
+        });
+      }
+    });
+  }, [code]);
 
   // waiting: look again every few seconds, while anyone's looking
   useEffect(() => {
@@ -70,7 +102,12 @@ export default function TeamRoom({
   useEffect(() => {
     const filled = team.full && !wasFull.current;
     wasFull.current = team.full;
-    if (filled) toast(`${mate} is in. You're a team.`, "Team complete");
+    if (filled) {
+      toast(`${mate} is in. You're a team.`, "Team complete");
+      if (!prefersReducedMotion() && heading.current) {
+        gsap.fromTo(heading.current, { rotation: -2 }, { rotation: 2, duration: 0.1, repeat: 5, yoyo: true, ease: "none", clearProps: "rotation" });
+      }
+    }
     if ((filled || (landed === "joined" && team.full)) && !cheered.current) {
       cheered.current = true;
       burst(seat.current);
@@ -115,12 +152,15 @@ export default function TeamRoom({
                 {landed === "new" ? "Team made." : "You're in."}
               </p>
             ) : null}
-            <Words
-              as="h1"
-              className="brush -rotate-[1.5deg] select-none break-words pb-[0.06em] pr-[clamp(4rem,20vw,10rem)] text-[clamp(2.9rem,8.5vw,7.5rem)] leading-[0.86] text-lime [overflow-wrap:anywhere] lg:pr-[clamp(6rem,12vw,12rem)]"
-            >
-              {team.name}
-            </Words>
+            {/* the name itself shakes when the second seat fills */}
+            <span ref={heading} className="block">
+              <Words
+                as="h1"
+                className="brush -rotate-[1.5deg] select-none break-words pb-[0.06em] pr-[clamp(4rem,20vw,10rem)] text-[clamp(2.9rem,8.5vw,7.5rem)] leading-[0.86] text-lime [overflow-wrap:anywhere] lg:pr-[clamp(6rem,12vw,12rem)]"
+              >
+                {team.name}
+              </Words>
+            </span>
             <p className="hand mt-[clamp(0.6rem,1.6vh,1rem)] -rotate-[3deg] whitespace-pre-line pl-[0.35rem] text-[clamp(1.1rem,1.7vw,1.5rem)] text-bone/60">
               {team.full ? "Two of you.\nSee you on the 24th." : "One down.\nOne to go."}
             </p>
@@ -162,7 +202,10 @@ export default function TeamRoom({
                   <span className="text-lime">01</span> The code
                 </p>
                 <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-3">
-                  <p className="display select-all whitespace-nowrap text-[clamp(3.2rem,11vw,7.5rem)] leading-[0.9] tracking-[0.02em]">
+                  <p
+                    ref={codeLine}
+                    className="display select-all whitespace-nowrap text-[clamp(3.2rem,11vw,7.5rem)] leading-[0.9] tracking-[0.02em]"
+                  >
                     {code}
                   </p>
                   <button type="button" onClick={() => copy(team.code, "Team code")} className={SMALL}>
@@ -188,9 +231,18 @@ export default function TeamRoom({
                 <p className="label mb-3 flex items-center gap-3 text-bone/45 md:hidden">
                   <span className="text-lime">03</span> The QR
                 </p>
-                <div className="relative w-[min(17rem,72vw)] rotate-[2deg] shadow-[0_18px_40px_rgba(0,0,0,0.45)] [border-radius:0.9rem]">
+                <div ref={qr} className="relative w-[min(17rem,72vw)] rotate-[2deg] shadow-[0_18px_40px_rgba(0,0,0,0.45)] [border-radius:0.9rem]">
                   <Qr text={link} label={`QR code: join ${team.name}`} className="block h-auto w-full" />
                   <Sprite name="clip" scale={0.24} className="absolute -right-[0.9rem] -top-[1.6rem] rotate-[18deg]" />
+                  {/* a viewfinder's corners, breathing: point something at it */}
+                  {[
+                    "left-[-0.5rem] top-[-0.5rem] border-l-2 border-t-2",
+                    "right-[-0.5rem] top-[-0.5rem] border-r-2 border-t-2",
+                    "left-[-0.5rem] bottom-[-0.5rem] border-b-2 border-l-2",
+                    "right-[-0.5rem] bottom-[-0.5rem] border-b-2 border-r-2",
+                  ].map((at) => (
+                    <span key={at} aria-hidden="true" className={`viewfinder absolute h-4 w-4 border-lime ${at}`} />
+                  ))}
                 </div>
                 <figcaption className="hand mt-4 -rotate-[2deg] text-center text-[clamp(1.05rem,1.4vw,1.3rem)] text-bone/55">
                   Point a phone camera at it.
@@ -226,16 +278,21 @@ function Seat({ index, role, name }: { index: string; role: string; name?: strin
         <span className="text-lime">{index}</span> {role}
       </p>
       {name ? (
-        <p className="display mt-3 flex items-center gap-2.5 text-[clamp(1.25rem,2.4vw,1.9rem)] leading-none text-bone">
-          <span className="min-w-0 truncate">{name}</span>
+        <p className="display mt-3 flex items-baseline gap-2.5 text-[clamp(1.15rem,2.2vw,1.75rem)] leading-[1.05] text-bone">
+          {/* a long name wraps rather than being cut off */}
+          <span className="min-w-0 [overflow-wrap:anywhere]">{name}</span>
           <span aria-hidden="true" className="h-[0.42rem] w-[0.42rem] shrink-0 rotate-45 bg-lime" />
         </p>
       ) : (
-        <p className="display mt-3 text-[clamp(1.25rem,2.4vw,1.9rem)] leading-none text-bone/30">
-          Waiting
-          <span aria-hidden="true" className="animate-pulse">.</span>
-          <span aria-hidden="true" className="animate-pulse [animation-delay:250ms]">.</span>
-          <span aria-hidden="true" className="animate-pulse [animation-delay:500ms]">.</span>
+        <p className="display mt-3 flex items-center gap-2 text-[clamp(1.15rem,2.2vw,1.75rem)] leading-[1.05] text-bone/30">
+          <span>
+            Waiting
+            <span aria-hidden="true" className="animate-pulse">.</span>
+            <span aria-hidden="true" className="animate-pulse [animation-delay:250ms]">.</span>
+            <span aria-hidden="true" className="animate-pulse [animation-delay:500ms]">.</span>
+          </span>
+          {/* sitting in the empty seat, watching the door */}
+          <LiveGhost search follow={false} className="w-[1.4rem] shrink-0 opacity-70" />
         </p>
       )}
     </>
@@ -261,7 +318,7 @@ function Next() {
       </h2>
       <ol className="mt-[clamp(1.25rem,3vh,2rem)] grid gap-[clamp(1.5rem,3vw,3rem)] md:grid-cols-3">
         {items.map((it, i) => (
-          <li key={it.k} className="border-t border-bone/15 pt-4">
+          <li key={it.k} className="arrive-in border-t border-bone/15 pt-4" style={{ animationDelay: `${0.08 * i}s` }}>
             <p className="label flex items-center gap-3 text-bone/45">
               <span className="text-lime">{String(i + 1).padStart(2, "0")}</span> {it.k}
             </p>

@@ -40,7 +40,12 @@ export default function JudgingPage() {
           <Blob title="The split">
             <div aria-hidden="true" className="flex h-[2.4rem] w-full gap-[3px] overflow-hidden rounded-full">
               {JUDGING.map((c, i) => (
-                <span key={c.name} className={`h-full basis-0 ${SHADES[i]}`} style={{ flexGrow: c.weight }} />
+                <span
+                  key={c.name}
+                  data-grow={0.12 * i}
+                  className={`h-full basis-0 ${SHADES[i]}`}
+                  style={{ flexGrow: c.weight }}
+                />
               ))}
             </div>
             <ul className="mt-[clamp(1rem,2.4vh,1.4rem)] grid grid-cols-2 gap-x-[clamp(1rem,2vw,1.75rem)] gap-y-3">
@@ -50,7 +55,9 @@ export default function JudgingPage() {
                     <span aria-hidden="true" className={`h-[0.45rem] w-[0.45rem] shrink-0 rotate-45 ${SHADES[i]}`} />
                     {c.name.replace(/^The /, "")}
                   </span>
-                  <span className="display text-[clamp(1.05rem,1.5vw,1.3rem)] leading-none text-bone">{c.weight}%</span>
+                  <span className="display text-[clamp(1.05rem,1.5vw,1.3rem)] leading-none text-bone">
+                    <span data-count={c.weight}>{c.weight}</span>%
+                  </span>
                 </li>
               ))}
             </ul>
@@ -69,7 +76,7 @@ export default function JudgingPage() {
 
           <div className="px-[var(--edge)] lg:pr-[clamp(3rem,6vw,7rem)]">
             <SectionLabel index="01">The four things</SectionLabel>
-            <p className="hand mt-5 max-w-[14ch] -rotate-[3deg] whitespace-pre-line text-[clamp(1.1rem,1.8vw,1.6rem)] text-ink/60">
+            <p data-write className="hand mt-5 max-w-[14ch] -rotate-[3deg] whitespace-pre-line text-[clamp(1.1rem,1.8vw,1.6rem)] text-ink/60">
               {"Weighted.\nOn purpose."}
             </p>
 
@@ -85,7 +92,7 @@ export default function JudgingPage() {
                       {c.name}
                     </h2>
                     <p className="hand mt-2 -rotate-[2deg] pl-[0.3rem] text-[clamp(1.1rem,1.6vw,1.45rem)] text-ink/60">{c.line}</p>
-                    <Sprite name={c.sprite} scale={0.26} drift={12} className="absolute right-0 top-[0.4rem] rotate-[6deg]" />
+                    <Sprite name={c.sprite} data-pop scale={0.26} drift={12} className="absolute right-0 top-[0.4rem] rotate-[6deg]" />
                   </div>
 
                   <div>
@@ -95,10 +102,14 @@ export default function JudgingPage() {
                           i === 0 ? "bg-lime px-[0.18em] py-[0.08em] [border-radius:46%_54%_58%_42%/42%_60%_40%_58%]" : ""
                         }`}
                       >
-                        {c.weight}%
+                        <span data-count={c.weight}>{c.weight}</span>%
                       </span>
                       <span className="label text-ink/45">of the score</span>
                     </p>
+                    {/* the same share again, as a bar that fills */}
+                    <span aria-hidden="true" className="mt-4 block h-[3px] w-full max-w-[18rem] bg-ink/10">
+                      <span data-grow className={`block h-full ${i === 0 ? "bg-lime" : "bg-ink/45"}`} style={{ width: `${c.weight}%` }} />
+                    </span>
                     <p className="label mt-[clamp(1.25rem,3vh,1.75rem)] text-ink/45">What the judges ask</p>
                     <ul className="mt-3 max-w-[48ch] space-y-[0.6rem]">
                       {c.asks.map((a) => (
@@ -120,13 +131,13 @@ export default function JudgingPage() {
             <div className="mt-[clamp(4rem,10vh,6.5rem)] grid gap-[clamp(2rem,5vw,5rem)] lg:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)]">
               <div>
                 <SectionLabel index="02">On the morning</SectionLabel>
-                <p className="hand mt-5 max-w-[12ch] -rotate-[3deg] whitespace-pre-line text-[clamp(1.1rem,1.8vw,1.6rem)] text-ink/60">
+                <p data-write className="hand mt-5 max-w-[12ch] -rotate-[3deg] whitespace-pre-line text-[clamp(1.1rem,1.8vw,1.6rem)] text-ink/60">
                   {"Show\ntime."}
                 </p>
               </div>
-              <dl className="grid gap-x-[clamp(1.5rem,3vw,3rem)] gap-y-[clamp(1.5rem,4vh,2.25rem)] sm:grid-cols-2">
+              <dl data-stagger className="grid gap-x-[clamp(1.5rem,3vw,3rem)] gap-y-[clamp(1.5rem,4vh,2.25rem)] sm:grid-cols-2">
                 {MORNING.map((m) => (
-                  <div key={m.k} className="border-t border-ink/15 pt-4">
+                  <div key={m.k} data-anim="rise" className="border-t border-ink/15 pt-4">
                     <dt className="label text-ink/45">{m.k}</dt>
                     <dd className="body-copy mt-3 max-w-[40ch] text-[clamp(0.96rem,1.1vw,1.05rem)] text-ink/80">{m.v}</dd>
                   </div>

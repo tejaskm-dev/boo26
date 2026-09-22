@@ -37,11 +37,14 @@ export default function Hero({
           <div>
             <Words
               as="h1"
-              className="brush -rotate-[1.5deg] select-none pb-[0.08em] text-[clamp(3.4rem,9vw,8.5rem)] leading-[0.86] text-lime"
+              className="brush lean -rotate-[1.5deg] select-none pb-[0.08em] text-[clamp(3.4rem,9vw,8.5rem)] leading-[0.86] text-lime"
             >
               {title}
             </Words>
-            <p className="hand mt-[clamp(0.75rem,2vh,1.25rem)] -rotate-[3deg] whitespace-pre-line pl-[0.4rem] text-[clamp(1.15rem,1.9vw,1.7rem)] text-bone/65 md:pl-[clamp(2rem,6vw,5rem)]">
+            <p
+              data-write
+              className="hand mt-[clamp(0.75rem,2vh,1.25rem)] -rotate-[3deg] whitespace-pre-line pl-[0.4rem] text-[clamp(1.15rem,1.9vw,1.7rem)] text-bone/65 md:pl-[clamp(2rem,6vw,5rem)]"
+            >
               {note}
             </p>
           </div>
@@ -78,7 +81,7 @@ export function Diamonds({ lines }: { lines: readonly React.ReactNode[] }) {
   return (
     <ul className="space-y-[0.8rem]">
       {lines.map((line, i) => (
-        <li key={i} className="body-copy flex gap-[0.9rem] text-[clamp(0.95rem,1.1vw,1.05rem)] text-bone/85">
+        <li key={i} data-anim="rise" className="body-copy flex gap-[0.9rem] text-[clamp(0.95rem,1.1vw,1.05rem)] text-bone/85">
           <span aria-hidden="true" className="mt-[0.55em] h-[0.42rem] w-[0.42rem] shrink-0 rotate-45 bg-lime" />
           <span>{line}</span>
         </li>

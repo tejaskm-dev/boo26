@@ -7,15 +7,17 @@ import RiseIn from "@/components/fx/RiseIn";
 import Marquee from "@/components/fx/Marquee";
 import Countdown from "@/components/fx/Countdown";
 import CodeEntry from "./CodeEntry";
+import ForkSign from "./ForkSign";
 import { BAND, EVENT, NOTES } from "@/lib/site";
 import { HOW, JUDGING, RULES } from "@/lib/register/content";
 import type { SpriteName } from "@/lib/sprites";
 
+/** `n` is counted up to when the row comes into view */
 const FACTS = [
-  { k: "Team", v: "2 PEOPLE" },
-  { k: "Fee", v: "₹200 A TEAM" },
-  { k: "Open to", v: "ASIET STUDENTS" },
-  { k: "Starts", v: "24 OCT, 2 PM" },
+  { k: "Team", n: 2, after: " PEOPLE" },
+  { k: "Fee", before: "₹", n: 200, after: " A TEAM" },
+  { k: "Open to", after: "ASIET STUDENTS" },
+  { k: "Starts", after: "24 OCT, 2 PM" },
 ] as const;
 
 /** the reading along the way: each its own page, so a phone gets one thing at a time */
@@ -59,17 +61,18 @@ export default function Hub() {
             <div className="relative lg:col-start-1 lg:row-start-1 lg:pr-[clamp(2rem,4vw,4.5rem)]">
               <Words
                 as="h1"
-                className="brush -rotate-[1.5deg] select-none pb-[0.06em] text-[clamp(3.6rem,12vw,8rem)] leading-[0.84] text-lime lg:text-[clamp(4.5rem,8.6vw,8rem)]"
+                className="brush lean -rotate-[1.5deg] select-none pb-[0.06em] text-[clamp(3.6rem,12vw,8rem)] leading-[0.84] text-lime lg:text-[clamp(4.5rem,8.6vw,8rem)]"
               >
                 {"Pick your\npath."}
               </Words>
-              <p className="hand mt-[clamp(0.6rem,1.6vh,1rem)] -rotate-[3deg] whitespace-pre-line pl-[0.4rem] text-[clamp(1.15rem,1.9vw,1.7rem)] text-bone/65 md:pl-[clamp(2rem,6vw,5rem)]">
+              <p
+                data-write
+                className="hand mt-[clamp(0.6rem,1.6vh,1rem)] -rotate-[3deg] whitespace-pre-line pl-[0.4rem] text-[clamp(1.15rem,1.9vw,1.7rem)] text-bone/65 md:pl-[clamp(2rem,6vw,5rem)]"
+              >
                 {"Two of you.\nOne night."}
               </p>
-              {/* the signpost at the fork, beside the short second line */}
-              <RiseIn className="pointer-events-none absolute right-[4%] top-[30%] md:right-[14%] lg:right-[10%]" start="top 100%">
-                <Sprite name="signboard" scale={0.5} drift={14} idle={4} />
-              </RiseIn>
+              {/* the signpost at the fork: it sways, and points at the path under the pointer */}
+              <ForkSign className="pointer-events-none absolute right-[4%] top-[30%] md:right-[14%] lg:right-[10%]" />
             </div>
 
             <div className="border-t border-bone/15 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:border-l lg:border-t-0 lg:pl-[clamp(2.5rem,4vw,4.5rem)]">
@@ -88,7 +91,9 @@ export default function Hub() {
               {/* where the path splits */}
               <div aria-hidden="true" className="flex items-center gap-4">
                 <span className="h-px flex-1 bg-bone/15" />
-                <span className="hand grid h-[3.2rem] w-[3.2rem] place-items-center rounded-full pb-1 text-[1.55rem] text-lime">or</span>
+                <span data-pop className="hand grid h-[3.2rem] w-[3.2rem] place-items-center rounded-full pb-1 text-[1.55rem] text-lime">
+                  or
+                </span>
                 <span className="h-px flex-1 bg-bone/15" />
               </div>
 
@@ -110,7 +115,11 @@ export default function Hub() {
               {FACTS.map((f) => (
                 <div key={f.k}>
                   <dt className="label text-bone/45">{f.k}</dt>
-                  <dd className="display mt-2 text-[clamp(0.95rem,1.5vw,1.2rem)] leading-none">{f.v}</dd>
+                  <dd className="display mt-2 text-[clamp(0.95rem,1.5vw,1.2rem)] leading-none">
+                    {"before" in f ? f.before : null}
+                    {"n" in f ? <span data-count={f.n}>{f.n}</span> : null}
+                    {f.after}
+                  </dd>
                 </div>
               ))}
             </dl>
@@ -126,12 +135,30 @@ export default function Hub() {
       >
         <div className="flex items-start justify-between gap-6 px-[var(--edge)]">
           <SectionLabel index="01">How it works</SectionLabel>
-          <p className="hand max-w-[12ch] whitespace-pre-line text-right text-[clamp(1rem,1.5vw,1.4rem)] text-ink/55">
+          <p data-write className="hand max-w-[12ch] whitespace-pre-line text-right text-[clamp(1rem,1.5vw,1.4rem)] text-ink/55">
             {"Two people.\nOne code."}
           </p>
         </div>
 
-        <ol data-stagger className="mt-[clamp(1.5rem,4vh,2.5rem)] grid border-y border-ink/15 md:grid-cols-3">
+        <ol data-stagger data-draw-along className="relative mt-[clamp(1.5rem,4vh,2.5rem)] grid border-y border-ink/15 md:grid-cols-3">
+          {/* the thread the three stops hang off: across the top on a wide
+              screen, down the left on a phone */}
+          <svg
+            aria-hidden="true"
+            preserveAspectRatio="none"
+            viewBox="0 0 100 1"
+            className="pointer-events-none absolute inset-x-0 -top-px hidden h-px w-full overflow-visible md:block"
+          >
+            <line data-draw x1="0" y1="0.5" x2="100" y2="0.5" stroke="var(--color-lime)" strokeWidth={2} vectorEffect="non-scaling-stroke" />
+          </svg>
+          <svg
+            aria-hidden="true"
+            preserveAspectRatio="none"
+            viewBox="0 0 1 100"
+            className="pointer-events-none absolute inset-y-0 left-[calc(var(--edge)-0.6rem)] h-full w-px overflow-visible md:hidden"
+          >
+            <line data-draw x1="0.5" y1="0" x2="0.5" y2="100" stroke="var(--color-lime)" strokeWidth={2} vectorEffect="non-scaling-stroke" />
+          </svg>
           {HOW.map((s, i) => (
             <li
               key={s.index}
@@ -158,16 +185,16 @@ export default function Hub() {
         <div className="mt-[clamp(3.5rem,9vh,6rem)] grid gap-[clamp(2rem,5vw,5rem)] px-[var(--edge)] lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)]">
           <div className="relative">
             <SectionLabel index="02">Before you start</SectionLabel>
-            <p className="hand mt-6 max-w-[14ch] -rotate-[3deg] whitespace-pre-line text-[clamp(1.15rem,2vw,1.8rem)] text-ink/70">
+            <p data-write className="hand mt-6 max-w-[14ch] -rotate-[3deg] whitespace-pre-line text-[clamp(1.15rem,2vw,1.8rem)] text-ink/70">
               {"Read the map.\nIt's short."}
             </p>
-            <Sprite name="treasure-map" scale={0.46} drift={12} idle={4} className="mt-8 hidden -rotate-[6deg] lg:block" />
+            <Sprite name="treasure-map" data-pop scale={0.46} drift={12} idle={4} className="mt-8 hidden -rotate-[6deg] lg:block" />
           </div>
 
           <nav aria-label="Before you start">
-            <ol className="border-t border-ink/15">
+            <ol data-stagger className="border-t border-ink/15">
               {MAP.map((m, i) => (
-                <li key={m.href} className="border-b border-ink/15">
+                <li key={m.href} data-anim="rise" className="border-b border-ink/15">
                   <a
                     href={m.href}
                     className="group relative flex items-baseline gap-[clamp(0.9rem,2vw,1.6rem)] py-[clamp(1rem,2.6vh,1.5rem)] outline-none"
@@ -234,7 +261,7 @@ function Path({
   children: React.ReactNode;
 }) {
   return (
-    <article className="relative py-[clamp(1.5rem,3.5vh,2.25rem)]">
+    <article data-path={letter} className="group/path relative py-[clamp(1.5rem,3.5vh,2.25rem)]">
       <p className="label flex items-center gap-3 text-bone/45">
         <span className="text-lime">Path {letter}</span>
         <span aria-hidden="true" className="h-px w-8 bg-current opacity-40" />
@@ -252,7 +279,10 @@ function Path({
       <div className="mt-[clamp(1.1rem,3vh,1.75rem)]">{children}</div>
       {/* beside the label and the heading, clear of the text under them */}
       <RiseIn className="pointer-events-none absolute right-[2%] top-[clamp(1.25rem,3.5vh,2.25rem)] lg:top-[-0.4rem]" start="top 96%">
-        <Sprite name={cat} scale={0.33} drift={12} idle={5} />
+        {/* the cat hops when its path is pointed at */}
+        <span className="block transition-transform duration-500 ease-[var(--ease-out-soft)] group-hover/path:-translate-y-2 group-hover/path:rotate-[-6deg] group-focus-within/path:-translate-y-2">
+          <Sprite name={cat} scale={0.33} drift={12} idle={5} />
+        </span>
       </RiseIn>
     </article>
   );

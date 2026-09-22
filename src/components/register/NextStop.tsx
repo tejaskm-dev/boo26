@@ -45,7 +45,7 @@ export default function NextStop({
             <RowMark seed={1} />
             <span className="row-index label relative w-[1.6rem] shrink-0 text-bone/35">{index}</span>
             <span className="relative min-w-0 flex-1">
-              <span className="display block text-[clamp(1.9rem,5.4vw,4.4rem)] leading-[0.95]">{title}</span>
+              <span className="display lean block text-[clamp(1.9rem,5.4vw,4.4rem)] leading-[0.95]">{title}</span>
               <span className="body-copy mt-3 block text-[clamp(0.9rem,1.1vw,1rem)] text-bone/55">{note}</span>
             </span>
             <span
@@ -61,7 +61,7 @@ export default function NextStop({
           <RiseIn className="self-end" from="bottom">
             <Sprite name={cat} scale={0.46} drift={12} idle={4} />
           </RiseIn>
-          <p className="hand max-w-[16ch] -rotate-[2deg] whitespace-pre-line text-[clamp(1.1rem,1.7vw,1.55rem)] text-bone/60">
+          <p data-write className="hand max-w-[16ch] -rotate-[2deg] whitespace-pre-line text-[clamp(1.1rem,1.7vw,1.55rem)] text-bone/60">
             {aside}
           </p>
           <BlobButton href={action.href} size="lg">

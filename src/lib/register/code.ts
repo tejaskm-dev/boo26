@@ -6,7 +6,9 @@
  * 31 characters to the power of 6 is 887 million codes: far more than there
  * will ever be teams, so a code can't be guessed by counting.
  */
-const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+/** also what a code scrambles through before it settles, on the team page */
+export const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+const ALPHABET = CODE_ALPHABET;
 export const CODE_LENGTH = 6;
 const VALID = new RegExp(`^[${ALPHABET}]{${CODE_LENGTH}}$`);
 

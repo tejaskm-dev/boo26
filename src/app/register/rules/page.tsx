@@ -1,6 +1,7 @@
 import Section, { SectionLabel } from "@/components/sections/Section";
 import Sprite from "@/components/ui/Sprite";
 import GhostIndex from "@/components/ui/GhostIndex";
+import RowMark from "@/components/ui/RowMark";
 import EdgeLabel from "@/components/ui/EdgeLabel";
 import Closed from "@/components/register/Closed";
 import RegisterHeader from "@/components/register/RegisterHeader";
@@ -48,21 +49,33 @@ export default function RulesPage() {
           <div className="grid gap-[clamp(1.5rem,4vw,5rem)] px-[var(--edge)] lg:grid-cols-[minmax(0,0.42fr)_minmax(0,1fr)] lg:pr-[clamp(3rem,6vw,7rem)]">
             <div className="lg:sticky lg:top-[calc(var(--header-h)+2.5rem)] lg:self-start">
               <SectionLabel index="01">The rules</SectionLabel>
-              <p className="hand mt-5 max-w-[14ch] -rotate-[3deg] whitespace-pre-line text-[clamp(1.1rem,1.8vw,1.6rem)] text-ink/60">
+              <p data-write className="hand mt-5 max-w-[14ch] -rotate-[3deg] whitespace-pre-line text-[clamp(1.1rem,1.8vw,1.6rem)] text-ink/60">
                 {`${RULES.length} of them.\nAll of them count.`}
+              </p>
+              {/* which one you're on, as you read down them */}
+              <p aria-hidden="true" className="mt-[clamp(1.75rem,4.5vh,2.75rem)] hidden items-end gap-2 lg:flex">
+                <span className="block overflow-hidden">
+                  <span data-track-of="rules" className="display block text-[clamp(2.5rem,5.5vw,4.25rem)] leading-[0.8] text-ink">
+                    01
+                  </span>
+                </span>
+                <span className="label pb-1 text-ink/40">/ {pad(RULES.length - 1)}</span>
               </p>
             </div>
 
-            <ol data-stagger className="border-b border-ink/15">
+            <ol data-stagger data-track="rules" className="border-b border-ink/15">
               {RULES.map((r, i) => (
                 <li
                   key={r.title}
                   data-anim="rise"
+                  data-track-item
                   className="border-t border-ink/15 py-[clamp(1.2rem,3vh,1.8rem)] md:grid md:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] md:items-baseline md:gap-8"
                 >
-                  <div className="flex items-baseline gap-[clamp(0.9rem,1.8vw,1.5rem)]">
-                    <span className="label w-[1.6rem] shrink-0 text-ink/35">{pad(i)}</span>
-                    <h2 className="display text-[clamp(1.3rem,2.1vw,1.85rem)] leading-[1.02]">{r.title}</h2>
+                  {/* the rule being read keeps the marker stroke a row gets under the pointer */}
+                  <div className="relative flex items-baseline gap-[clamp(0.9rem,1.8vw,1.5rem)]">
+                    <RowMark seed={i} />
+                    <span className="label relative w-[1.6rem] shrink-0 text-ink/35">{pad(i)}</span>
+                    <h2 className="display relative text-[clamp(1.3rem,2.1vw,1.85rem)] leading-[1.02]">{r.title}</h2>
                   </div>
                   <p className="body-copy mt-2 max-w-[52ch] pl-[calc(1.6rem+clamp(0.9rem,1.8vw,1.5rem))] text-[clamp(0.96rem,1.1vw,1.05rem)] text-ink/75 md:mt-0 md:pl-0">
                     {r.body}
@@ -75,7 +88,7 @@ export default function RulesPage() {
           {/* the night, practically */}
           <div className="mt-[clamp(4.5rem,11vh,7rem)] px-[var(--edge)] lg:pr-[clamp(3rem,6vw,7rem)]">
             <SectionLabel index="02">The night, practically</SectionLabel>
-            <p className="hand mt-5 max-w-[16ch] -rotate-[3deg] whitespace-pre-line text-[clamp(1.1rem,1.8vw,1.6rem)] text-ink/60">
+            <p data-write className="hand mt-5 max-w-[16ch] -rotate-[3deg] whitespace-pre-line text-[clamp(1.1rem,1.8vw,1.6rem)] text-ink/60">
               {"Pack light.\nCharge everything."}
             </p>
 
@@ -84,6 +97,7 @@ export default function RulesPage() {
                 <li key={g.title} className="relative border-t border-ink/15 pt-[clamp(1.1rem,2.6vh,1.5rem)]">
                   <Sprite
                     name={g.sprite}
+                    data-pop
                     scale={g.scale}
                     drift={10}
                     className="absolute bottom-[calc(100%-0.5rem)] right-[4%]"
@@ -93,11 +107,11 @@ export default function RulesPage() {
                 </li>
               ))}
               <li className="relative border-t border-ink/15 pt-[clamp(1.1rem,2.6vh,1.5rem)]">
-                <Sprite name="moon" scale={0.2} drift={10} className="absolute bottom-[calc(100%-0.5rem)] right-[4%]" />
+                <Sprite name="moon" data-pop scale={0.2} drift={10} className="absolute bottom-[calc(100%-0.5rem)] right-[4%]" />
                 <h2 className="display text-[clamp(1.2rem,1.9vw,1.6rem)] leading-none">The schedule</h2>
-                <ol className="mt-3 space-y-[0.55rem]">
+                <ol data-stagger className="mt-3 space-y-[0.55rem]">
                   {TIMELINE.map((t) => (
-                    <li key={t.time} className="body-copy flex items-baseline gap-3 text-[clamp(0.95rem,1.05vw,1rem)]">
+                    <li key={t.time} data-anim="rise" className="body-copy flex items-baseline gap-3 text-[clamp(0.95rem,1.05vw,1rem)]">
                       <span className="label w-[3.4rem] shrink-0 text-ink/45">{t.time}</span>
                       <span className="text-ink/80">{t.label}</span>
                     </li>
