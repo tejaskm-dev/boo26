@@ -58,6 +58,10 @@ export function GlowEyes({
   );
 }
 
+/** The ghost's outline, on a 64 x 60 box. The QR code's centre draws it too. */
+export const GHOST_BODY =
+  "M32 2c15 0 25 11 25 25 0 7-2 11-2 16s3 7 1 10-8 1-11-2-5-4-8-1-6 6-10 4-4-6-8-6-7 4-10 2-1-8 0-12-2-6-2-11C7 13 17 2 32 2Z";
+
 /** The little melted ghost that shows up at the edge of a field. */
 export function Ghost({
   className = "",
@@ -71,10 +75,7 @@ export function Ghost({
   const eyes = on === "bone" ? "var(--color-bone)" : "var(--color-ink)";
   return (
     <svg viewBox="0 0 64 60" className={className} aria-hidden="true">
-      <path
-        d="M32 2c15 0 25 11 25 25 0 7-2 11-2 16s3 7 1 10-8 1-11-2-5-4-8-1-6 6-10 4-4-6-8-6-7 4-10 2-1-8 0-12-2-6-2-11C7 13 17 2 32 2Z"
-        fill={body}
-      />
+      <path d={GHOST_BODY} fill={body} />
       <ellipse cx="24" cy="26" rx="4" ry="5.4" fill={eyes} />
       <ellipse cx="40" cy="26" rx="4" ry="5.4" fill={eyes} />
     </svg>

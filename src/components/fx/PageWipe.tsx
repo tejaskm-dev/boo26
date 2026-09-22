@@ -6,6 +6,7 @@ import { EVENT } from "@/lib/site";
 import { MD, OPEN_EVENT, prefersReducedMotion } from "@/lib/motion";
 import { getLenis } from "@/lib/lenis";
 import { STORAGE } from "@/lib/storage";
+import { setLeave } from "@/lib/leave";
 
 /**
  * The page wipe, and the preloader it doubles as.
@@ -334,11 +335,19 @@ export default function PageWipe() {
       }
     };
 
+    // The same exit for code that moves on once it's done — a sent form, say.
+    setLeave((href, from) => {
+      const url = new URL(href, window.location.href);
+      if (prefersReducedMotion()) window.location.assign(url.href);
+      else if (!leaving) leave(url.href, from);
+    });
+
     document.addEventListener("click", onClick);
     window.addEventListener("pageshow", onPageShow);
     // Listeners only. The arrival is left to finish: React runs effects twice
     // in development, and the second run must not undo the first's work.
     return () => {
+      setLeave(null);
       document.removeEventListener("click", onClick);
       window.removeEventListener("pageshow", onPageShow);
     };

@@ -15,22 +15,30 @@ const REST =
 const HOVER =
   "M3 36C3 12 21 3 44 2C78 1 96 8 120 8C144 8 162 1 196 2C219 3 237 12 237 36C237 60 219 69 196 70C162 71 144 64 120 64C96 64 78 71 44 70C21 69 3 60 3 36Z";
 
-type Props = React.AnchorHTMLAttributes<HTMLAnchorElement> & {
-  href: string;
+type Look = {
   children: React.ReactNode;
   size?: "sm" | "lg";
   tone?: "lime" | "ink";
+  /** a button waiting on the server: it says so, and stays where it is */
+  busy?: boolean;
 };
+
+/** With an href it's a link, as everywhere on the site. */
+type LinkProps = Look & React.AnchorHTMLAttributes<HTMLAnchorElement> & { href: string };
+
+/** Without one it's a form's own <button>, in the same slab. */
+type ButtonProps = Look & React.ButtonHTMLAttributes<HTMLButtonElement> & { href?: undefined };
 
 export default function BlobButton({
   href,
   children,
   size = "sm",
   tone = "lime",
+  busy = false,
   className = "",
   ...rest
-}: Props) {
-  const root = useRef<HTMLAnchorElement>(null);
+}: LinkProps | ButtonProps) {
+  const root = useRef<HTMLElement>(null);
   const shape = useRef<SVGPathElement>(null);
   const glow = useRef<HTMLSpanElement>(null);
   const label = useRef<HTMLSpanElement>(null);
@@ -98,13 +106,9 @@ export default function BlobButton({
   const fill = tone === "lime" ? "var(--color-lime)" : "var(--color-ink)";
   const ink = tone === "lime" ? "text-ink" : "text-bone";
 
-  return (
-    <a
-      ref={root}
-      href={href}
-      className={`group relative inline-flex isolate items-center justify-center outline-none ${pad} ${className}`}
-      {...rest}
-    >
+  const look = `group relative inline-flex isolate items-center justify-center outline-none ${pad} ${className}`;
+  const inside = (
+    <>
       <span
         ref={glow}
         aria-hidden="true"
@@ -137,6 +141,32 @@ export default function BlobButton({
           <path d="M2.5 9.5 9.5 2.5M4 2.5h5.5V8" />
         </svg>
       </span>
-    </a>
+    </>
+  );
+
+  if (href !== undefined) {
+    return (
+      <a
+        ref={root as React.Ref<HTMLAnchorElement>}
+        href={href}
+        className={look}
+        {...(rest as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
+      >
+        {inside}
+      </a>
+    );
+  }
+
+  const { type: kind = "button", ...attrs } = rest as React.ButtonHTMLAttributes<HTMLButtonElement>;
+  return (
+    <button
+      ref={root as React.Ref<HTMLButtonElement>}
+      type={kind}
+      aria-busy={busy || undefined}
+      className={`${look} ${busy ? "cursor-wait opacity-70" : "cursor-pointer"}`}
+      {...attrs}
+    >
+      {inside}
+    </button>
   );
 }
