@@ -494,6 +494,17 @@ li[data-stop][data-current="true"] [data-stop-cat] {
   translate: 0 -0.15em;
 }
 
+/* The clause being read, in a legal page's contents (LegalToc), keeps the
+   stroke a row gets under the pointer: the same mark, meaning "this one". */
+.group[data-current="true"] > .row-mark {
+  opacity: 0.22;
+  scale: 1 1;
+}
+
+.group[data-current="true"] .row-index {
+  color: var(--color-ink);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .row-mark,
   .row-index {
