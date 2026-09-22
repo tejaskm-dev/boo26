@@ -151,6 +151,13 @@ export default function StepFrame({
             <p className="hand mt-[clamp(0.6rem,1.6vh,1rem)] max-w-[16ch] -rotate-[3deg] whitespace-pre-line pl-[0.35rem] text-[clamp(1.1rem,1.7vw,1.5rem)] text-bone/60">
               {step.note}
             </p>
+            {/* the empty half of a wide screen gets one of the site's own marks */}
+            <Sprite
+              name="squiggle-lime"
+              scale={0.3}
+              drift={16}
+              className="pointer-events-none absolute -bottom-[clamp(6rem,15vh,10rem)] left-[1rem] hidden lg:block"
+            />
             <RiseIn
               key={`cat-${at}`}
               className="pointer-events-none absolute right-0 top-[-0.5rem] lg:right-[4%] lg:top-auto lg:bottom-[-1rem]"

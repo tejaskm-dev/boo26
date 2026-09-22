@@ -36,6 +36,7 @@ export default function JudgingPage() {
     <>
       <RegisterHeader back={{ href: "/register", label: "Register" }} />
       <main className="relative overflow-x-clip">
+        <Sprite name="star" scale={0.13} drift={30} className="pointer-events-none absolute left-[46%] top-[30%] z-10 hidden md:block" />
         <Hero index="02" label="Judging" title={"How it's\njudged."} note={"Spoiler: make\nthem react."} cat="eyes-glow" catScale={0.34}>
           <Blob title="The split">
             <div aria-hidden="true" className="flex h-[2.4rem] w-full gap-[3px] overflow-hidden rounded-full">
@@ -128,7 +129,11 @@ export default function JudgingPage() {
             </ol>
 
             {/* the morning itself */}
-            <div className="mt-[clamp(4rem,10vh,6.5rem)] grid gap-[clamp(2rem,5vw,5rem)] lg:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)]">
+            <div
+              data-scrub="up"
+              data-scrub-amount="5"
+              className="mt-[clamp(4rem,10vh,6.5rem)] grid gap-[clamp(2rem,5vw,5rem)] lg:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)]"
+            >
               <div>
                 <SectionLabel index="02">On the morning</SectionLabel>
                 <p data-write className="hand mt-5 max-w-[12ch] -rotate-[3deg] whitespace-pre-line text-[clamp(1.1rem,1.8vw,1.6rem)] text-ink/60">

@@ -92,7 +92,12 @@ export default function RulesPage() {
               {"Pack light.\nCharge everything."}
             </p>
 
-            <ul className="mt-[clamp(3rem,7vh,4.5rem)] grid gap-x-[clamp(1.5rem,3vw,3rem)] gap-y-[clamp(3.25rem,8vh,4.5rem)] sm:grid-cols-2 lg:grid-cols-3">
+            <Sprite name="scribble" scale={0.4} drift={16} className="pointer-events-none absolute right-[6%] top-[52%] hidden opacity-70 lg:block" />
+            <ul
+              data-scrub="up"
+              data-scrub-amount="5"
+              className="mt-[clamp(3rem,7vh,4.5rem)] grid gap-x-[clamp(1.5rem,3vw,3rem)] gap-y-[clamp(3.25rem,8vh,4.5rem)] sm:grid-cols-2 lg:grid-cols-3"
+            >
               {GUIDE.map((g) => (
                 <li key={g.title} className="relative border-t border-ink/15 pt-[clamp(1.1rem,2.6vh,1.5rem)]">
                   <Sprite

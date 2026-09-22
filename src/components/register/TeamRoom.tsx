@@ -136,6 +136,7 @@ export default function TeamRoom({
       field="ink"
       className="min-h-svh pb-[clamp(3.5rem,9vh,6rem)] pt-[calc(var(--header-h)+clamp(1.5rem,5vh,3.5rem))]"
     >
+      <Sprite name="star" scale={0.13} drift={28} className="pointer-events-none absolute right-[30%] top-[22%] hidden md:block" />
       <div className="px-[var(--edge)]">
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
           <p className="label label-loose text-bone/45">

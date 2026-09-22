@@ -49,6 +49,7 @@ export default function Hub() {
     <main className="relative overflow-x-clip">
       {/* 1 — the fork */}
       <Section field="ink" className="pb-[clamp(3rem,8vh,5rem)] pt-[calc(var(--header-h)+clamp(1.5rem,5vh,3.5rem))]">
+        <Sprite name="star" scale={0.14} drift={26} className="pointer-events-none absolute left-[42%] top-[38%] hidden md:block" />
         <div data-intro className="relative px-[var(--edge)]">
           <p data-anim="rise" className="label label-loose text-bone/45">
             Registration · {EVENT.date}
@@ -110,6 +111,8 @@ export default function Hub() {
 
             <dl
               data-anim="rise"
+              data-scrub="up"
+              data-scrub-amount="6"
               className="grid grid-cols-2 gap-x-6 gap-y-[clamp(1.1rem,2.6vh,1.6rem)] border-t border-bone/15 pt-[clamp(1.1rem,2.6vh,1.6rem)] lg:col-start-1 lg:row-start-2 lg:mr-[clamp(2rem,4vw,4.5rem)] lg:self-end"
             >
               {FACTS.map((f) => (
@@ -133,9 +136,11 @@ export default function Hub() {
         forms={[{ shape: "swellMid", tone: "ink", at: "inset-x-0 top-0 w-full h-[8vh] md:h-[15vh]" }]}
         className="pb-[clamp(4rem,10vh,7rem)] pt-[clamp(4.5rem,13vh,10rem)]"
       >
-        <div className="flex items-start justify-between gap-6 px-[var(--edge)]">
+        {/* dark props read on the cream field, the way they do on the home page */}
+        <Sprite name="web" scale={0.8} drift={10} className="pointer-events-none absolute -right-3 top-[7vh] hidden opacity-80 md:block" />
+        <div className="px-[var(--edge)]">
           <SectionLabel index="01">How it works</SectionLabel>
-          <p data-write className="hand max-w-[12ch] whitespace-pre-line text-right text-[clamp(1rem,1.5vw,1.4rem)] text-ink/55">
+          <p data-write className="hand mt-5 max-w-[12ch] -rotate-[3deg] whitespace-pre-line text-[clamp(1.1rem,1.8vw,1.6rem)] text-ink/60">
             {"Two people.\nOne code."}
           </p>
         </div>
@@ -227,6 +232,8 @@ export default function Hub() {
         forms={[{ shape: "spillLeft", tone: "bone", at: "inset-x-0 top-0 w-full h-[11vh] md:h-[19vh]" }]}
         className="pb-[clamp(3.5rem,9vh,6rem)] pt-[clamp(6rem,19vh,12rem)]"
       >
+        <Sprite name="moon" scale={0.34} drift={28} idle={6} className="pointer-events-none absolute right-[8%] top-[18%] hidden md:block" />
+        <Sprite name="star-small" scale={0.5} drift={34} className="pointer-events-none absolute left-[14%] top-[34%] hidden md:block" />
         <div className="flex flex-col items-center px-[var(--edge)] text-center">
           <p className="label label-loose text-bone/45">The doors open in</p>
           <div className="mt-[clamp(1.25rem,3vh,2rem)]">
