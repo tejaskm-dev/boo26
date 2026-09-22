@@ -1,13 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import StepFrame, { type Step } from "./StepFrame";
 import { ChoiceField, TextField } from "./Fields";
 import { Agree, CampusFields, Summary, YouFields, memberRows } from "./MemberFields";
 import { useSteps } from "./useSteps";
+import { useMember } from "./useMember";
+import { dropDraft, saveDraft, useOpeningDraft, type Draft } from "./draft";
 import { createTeam } from "@/app/register/actions";
 import { REACTIONS } from "@/lib/register/content";
 import { teamPath } from "@/lib/register/code";
+import { ghostSays } from "@/lib/register/ghost";
 import {
   CAMPUS_FIELDS,
   EMPTY_MEMBER,
@@ -18,17 +21,17 @@ import {
   checkYou,
   hasErrors,
   type Errors,
-  type Member,
   type TeamDetails,
 } from "@/lib/register/fields";
 import { leaveTo } from "@/lib/leave";
 import { toast } from "@/lib/toast";
 
 const KEYS = ["you", "campus", "team", "check"] as const;
+const LAST = KEYS.length - 1;
 
 const STEPS: Step[] = [
   { label: "You", title: "Who's\nstarting?", note: "That's you.\nThe captain.", cat: "cat-curious" },
-  { label: "Campus", title: "The\ndetails.", note: "Plus one very\nimportant question.", cat: "cat-laptop" },
+  { label: "Campus", title: "The\ndetails.", note: "The ASIET bits.\nQuick ones.", cat: "cat-laptop" },
   { label: "Team", title: "Name the\nteam.", note: "Make it one\nthey'll remember.", cat: "cat-excited" },
   { label: "Check", title: "Look\nright?", note: "Last chance\nto fix a typo.", cat: "cat-thinking" },
 ];
@@ -40,31 +43,59 @@ const REACTION_OPTIONS = [{ value: "", label: "Not sure yet" }, ...REACTIONS.map
  * college, the team, a look over it all — then the team exists and this page
  * wipes over to it, where the code, the link and the QR are waiting to be
  * sent on.
+ *
+ * Drawn first exactly as the server drew it; then, if this tab was part-way
+ * through a sign-up, once more with what was typed (./draft.ts).
  */
 export default function CreateTeam({ preview }: { preview: boolean }) {
+  const draft = useOpeningDraft();
+  return <Form key={draft ? "resumed" : "fresh"} preview={preview} draft={draft ?? null} />;
+}
+
+function Form({ preview, draft }: { preview: boolean; draft: Draft | null }) {
   const { at, go, back } = useSteps(KEYS);
-  const [member, setMember] = useState<Member>(EMPTY_MEMBER);
-  const [team, setTeam] = useState<TeamDetails>(EMPTY_TEAM);
-  const [agreed, setAgreed] = useState(false);
-  const [memberErrors, setMemberErrors] = useState<Errors<Member>>({});
+  const {
+    member,
+    errors: memberErrors,
+    setErrors: setMemberErrors,
+    set: setM,
+    touch,
+    ok,
+    passes,
+  } = useMember(draft?.member ?? EMPTY_MEMBER);
+  const [team, setTeam] = useState<TeamDetails>(draft?.team ?? EMPTY_TEAM);
   const [teamErrors, setTeamErrors] = useState<Errors<TeamDetails>>({});
+  const [agreed, setAgreed] = useState(false);
   const [agreeError, setAgreeError] = useState<string>();
   const [busy, setBusy] = useState(false);
+  /** back from the look-over to change something: the next Next goes straight back to it */
+  const [editing, setEditing] = useState(false);
 
-  // an edit clears that field's note: it's being dealt with
-  const setM = (field: keyof Member, value: string) => {
-    setMember((m) => ({ ...m, [field]: value }));
-    setMemberErrors((e) => ({ ...e, [field]: undefined }));
-  };
+  useEffect(() => {
+    if (Object.values(member).some(Boolean) || team.name || team.reaction) saveDraft({ member, team });
+  }, [member, team]);
+
   const setT = (field: keyof TeamDetails, value: string) => {
     setTeam((t) => ({ ...t, [field]: value }));
     setTeamErrors((e) => ({ ...e, [field]: undefined }));
+  };
+
+  const onward = (to: number) => {
+    if (!editing) return go(to);
+    setEditing(false);
+    go(LAST);
+  };
+
+  const edit = (i: number) => {
+    setEditing(true);
+    go(i);
   };
 
   const send = async (button: Element) => {
     if (busy) return;
     if (!agreed) {
       setAgreeError("Tick this to carry on.");
+      ghostSays("scared");
       return;
     }
     setBusy(true);
@@ -72,48 +103,45 @@ export default function CreateTeam({ preview }: { preview: boolean }) {
       const sent = await createTeam({ team, member, agreed });
       if (sent.ok) {
         // stays busy: the page is on its way out
+        dropDraft();
+        ghostSays("fly");
         leaveTo(`${teamPath(sent.code)}?new=1`, button);
         return;
       }
-      // put each message back beside its field, and go to the first step that has one
+      // each message back beside its field, then the first step that has one
       const m = sent.member ?? {};
       const t = sent.team ?? {};
       setMemberErrors(m);
       setTeamErrors(t);
-      if (YOU_FIELDS.some((f) => m[f])) go(0);
-      else if (CAMPUS_FIELDS.some((f) => m[f])) go(1);
-      else if (hasErrors(t)) go(2);
+      const to = YOU_FIELDS.some((f) => m[f]) ? 0 : CAMPUS_FIELDS.some((f) => m[f]) ? 1 : hasErrors(t) ? 2 : -1;
+      if (to >= 0) edit(to);
+      ghostSays("scared");
       toast(sent.message, "Not yet");
     } catch {
+      ghostSays("scared");
       toast("Couldn't reach BOO! Check your connection and try again.", "Not sent");
     }
     setBusy(false);
   };
 
-  // A step's own check joins whatever notes are still standing, so one the
-  // server left on a later step is still there when the reader gets to it.
-  // Only this step's fields hold it back.
-  const advance = (found: Errors<Member>, fields: readonly (keyof Member)[], to: number) => {
-    const notes = { ...memberErrors, ...found };
-    setMemberErrors(notes);
-    if (!fields.some((f) => notes[f])) go(to);
-  };
-
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (at === 0) advance(checkYou(member), YOU_FIELDS, 1);
-    else if (at === 1) advance(checkCampus(member), CAMPUS_FIELDS, 2);
-    else if (at === 2) {
+    if (at === 0) {
+      if (passes(checkYou(member), YOU_FIELDS)) onward(1);
+    } else if (at === 1) {
+      if (passes(checkCampus(member), CAMPUS_FIELDS)) onward(2);
+    } else if (at === 2) {
       const notes = { ...teamErrors, ...checkTeam(team, REACTIONS) };
       setTeamErrors(notes);
-      if (!hasErrors(notes)) go(3);
+      if (hasErrors(notes)) ghostSays("scared");
+      else onward(3);
     } else {
-      const submitter = (e.nativeEvent as SubmitEvent).submitter ?? e.currentTarget;
-      void send(submitter);
+      void send((e.nativeEvent as SubmitEvent).submitter ?? e.currentTarget);
     }
   };
 
   const rows = memberRows(member);
+  const fields = { prefix: "captain", member, errors: memberErrors, set: setM, touch, ok };
 
   return (
     <StepFrame
@@ -123,12 +151,12 @@ export default function CreateTeam({ preview }: { preview: boolean }) {
       onSubmit={onSubmit}
       onBack={at > 0 ? back : undefined}
       backHref="/register"
-      next={at < 3 ? "Next" : busy ? "Creating…" : "Create the team"}
+      next={at === LAST ? (busy ? "Creating…" : "Create the team") : editing ? "Back to check" : `Next · ${STEPS[at + 1].label}`}
       busy={busy}
       preview={preview}
     >
-      {at === 0 ? <YouFields prefix="captain" member={member} errors={memberErrors} set={setM} /> : null}
-      {at === 1 ? <CampusFields prefix="captain" member={member} errors={memberErrors} set={setM} /> : null}
+      {at === 0 ? <YouFields {...fields} /> : null}
+      {at === 1 ? <CampusFields {...fields} /> : null}
       {at === 2 ? (
         <>
           <TextField
@@ -137,6 +165,7 @@ export default function CreateTeam({ preview }: { preview: boolean }) {
             label="Team name"
             value={team.name}
             onChange={(v) => setT("name", v)}
+            ok={!!team.name.trim() && !teamErrors.name && !checkTeam(team, REACTIONS).name}
             error={teamErrors.name}
             hint="Up to 32 characters. It goes on the team page, and on the night."
             autoComplete="off"
@@ -157,13 +186,13 @@ export default function CreateTeam({ preview }: { preview: boolean }) {
           />
         </>
       ) : null}
-      {at === 3 ? (
+      {at === LAST ? (
         <>
-          <Summary title="You" onEdit={() => go(0)} rows={rows.you} />
-          <Summary title="Campus" onEdit={() => go(1)} rows={rows.campus} />
+          <Summary title="You" onEdit={() => edit(0)} rows={rows.you} />
+          <Summary title="Campus" onEdit={() => edit(1)} rows={rows.campus} />
           <Summary
             title="Team"
-            onEdit={() => go(2)}
+            onEdit={() => edit(2)}
             rows={[team.name.trim(), team.reaction ? `Going for: ${team.reaction}` : "Reaction: not sure yet"]}
           />
           <div className="border-t border-bone/15 pt-[clamp(1.25rem,3vh,1.75rem)]">
@@ -173,6 +202,7 @@ export default function CreateTeam({ preview }: { preview: boolean }) {
               onChange={(v) => {
                 setAgreed(v);
                 setAgreeError(undefined);
+                if (v) ghostSays("cheer");
               }}
               error={agreeError}
             />

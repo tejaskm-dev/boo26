@@ -15,14 +15,7 @@ export const YEARS = [
   { value: "4", label: "4th" },
 ] as const;
 
-/** Food is provided through the night, so this one decides dinner. */
-export const FOODS = [
-  { value: "veg", label: "Veg" },
-  { value: "non-veg", label: "Non-veg" },
-] as const;
-
 export type Year = (typeof YEARS)[number]["value"];
-export type Food = (typeof FOODS)[number]["value"];
 
 /** One person. The captain and the teammate each fill in one of these. */
 export type Member = {
@@ -33,7 +26,6 @@ export type Member = {
   department: string;
   year: Year | "";
   collegeId: string;
-  food: Food | "";
 };
 
 export type TeamDetails = {
@@ -51,14 +43,13 @@ export const EMPTY_MEMBER: Member = {
   department: "",
   year: "",
   collegeId: "",
-  food: "",
 };
 
 export const EMPTY_TEAM: TeamDetails = { name: "", reaction: "" };
 
 /** The fields each step asks, so an error found later can send the reader back to the right one. */
 export const YOU_FIELDS = ["name", "email", "phone"] as const satisfies readonly (keyof Member)[];
-export const CAMPUS_FIELDS = ["department", "year", "collegeId", "food"] as const satisfies readonly (keyof Member)[];
+export const CAMPUS_FIELDS = ["department", "year", "collegeId"] as const satisfies readonly (keyof Member)[];
 
 const squash = (s: string) => s.replace(/\s+/g, " ").trim();
 
@@ -71,6 +62,12 @@ export function cleanPhone(input: string): string {
   if (d.length === 12 && d.startsWith("91")) d = d.slice(2);
   else if (d.length === 11 && d.startsWith("0")) d = d.slice(1);
   return d;
+}
+
+/** The number field as it's typed: ten digits at most, read out in two fives. */
+export function typePhone(input: string): string {
+  const d = cleanPhone(input).slice(0, 10);
+  return d.length > 5 ? `${d.slice(0, 5)} ${d.slice(5)}` : d;
 }
 
 /** 9876543210 → +91 98765 43210 */
@@ -86,7 +83,6 @@ export function cleanMember(m: Member): Member {
     department: squash(m.department),
     year: m.year,
     collegeId: squash(m.collegeId).toUpperCase(),
-    food: m.food,
   };
 }
 
@@ -125,8 +121,6 @@ export function checkCampus(raw: Member): Errors<Member> {
 
   if (!m.collegeId) e.collegeId = "It's on your college ID card.";
   else if (!/^[A-Z0-9][A-Z0-9/ .-]{2,23}$/.test(m.collegeId)) e.collegeId = "Letters and numbers, as printed on your card.";
-
-  if (!FOODS.some((f) => f.value === m.food)) e.food = "Veg or non-veg?";
   return e;
 }
 
@@ -162,7 +156,6 @@ export function asMember(input: unknown): Member {
     department: s("department"),
     year: s("year") as Member["year"],
     collegeId: s("collegeId"),
-    food: s("food") as Member["food"],
   };
 }
 

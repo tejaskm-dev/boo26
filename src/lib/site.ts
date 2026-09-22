@@ -262,7 +262,7 @@ export const LEGAL = [
 ] as const;
 
 /** the date on all three, until one of them changes on its own */
-export const LEGAL_UPDATED = "22 Sep 2026";
+export const LEGAL_UPDATED = "23 Sep 2026";
 
 /** Handwritten margin notes, kept in one place so they stay rationed. */
 export const NOTES = {

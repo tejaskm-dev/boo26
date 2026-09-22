@@ -9,8 +9,12 @@ import Words from "@/components/fx/Words";
 import RiseIn from "@/components/fx/RiseIn";
 import Trail from "./Trail";
 import { prefersReducedMotion } from "@/lib/motion";
-import { scrollPageTo } from "@/lib/lenis";
+import { getLenis, scrollPageTo } from "@/lib/lenis";
+import { ghostSays, onGhost } from "@/lib/register/ghost";
 import type { SpriteName } from "@/lib/sprites";
+
+/** the fields that bring up a keyboard: where attention goes when a step opens */
+const TYPED = "input[type=text], input[type=email], input[type=tel], input:not([type])";
 
 export type Step = { label: string; title: string; note: string; cat: SpriteName; catScale?: number };
 
@@ -22,7 +26,13 @@ export type Step = { label: string; title: string; note: string; cat: SpriteName
  * scrolled away from.
  *
  * Moving between steps re-asks the question — the heading rises again, a new
- * cat drops in — and puts the reader, and their focus, back at the top.
+ * cat drops in, the fields slide in from the way you're going — and puts the
+ * reader back at the top: focus on the first field where there's a keyboard
+ * and a mouse, on the question on a phone, so no keyboard jumps up unasked.
+ *
+ * Filling it in should never fight you. Enter goes to the next field and only
+ * sends the step from the last one; the ghost on the trail follows along; and
+ * when something's wrong the step shakes and the cursor lands on the problem.
  */
 export default function StepFrame({
   kicker,
@@ -56,21 +66,61 @@ export default function StepFrame({
   const shown = useRef(at);
 
   useEffect(() => {
-    if (shown.current === at) return;
+    const from = shown.current;
+    if (from === at) return;
     shown.current = at;
     scrollPageTo(0);
-    head.current?.focus({ preventScroll: true });
     const el = body.current;
+    const first = el?.querySelector<HTMLInputElement>(TYPED);
+    if (first && window.matchMedia("(hover: hover) and (pointer: fine)").matches) first.focus({ preventScroll: true });
+    else head.current?.focus({ preventScroll: true });
     if (!el || prefersReducedMotion()) return;
+    const dir = at > from ? 1 : -1;
     const tween = gsap.fromTo(
       el.children,
-      { y: 22, autoAlpha: 0 },
-      { y: 0, autoAlpha: 1, duration: 0.6, stagger: 0.06, ease: "power3.out", clearProps: "transform,opacity,visibility" },
+      { x: dir * 40, autoAlpha: 0 },
+      { x: 0, autoAlpha: 1, duration: 0.55, stagger: 0.06, ease: "power3.out", clearProps: "transform,opacity,visibility" },
     );
     return () => {
       tween.kill();
     };
   }, [at]);
+
+  // Something's wrong: the step shakes and the cursor goes to the first
+  // problem. After the effects of whatever else just changed, so a jump back
+  // to an earlier step doesn't take the focus straight off it again.
+  useEffect(
+    () =>
+      onGhost((mood) => {
+        const el = body.current;
+        if (mood !== "scared" || !el) return;
+        if (!prefersReducedMotion()) gsap.fromTo(el, { x: 0 }, { x: 7, duration: 0.055, repeat: 5, yoyo: true, ease: "none", clearProps: "x" });
+        window.setTimeout(() => {
+          const bad = el.querySelector<HTMLElement>("[aria-invalid=true]");
+          if (!bad) return;
+          bad.focus({ preventScroll: true });
+          const r = bad.getBoundingClientRect();
+          if (r.top < 90 || r.bottom > window.innerHeight - 40) {
+            const lenis = getLenis();
+            if (lenis) lenis.scrollTo(bad, { offset: -window.innerHeight * 0.3 });
+            else bad.scrollIntoView({ block: "center" });
+          }
+        }, 80);
+      }),
+    [],
+  );
+
+  /** Enter moves on a field, and sends the step only from the last one */
+  const onKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
+    const t = e.target;
+    if (e.key !== "Enter" || e.nativeEvent.isComposing || !(t instanceof HTMLInputElement) || t.type === "checkbox") return;
+    const inputs = Array.from(e.currentTarget.querySelectorAll("input"));
+    const next = inputs.slice(inputs.indexOf(t) + 1).find((i) => !(t.type === "radio" && i.name === t.name));
+    if (!next) return;
+    e.preventDefault();
+    // a row of choices takes focus on its picked one, as Tab would
+    (next.type === "radio" ? (inputs.find((i) => i.name === next.name && i.checked) ?? next) : next).focus();
+  };
 
   return (
     <Section
@@ -112,7 +162,17 @@ export default function StepFrame({
         </div>
 
         {/* the answers */}
-        <form onSubmit={onSubmit} noValidate className="lg:pt-[clamp(4.5rem,11vh,7rem)]">
+        <form
+          onSubmit={onSubmit}
+          onKeyDown={onKeyDown}
+          onInput={() => ghostSays("nod")}
+          onFocus={() => ghostSays("watch")}
+          onBlur={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget as Node | null)) ghostSays("away");
+          }}
+          noValidate
+          className="lg:pt-[clamp(4.5rem,11vh,7rem)]"
+        >
           <div ref={body} className="space-y-[clamp(1.9rem,4.5vh,2.6rem)]">
             {children}
           </div>

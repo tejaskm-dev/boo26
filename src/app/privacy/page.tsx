@@ -65,7 +65,7 @@ const PRIVACY: LegalDoc = {
       body: (
         <>
           <P>
-            The site keeps up to three small notes in your browser&rsquo;s session storage. They never leave your device,
+            The site keeps up to four small notes in your browser&rsquo;s session storage. They never leave your device,
             and they&rsquo;re deleted when you close the tab.
           </P>
           <List>
@@ -79,6 +79,11 @@ const PRIVACY: LegalDoc = {
             <Item>
               <Key>{STORAGE.tilt}</Key> — on iPhone and iPad only: you allowed motion access, so you aren&rsquo;t asked again
               this visit.
+            </Item>
+            <Item>
+              <Key>{STORAGE.draft}</Key> — while you&rsquo;re registering, what you&rsquo;ve typed into the form, so a reload
+              or a switch to another app doesn&rsquo;t lose it. It stays in the tab, and it&rsquo;s deleted the moment your
+              team is made or joined.
             </Item>
           </List>
           <P>If your browser blocks storage, the site still works. It just plays the full intro every time.</P>

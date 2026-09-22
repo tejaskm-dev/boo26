@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { gsap } from "gsap";
 import { CODE_LENGTH, cleanCode, isCode, joinPath } from "@/lib/register/code";
 import { leaveTo } from "@/lib/leave";
+import { prefersReducedMotion } from "@/lib/motion";
 
 /**
  * Typing the team code in. The same pill as the footer's newsletter box, so
@@ -14,6 +16,7 @@ import { leaveTo } from "@/lib/leave";
 export default function CodeEntry({ id }: { id: string }) {
   const [value, setValue] = useState("");
   const [error, setError] = useState<string>();
+  const pill = useRef<HTMLDivElement>(null);
 
   const onChange = (raw: string) => {
     const fromLink = raw.match(/\/join\/([a-z0-9-]+)/i)?.[1];
@@ -31,6 +34,10 @@ export default function CodeEntry({ id }: { id: string }) {
           ? "Six letters and numbers, like the one your teammate got."
           : "That code has a letter codes never use. Check it again?",
       );
+      // a shake, the way the form shakes at a wrong answer
+      if (pill.current && !prefersReducedMotion()) {
+        gsap.fromTo(pill.current, { x: 0 }, { x: 7, duration: 0.055, repeat: 5, yoyo: true, ease: "none", clearProps: "x" });
+      }
       return;
     }
     leaveTo(joinPath(code), (e.nativeEvent as SubmitEvent).submitter ?? e.currentTarget);
@@ -42,6 +49,7 @@ export default function CodeEntry({ id }: { id: string }) {
         Team code
       </label>
       <div
+        ref={pill}
         className={`mt-3 flex items-center gap-2 rounded-full border bg-bone/[0.04] p-1.5 transition-colors duration-300 focus-within:border-lime/60 ${
           error ? "border-lime/50" : "border-bone/20"
         }`}

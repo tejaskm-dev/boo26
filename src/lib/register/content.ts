@@ -80,7 +80,7 @@ export const GUIDE: { title: string; body: string; sprite: SpriteName; scale: nu
   },
   {
     title: "Food",
-    body: "Provided through the night. Registration asks each of you veg or non-veg.",
+    body: "Provided through the night, and all of it's veg.",
     sprite: "can",
     scale: 0.19,
   },

@@ -14,6 +14,8 @@
 type Base = {
   id: string;
   label: string;
+  /** the answer checks out: a lime tick draws itself at the end of the line */
+  ok?: boolean;
   /** the step's own count, set in lime before the label */
   index?: string;
   error?: string;
@@ -57,10 +59,14 @@ export function TextField({
   error,
   hint,
   optional,
+  ok,
+  lead,
   value,
   onChange,
   ...input
 }: Base & {
+  /** fixed text before what's typed, such as a country code */
+  lead?: string;
   value: string;
   onChange: (value: string) => void;
 } & Omit<React.InputHTMLAttributes<HTMLInputElement>, "id" | "value" | "onChange">) {
@@ -70,16 +76,26 @@ export function TextField({
       <label htmlFor={id} className="label flex items-center gap-3 text-bone/55">
         <Label index={index} label={label} optional={optional} />
       </label>
-      <div className="group/field relative mt-2">
+      <div className="group/field relative mt-2 flex items-baseline gap-2">
+        {lead ? (
+          <span aria-hidden="true" className="body-copy text-[1.15rem] text-bone/40 md:text-[1.3rem]">
+            {lead}
+          </span>
+        ) : null}
         <input
           id={id}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           aria-invalid={error ? true : undefined}
           aria-describedby={noted ? `${id}-note` : undefined}
-          className="body-copy w-full bg-transparent pb-3 pt-1.5 text-[1.15rem] text-bone caret-lime outline-none placeholder:text-bone/25 md:text-[1.3rem]"
+          className="body-copy min-w-0 flex-1 bg-transparent pb-3 pr-8 pt-1.5 text-[1.15rem] text-bone caret-lime outline-none placeholder:text-bone/25 md:text-[1.3rem]"
           {...input}
         />
+        {ok && !error ? (
+          <svg aria-hidden="true" viewBox="0 0 16 12" className="field-ok absolute bottom-[1.05rem] right-1 h-[0.75rem] w-[1rem] text-lime">
+            <path d="M1.5 6.5 5.5 10.5 14.5 1.5" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        ) : null}
         <span
           aria-hidden="true"
           className={`absolute inset-x-0 bottom-0 h-px ${error ? "bg-lime/60" : "bg-bone/25"}`}
@@ -134,7 +150,7 @@ export function ChoiceField({
               className="peer sr-only"
             />
             <span
-              className={`label block border px-[1.05rem] py-[0.85rem] text-[0.68rem] transition-[background-color,border-color,color] duration-300 ease-[var(--ease-out-soft)] peer-checked:border-lime peer-checked:bg-lime peer-checked:text-ink peer-focus-visible:ring-2 peer-focus-visible:ring-lime peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-ink md:text-[0.72rem] ${
+              className={`chip label block border px-[1.05rem] py-[0.85rem] text-[0.68rem] transition-[background-color,border-color,color] duration-300 ease-[var(--ease-out-soft)] peer-checked:border-lime peer-checked:bg-lime peer-checked:text-ink peer-focus-visible:ring-2 peer-focus-visible:ring-lime peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-ink md:text-[0.72rem] ${
                 error ? "border-lime/50 text-bone/80" : "border-bone/22 text-bone/75 hover:border-bone/55 hover:text-bone"
               } ${BLOBS[i % BLOBS.length]}`}
             >
@@ -183,11 +199,11 @@ export function CheckField({
         />
         <span
           aria-hidden="true"
-          className={`mt-[0.1rem] grid h-[1.55rem] w-[1.55rem] shrink-0 place-items-center border-[1.5px] text-ink transition-colors duration-300 [border-radius:42%_58%_52%_48%/52%_44%_56%_48%] peer-checked:border-lime peer-checked:bg-lime peer-focus-visible:ring-2 peer-focus-visible:ring-lime peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-ink peer-checked:[&>svg]:opacity-100 ${
+          className={`tick mt-[0.1rem] grid h-[1.55rem] w-[1.55rem] shrink-0 place-items-center border-[1.5px] text-ink transition-colors duration-300 [border-radius:42%_58%_52%_48%/52%_44%_56%_48%] peer-checked:border-lime peer-checked:bg-lime peer-focus-visible:ring-2 peer-focus-visible:ring-lime peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-ink ${
             error ? "border-lime/70" : "border-bone/40 group-hover:border-bone/70"
           }`}
         >
-          <svg viewBox="0 0 14 12" className="h-[0.8rem] w-[0.8rem] opacity-0 transition-opacity duration-200" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+          <svg viewBox="0 0 14 12" className="h-[0.8rem] w-[0.8rem]" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
             <path d="M1.5 6.5 5 10l7.5-8.5" />
           </svg>
         </span>

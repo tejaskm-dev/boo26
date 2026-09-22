@@ -1,5 +1,5 @@
 import { CheckField, ChoiceField, TextField } from "./Fields";
-import { FOODS, YEARS, cleanPhone, showPhone, type Errors, type Member } from "@/lib/register/fields";
+import { YEARS, cleanPhone, showPhone, typePhone, type Errors, type Member } from "@/lib/register/fields";
 
 /**
  * The two steps both people fill in, the captain and the teammate alike —
@@ -12,9 +12,13 @@ type Props = {
   member: Member;
   errors: Errors<Member>;
   set: (field: keyof Member, value: string) => void;
+  /** left a field */
+  touch: (field: keyof Member) => void;
+  /** the answer checks out */
+  ok: (field: keyof Member) => boolean;
 };
 
-export function YouFields({ prefix, member, errors, set }: Props) {
+export function YouFields({ prefix, member, errors, set, touch, ok }: Props) {
   return (
     <>
       <TextField
@@ -23,6 +27,8 @@ export function YouFields({ prefix, member, errors, set }: Props) {
         label="Full name"
         value={member.name}
         onChange={(v) => set("name", v)}
+        onBlur={() => touch("name")}
+        ok={ok("name")}
         error={errors.name}
         hint="As it is on your college ID."
         autoComplete="name"
@@ -38,6 +44,8 @@ export function YouFields({ prefix, member, errors, set }: Props) {
         inputMode="email"
         value={member.email}
         onChange={(v) => set("email", v)}
+        onBlur={() => touch("email")}
+        ok={ok("email")}
         error={errors.email}
         hint="Where the updates about the night go."
         autoComplete="email"
@@ -52,19 +60,23 @@ export function YouFields({ prefix, member, errors, set }: Props) {
         label="WhatsApp number"
         type="tel"
         inputMode="tel"
+        lead="+91"
+        placeholder="98765 43210"
         value={member.phone}
-        onChange={(v) => set("phone", v)}
+        onChange={(v) => set("phone", typePhone(v))}
+        onBlur={() => touch("phone")}
+        ok={ok("phone")}
         error={errors.phone}
         hint="So we can reach you on the night."
         autoComplete="tel-national"
-        enterKeyHint="next"
-        maxLength={16}
+        enterKeyHint="go"
+        maxLength={18}
       />
     </>
   );
 }
 
-export function CampusFields({ prefix, member, errors, set }: Props) {
+export function CampusFields({ prefix, member, errors, set, touch, ok }: Props) {
   return (
     <>
       <TextField
@@ -73,6 +85,8 @@ export function CampusFields({ prefix, member, errors, set }: Props) {
         label="Department"
         value={member.department}
         onChange={(v) => set("department", v)}
+        onBlur={() => touch("department")}
+        ok={ok("department")}
         error={errors.department}
         placeholder="CSE, ECE, ME…"
         autoComplete="off"
@@ -96,23 +110,15 @@ export function CampusFields({ prefix, member, errors, set }: Props) {
         label="College ID number"
         value={member.collegeId}
         onChange={(v) => set("collegeId", v)}
+        onBlur={() => touch("collegeId")}
+        ok={ok("collegeId")}
         error={errors.collegeId}
         hint="As printed on your ID card. Bring the card too."
         autoComplete="off"
         autoCapitalize="characters"
         spellCheck={false}
-        enterKeyHint="next"
+        enterKeyHint="go"
         maxLength={24}
-      />
-      <ChoiceField
-        id={`${prefix}-food`}
-        index="04"
-        label="Food on the night"
-        name={`${prefix}-food`}
-        options={FOODS}
-        value={member.food}
-        onChange={(v) => set("food", v)}
-        error={errors.food}
       />
     </>
   );
@@ -156,13 +162,11 @@ export function Summary({
 
 export function memberRows(m: Member) {
   const year = YEARS.find((y) => y.value === m.year)?.label;
-  const food = FOODS.find((f) => f.value === m.food)?.label;
   return {
     you: [m.name.trim(), m.email.trim().toLowerCase(), m.phone && showPhone(cleanPhone(m.phone))],
     campus: [
       [m.department.trim(), year && `${year} year`].filter(Boolean).join(" · "),
       m.collegeId.trim().toUpperCase(),
-      food && `${food}, please`,
     ],
   };
 }
