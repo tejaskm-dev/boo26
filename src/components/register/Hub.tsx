@@ -46,30 +46,67 @@ export default function Hub() {
   return (
     <main className="relative overflow-x-clip">
       {/* 1 — the fork */}
-      <Section field="ink" className="pb-[clamp(3rem,8vh,5rem)] pt-[calc(var(--header-h)+clamp(2rem,7vh,5rem))]">
+      <Section field="ink" className="pb-[clamp(3rem,8vh,5rem)] pt-[calc(var(--header-h)+clamp(1.5rem,5vh,3.5rem))]">
         <div data-intro className="relative px-[var(--edge)]">
           <p data-anim="rise" className="label label-loose text-bone/45">
             Registration · {EVENT.date}
           </p>
 
-          <div className="mt-[clamp(1.5rem,4vh,2.75rem)] grid gap-[clamp(2.5rem,6vh,4rem)] lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] lg:items-end">
-            <div className="relative">
+          {/* On a phone it runs question, the two paths, then the facts. On a
+              wide screen the paths take the right half, so both are on the
+              first screen beside the question they answer. */}
+          <div className="mt-[clamp(1.5rem,4vh,2.5rem)] grid grid-cols-1 gap-y-[clamp(2rem,5vh,3rem)] lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+            <div className="relative lg:col-start-1 lg:row-start-1 lg:pr-[clamp(2rem,4vw,4.5rem)]">
               <Words
                 as="h1"
-                className="brush -rotate-[1.5deg] select-none pb-[0.06em] text-[clamp(4rem,12.5vw,11rem)] leading-[0.84] text-lime"
+                className="brush -rotate-[1.5deg] select-none pb-[0.06em] text-[clamp(3.6rem,12vw,8rem)] leading-[0.84] text-lime lg:text-[clamp(4.5rem,8.6vw,8rem)]"
               >
                 {"Pick your\npath."}
               </Words>
               <p className="hand mt-[clamp(0.6rem,1.6vh,1rem)] -rotate-[3deg] whitespace-pre-line pl-[0.4rem] text-[clamp(1.15rem,1.9vw,1.7rem)] text-bone/65 md:pl-[clamp(2rem,6vw,5rem)]">
                 {"Two of you.\nOne night."}
               </p>
-              {/* the signpost at the fork */}
-              <RiseIn className="pointer-events-none absolute right-[3%] top-[36%] md:right-[8%] lg:right-0 lg:top-[16%]" start="top 100%">
+              {/* the signpost at the fork, beside the short second line */}
+              <RiseIn className="pointer-events-none absolute right-[4%] top-[30%] md:right-[14%] lg:right-[10%]" start="top 100%">
                 <Sprite name="signboard" scale={0.5} drift={14} idle={4} />
               </RiseIn>
             </div>
 
-            <dl data-anim="rise" className="grid grid-cols-2 gap-x-6 gap-y-[clamp(1.1rem,2.6vh,1.6rem)] border-t border-bone/15 pt-[clamp(1.1rem,2.6vh,1.6rem)]">
+            <div className="border-t border-bone/15 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:border-l lg:border-t-0 lg:pl-[clamp(2.5rem,4vw,4.5rem)]">
+              <Path
+                letter="A"
+                who="One of you"
+                title="Start a team."
+                body="Go first. Your details and a team name, then a code, a link and a QR to send your teammate."
+                cat="cat-excited"
+              >
+                <BlobButton href="/register/create" size="lg">
+                  Start a team
+                </BlobButton>
+              </Path>
+
+              {/* where the path splits */}
+              <div aria-hidden="true" className="flex items-center gap-4">
+                <span className="h-px flex-1 bg-bone/15" />
+                <span className="hand grid h-[3.2rem] w-[3.2rem] place-items-center rounded-full pb-1 text-[1.55rem] text-lime">or</span>
+                <span className="h-px flex-1 bg-bone/15" />
+              </div>
+
+              <Path
+                letter="B"
+                who="The other one"
+                title="Join a team."
+                body="Your teammate started it? Scan their QR, tap their link, or type their code in here."
+                cat="cat-curious"
+              >
+                <CodeEntry id="hub-code" />
+              </Path>
+            </div>
+
+            <dl
+              data-anim="rise"
+              className="grid grid-cols-2 gap-x-6 gap-y-[clamp(1.1rem,2.6vh,1.6rem)] border-t border-bone/15 pt-[clamp(1.1rem,2.6vh,1.6rem)] lg:col-start-1 lg:row-start-2 lg:mr-[clamp(2rem,4vw,4.5rem)] lg:self-end"
+            >
               {FACTS.map((f) => (
                 <div key={f.k}>
                   <dt className="label text-bone/45">{f.k}</dt>
@@ -77,44 +114,6 @@ export default function Hub() {
                 </div>
               ))}
             </dl>
-          </div>
-
-          <div className="relative mt-[clamp(3rem,8vh,5rem)] grid grid-cols-1 border-t border-bone/15 md:grid-cols-2">
-            <Path
-              letter="A"
-              who="One of you"
-              title={"Start a\nteam."}
-              body="Go first. Your details and a team name, and you get a code, a link and a QR to send your teammate."
-              cat="cat-excited"
-              className="md:pr-[clamp(2.5rem,5vw,5rem)]"
-            >
-              <BlobButton href="/register/create" size="lg">
-                Start a team
-              </BlobButton>
-            </Path>
-
-            {/* the fork: a line between them on a phone, a knot in the divider on a wide screen */}
-            <div
-              aria-hidden="true"
-              className="flex items-center gap-4 md:absolute md:left-1/2 md:top-1/2 md:z-10 md:-translate-x-1/2 md:-translate-y-1/2"
-            >
-              <span className="h-px flex-1 bg-bone/15 md:hidden" />
-              <span className="hand grid h-[3.4rem] w-[3.4rem] place-items-center rounded-full bg-ink pb-1 text-[1.6rem] text-lime md:border md:border-bone/15">
-                or
-              </span>
-              <span className="h-px flex-1 bg-bone/15 md:hidden" />
-            </div>
-
-            <Path
-              letter="B"
-              who="The other one"
-              title={"Join a\nteam."}
-              body="Got a code, a link or a QR from your teammate? Scan it with your camera, tap the link, or type the code in here."
-              cat="cat-curious"
-              className="md:border-l md:border-bone/15 md:pl-[clamp(2.5rem,5vw,5rem)]"
-            >
-              <CodeEntry id="hub-code" />
-            </Path>
           </div>
         </div>
       </Section>
@@ -225,7 +224,6 @@ function Path({
   title,
   body,
   cat,
-  className = "",
   children,
 }: {
   letter: string;
@@ -233,11 +231,10 @@ function Path({
   title: string;
   body: string;
   cat: SpriteName;
-  className?: string;
   children: React.ReactNode;
 }) {
   return (
-    <article className={`relative py-[clamp(2rem,5vh,3.25rem)] ${className}`}>
+    <article className="relative py-[clamp(1.5rem,3.5vh,2.25rem)]">
       <p className="label flex items-center gap-3 text-bone/45">
         <span className="text-lime">Path {letter}</span>
         <span aria-hidden="true" className="h-px w-8 bg-current opacity-40" />
@@ -245,16 +242,17 @@ function Path({
       </p>
       <Words
         as="h2"
-        className="brush mt-[clamp(1rem,2.6vh,1.5rem)] -rotate-[1.2deg] select-none pr-[clamp(4rem,16vw,9rem)] text-[clamp(2.7rem,5.6vw,4.9rem)] leading-[0.88] text-bone"
+        className="brush mt-[clamp(0.85rem,2.2vh,1.25rem)] -rotate-[1.2deg] select-none pr-[clamp(4rem,16vw,9rem)] text-[clamp(2.6rem,9vw,4rem)] leading-[0.88] text-bone lg:text-[clamp(2.4rem,3.4vw,3.5rem)]"
       >
         {title}
       </Words>
-      <p className="body-copy mt-[clamp(0.9rem,2.2vh,1.25rem)] max-w-[38ch] text-[clamp(0.95rem,1.1vw,1.05rem)] text-bone/70">
+      <p className="body-copy mt-[clamp(0.75rem,1.8vh,1rem)] max-w-[44ch] text-[clamp(0.95rem,1.1vw,1.05rem)] text-bone/70">
         {body}
       </p>
-      <div className="mt-[clamp(1.5rem,4vh,2.25rem)]">{children}</div>
-      <RiseIn className="pointer-events-none absolute right-[2%] top-[clamp(2.5rem,7vh,4rem)]" start="top 96%">
-        <Sprite name={cat} scale={0.36} drift={12} idle={5} />
+      <div className="mt-[clamp(1.1rem,3vh,1.75rem)]">{children}</div>
+      {/* beside the label and the heading, clear of the text under them */}
+      <RiseIn className="pointer-events-none absolute right-[2%] top-[clamp(1.25rem,3.5vh,2.25rem)] lg:top-[-0.4rem]" start="top 96%">
+        <Sprite name={cat} scale={0.33} drift={12} idle={5} />
       </RiseIn>
     </article>
   );
