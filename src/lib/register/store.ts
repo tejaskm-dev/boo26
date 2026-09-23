@@ -1,7 +1,7 @@
 import "server-only";
 import { connection } from "next/server";
 import { newCode } from "./code";
-import { read, run, usingDatabase } from "./db";
+import { del, read, run, usingDatabase, write } from "./db";
 import { firstName, type Member, type TeamDetails } from "./fields";
 
 /**
@@ -181,4 +181,116 @@ export async function addMember(
   if (taken.length) return { ok: false, clashes: clashesFrom(taken) };
   team.members.push(member);
   return { ok: true };
+}
+
+/* ------------------------------------------------------------------ *
+ * What the core team sees (src/app/(admin))
+ *
+ * Everything above hands out first names only, because anyone with a code can
+ * ask. These are for the dashboard, behind the sign-in: whole records, and
+ * the two fixes an event needs on the night.
+ * ------------------------------------------------------------------ */
+
+export type TeamRecord = {
+  code: string;
+  name: string;
+  reaction: string;
+  createdAt: string;
+  members: (Member & { seat: number; joinedAt: string })[];
+};
+
+export type AdminAction = { at: string; who: string; did: string; about: string };
+
+type MemberRow = {
+  seat: number;
+  name: string;
+  email: string;
+  phone: string;
+  college_id: string;
+  department: string;
+  year: string;
+  created_at: string;
+};
+
+const asMemberRecord = (m: MemberRow) => ({
+  seat: m.seat,
+  name: m.name,
+  email: m.email,
+  phone: m.phone,
+  collegeId: m.college_id,
+  department: m.department,
+  year: m.year as Member["year"],
+  joinedAt: m.created_at,
+});
+
+/** Every team, newest first, with both people in full. */
+export async function listTeams(): Promise<TeamRecord[]> {
+  await connection();
+
+  if (usingDatabase) {
+    const rows = await read<
+      { code: string; name: string; reaction: string; created_at: string; members: MemberRow[] }[]
+    >(
+      "teams?select=code,name,reaction,created_at,members(seat,name,email,phone,college_id,department,year,created_at)&order=created_at.desc",
+    );
+    return rows.map((t) => ({
+      code: t.code,
+      name: t.name,
+      reaction: t.reaction,
+      createdAt: t.created_at,
+      members: [...t.members].sort((a, b) => a.seat - b.seat).map(asMemberRecord),
+    }));
+  }
+
+  return [...kept.values()].reverse().map((t) => ({
+    code: t.code,
+    name: t.name,
+    reaction: t.reaction,
+    createdAt: new Date().toISOString(),
+    members: t.members.map((m, i) => ({ ...m, seat: i + 1, joinedAt: new Date().toISOString() })),
+  }));
+}
+
+/** Takes a team off the list — a duplicate, a test, a pair who dropped out. */
+export async function removeTeam(code: string): Promise<void> {
+  if (usingDatabase) {
+    // the members go with it: the foreign key cascades
+    await del(`teams?code=eq.${encodeURIComponent(code)}`);
+    return;
+  }
+  kept.delete(code);
+}
+
+/** Empties the second seat, so someone else can take the invite. */
+export async function freeSeat(code: string): Promise<void> {
+  if (usingDatabase) {
+    await del(`members?team_code=eq.${encodeURIComponent(code)}&seat=eq.2`);
+    return;
+  }
+  const team = kept.get(code);
+  if (team) team.members = team.members.slice(0, 1);
+}
+
+type Log = AdminAction[];
+const loggedHere = ((globalThis as typeof globalThis & { __booAdminLog?: Log }).__booAdminLog ??= []);
+
+/** Writes down who changed what. */
+export async function logAdmin(who: string, did: string, about: string): Promise<void> {
+  const at = new Date().toISOString();
+  if (usingDatabase) {
+    await write("admin_log", { who, did, about });
+    return;
+  }
+  loggedHere.unshift({ at, who, did, about });
+}
+
+export async function recentAdminActions(limit = 20): Promise<AdminAction[]> {
+  await connection();
+  if (usingDatabase) {
+    const rows = await read<{ at: string; who: string; did: string; about: string }[]>(
+      `admin_log?select=at,who,did,about&order=at.desc&limit=${limit}`,
+    );
+    return rows;
+  }
+  return loggedHere.slice(0, limit);
 }

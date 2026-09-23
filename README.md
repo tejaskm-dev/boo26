@@ -18,6 +18,10 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+
 ## Registration
 
 `/register` and everything under it is either the sign-up or the coming-soon
@@ -53,9 +57,36 @@ flow still runs on one machine, but a deploy runs several and a team made on
 one request is a stranger to the next — so the pages say teams aren't kept
 for good yet, until the database answers.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### The dashboard
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+`/admin` is the core team's page: every team with both people in full, who's
+still short a teammate, counts by department and year, a search, a CSV export,
+and the two fixes a night like this needs — free a second seat, remove a team.
+Every fix is written down with who did it.
+
+Sign-in is Google, and only the emails you list get in. Set up once:
+
+1. [Google Cloud console](https://console.cloud.google.com/apis/credentials) →
+   Create credentials → OAuth client ID → Web application.
+2. Authorised redirect URIs — add both:
+   - `https://<the site>/admin/callback`
+   - `http://localhost:3000/admin/callback`
+3. Copy the client ID and secret into `GOOGLE_CLIENT_ID` and
+   `GOOGLE_CLIENT_SECRET`.
+4. `ADMIN_EMAILS`: the Google accounts allowed in, comma separated.
+5. `ADMIN_SESSION_SECRET`: a long random string, which signs the cookie that
+   keeps an admin signed in — `openssl rand -base64 32`.
+
+Until all four are set the page says which ones are missing rather than
+failing quietly. Nothing else has to happen: no invites, no accounts, no
+passwords. Adding someone to the core team is one more email in
+`ADMIN_EMAILS`; taking them off locks them out on their next request, signed
+in or not.
+
+It costs the site nothing. `/admin` is a separate root layout, so it loads
+none of the site's fonts, animation or smooth scrolling, and the site loads
+none of the dashboard; the session cookie is scoped to `/admin`, so no request
+a student makes ever carries it; and the page asks not to be indexed.
 
 ## Learn More
 

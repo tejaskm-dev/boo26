@@ -44,3 +44,13 @@ export function run<T>(fn: string, args: Record<string, unknown>): Promise<T> {
 export function read<T>(query: string): Promise<T> {
   return ask(query) as Promise<T>;
 }
+
+/** One row, added. */
+export async function write(table: string, row: Record<string, unknown>): Promise<void> {
+  await ask(table, { method: "POST", body: JSON.stringify(row), headers: { Prefer: "return=minimal" } });
+}
+
+/** Whatever the query matches, gone. */
+export async function del(query: string): Promise<void> {
+  await ask(query, { method: "DELETE", headers: { Prefer: "return=minimal" } });
+}

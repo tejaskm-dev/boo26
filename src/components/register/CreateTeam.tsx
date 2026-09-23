@@ -7,7 +7,7 @@ import { Agree, CampusFields, Summary, YouFields, memberRows } from "./MemberFie
 import { useSteps } from "./useSteps";
 import { useMember } from "./useMember";
 import { dropDraft, saveDraft, useOpeningDraft, type Draft } from "./draft";
-import { createTeam } from "@/app/register/actions";
+import { createTeam } from "@/lib/register/actions";
 import { REACTIONS } from "@/lib/register/content";
 import { teamPath } from "@/lib/register/code";
 import { ghostSays } from "@/lib/register/ghost";

@@ -141,6 +141,17 @@ exception
 end;
 $$;
 
+-- Who changed what in the dashboard: removing a team, freeing a seat.
+create table if not exists public.admin_log (
+  id bigint generated always as identity primary key,
+  at timestamptz not null default now(),
+  who text not null,
+  did text not null,
+  about text not null
+);
+
+alter table public.admin_log enable row level security;
+
 -- What the night needs, in one place: every registered person with their team.
 -- security_invoker, so it's read with the rights of whoever asks rather than
 -- the rights of whoever made it: without it a view owned here would hand the
@@ -167,7 +178,7 @@ create or replace view public.registrations with (security_invoker = on) as
 -- by row level security; this takes the public keys off the view and the two
 -- functions that write, so nothing is left to try.
 revoke all on public.registrations from anon, authenticated;
-revoke all on public.teams, public.members from anon, authenticated;
+revoke all on public.teams, public.members, public.admin_log from anon, authenticated;
 revoke execute on function public.register_team(text, text, text, jsonb) from public, anon, authenticated;
 revoke execute on function public.join_team(text, jsonb) from public, anon, authenticated;
 revoke execute on function public.member_clashes(jsonb) from public, anon, authenticated;
