@@ -14,7 +14,7 @@ import PageWipe from "@/components/fx/PageWipe";
 import { EVENT } from "@/lib/site";
 import { WIPE_BOOT } from "@/lib/wipe";
 import "lenis/dist/lenis.css";
-import "./globals.css";
+import "../globals.css";
 
 const archivo = Archivo({
   subsets: ["latin"],
@@ -69,7 +69,13 @@ export const viewport: Viewport = {
   colorScheme: "light",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+/**
+ * The site's own shell. /admin has a second root layout of its own
+ * (src/app/(admin)/layout.tsx) with none of this: a dashboard has no business
+ * loading smooth scrolling, the preloader or the page wipe, and the site has
+ * no business loading anything the dashboard needs.
+ */
+export default function SiteLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning className={`${archivo.variable} ${bagel.variable} ${caveat.variable} ${spaceGrotesk.variable}`}>
       <body>
