@@ -7,7 +7,7 @@ import RegisterHeader from "@/components/register/RegisterHeader";
 import Hero, { Blob } from "@/components/register/Hero";
 import NextStop from "@/components/register/NextStop";
 import { JUDGING } from "@/lib/register/content";
-import { registrationMode } from "@/lib/register/mode";
+import { registrationOpen } from "@/lib/register/mode";
 import { registerMeta } from "@/lib/register/meta";
 import { EVENT } from "@/lib/site";
 
@@ -31,7 +31,7 @@ const MORNING = [
  * bar, because the proportions are the point — the reaction is most of it.
  */
 export default function JudgingPage() {
-  if (registrationMode() === "soon") return <Closed />;
+  if (!registrationOpen()) return <Closed />;
   return (
     <>
       <RegisterHeader back={{ href: "/register", label: "Register" }} />

@@ -2,7 +2,7 @@
 
 import { REACTIONS } from "@/lib/register/content";
 import { cleanCode, isCode } from "@/lib/register/code";
-import { registrationMode } from "@/lib/register/mode";
+import { registrationOpen } from "@/lib/register/mode";
 import { addMember, addTeam, type Clash } from "@/lib/register/store";
 import {
   asMember,
@@ -56,7 +56,7 @@ function taken(clashes: Clash[]): Sent {
 }
 
 export async function createTeam(input: unknown): Promise<Sent> {
-  if (registrationMode() === "soon") return closed;
+  if (!registrationOpen()) return closed;
   const body = read(input);
   const team = asTeam(body.team);
   const member = asMember(body.member);
@@ -73,7 +73,7 @@ export async function createTeam(input: unknown): Promise<Sent> {
 }
 
 export async function joinTeam(input: unknown): Promise<Sent> {
-  if (registrationMode() === "soon") return closed;
+  if (!registrationOpen()) return closed;
   const body = read(input);
   const code = typeof body.code === "string" ? cleanCode(body.code) : "";
   if (!isCode(code)) return { ok: false, message: "That team code doesn't look right." };

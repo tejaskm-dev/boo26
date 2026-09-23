@@ -1,21 +1,25 @@
 /**
- * Where registration stands, and so what every page under /register shows.
+ * The switch for /register: the sign-up, or the coming-soon page.
  *
- *   soon     the coming-soon page, as before. The default for a production
- *            build, so merging this can't open registration by accident.
- *   preview  the whole flow, working end to end against a store kept in the
- *            server's memory (src/lib/register/store.ts). Good for trying it —
- *            teams vanish when the server restarts, and aren't shared between
- *            servers. The default under `next dev`.
+ *   BOO_REGISTRATION_OPEN=true    the whole flow — the fork, the rules, the
+ *                                 judging, starting and joining a team
+ *   BOO_REGISTRATION_OPEN=false   the coming-soon page on every /register path
  *
- * Set BOO_REGISTRATION=preview where a production build is made to show the
- * preview there. Registration opens for real once a database is wired into
- * the store; the pages and the flow don't change.
+ * Unset, it's open. Set it to false to put the coming-soon page back without
+ * touching any code — in .env.local here, or in the host's environment
+ * variables for a deploy. The value is read where the pages are built, so a
+ * change to it needs a new build (on Vercel, a redeploy).
  */
-export type RegistrationMode = "soon" | "preview";
-
-export function registrationMode(): RegistrationMode {
-  const set = process.env.BOO_REGISTRATION;
-  if (set === "soon" || set === "preview") return set;
-  return process.env.NODE_ENV === "development" ? "preview" : "soon";
+export function registrationOpen(): boolean {
+  const set = process.env.BOO_REGISTRATION_OPEN?.trim().toLowerCase();
+  if (set === "false" || set === "0" || set === "off" || set === "no") return false;
+  return true;
 }
+
+/**
+ * Teams are still kept in the server's memory (src/lib/register/store.ts),
+ * so the pages say so: they don't survive a restart, and a host that runs
+ * more than one instance may not find them again. Set this to false in the
+ * same change that wires a database in, and the notes go.
+ */
+export const TEAMS_ARE_TEMPORARY = true;
