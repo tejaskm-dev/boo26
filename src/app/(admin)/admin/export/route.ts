@@ -29,7 +29,15 @@ const cell = (v: unknown) => {
 export async function GET() {
   if (!(await currentAdmin())) return new Response("Not signed in", { status: 401 });
 
-  const teams = await listTeams();
+  let teams;
+  try {
+    teams = await listTeams();
+  } catch (trouble) {
+    return new Response(`Couldn't read the registrations: ${trouble instanceof Error ? trouble.message : trouble}`, {
+      status: 503,
+    });
+  }
+
   const rows = [HEAD.join(",")];
   for (const t of teams) {
     for (const m of t.members) {
