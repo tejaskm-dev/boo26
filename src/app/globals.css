@@ -232,8 +232,8 @@ html[data-idle="true"] .grain {
  * Every load starts covered — the inline script in the layout sets
  * data-wipe before the first paint — and the cover doubles as the
  * preloader. `load` is the first page of a visit and gets the full count,
- * `reload` a quick one, and `arrive` (came in through the wipe) only shows
- * the loader if the page is slow, so a quick hop is just the wipe.
+ * `reload` a quick one, and `arrive` (came in through the wipe) none at all:
+ * moving around the site is only ever the wipe.
  * ------------------------------------------------------------------ */
 @property --p {
   syntax: "<integer>";
@@ -279,21 +279,13 @@ html[data-wipe] [data-page-wipe] {
   display: none;
 }
 
+/* Loading the site, not moving around it. A page arrived at through the
+   wipe used to fade the loader in if it wasn't ready 0.45s after the cover
+   landed, which on a phone is nearly every time: the hop went wipe, preloader,
+   wipe. Now the discs hold on their own until the page is ready. */
 html[data-wipe="load"] .preloader,
-html[data-wipe="reload"] .preloader,
-html[data-wipe="arrive"] .preloader {
+html[data-wipe="reload"] .preloader {
   display: block;
-}
-
-html[data-wipe="arrive"] .preloader {
-  opacity: 0;
-  animation: preloader-show 0.35s ease 0.45s forwards;
-}
-
-@keyframes preloader-show {
-  to {
-    opacity: 1;
-  }
 }
 
 /* The count and the fill share one integer, so they can never disagree. The
@@ -876,3 +868,101 @@ footer[data-field] {
 
 
 
+
+/* ------------------------------------------------------------------ *
+ * Registration (src/components/register)
+ *
+ * The small answers a form gives back, in CSS so they cost nothing: a tick
+ * that draws itself at the end of a line that checks out, a choice that pops
+ * as it's picked, a box whose tick draws in, and the stop you're on along
+ * the trail breathing out a ring.
+ * ------------------------------------------------------------------ */
+.field-ok path {
+  stroke-dasharray: 20;
+  stroke-dashoffset: 20;
+  animation: draw-in 0.45s var(--ease-out-soft) 0.05s forwards;
+}
+
+@keyframes draw-in {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.peer:checked + .chip,
+.peer:checked + .tick {
+  animation: chip-pop 0.5s var(--ease-out-soft);
+}
+
+@keyframes chip-pop {
+  0% {
+    scale: 0.84;
+  }
+  55% {
+    scale: 1.08;
+  }
+  100% {
+    scale: 1;
+  }
+}
+
+.tick path {
+  stroke-dasharray: 18;
+  stroke-dashoffset: 18;
+  transition: stroke-dashoffset 0.32s var(--ease-out-soft) 0.06s;
+}
+
+.peer:checked + .tick path {
+  stroke-dashoffset: 0;
+}
+
+.bead-ping {
+  animation: bead-ping 2.6s var(--ease-out-soft) infinite;
+}
+
+@keyframes bead-ping {
+  0% {
+    box-shadow: 0 0 0 0 rgba(216, 255, 40, 0.5);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 0.65rem rgba(216, 255, 40, 0);
+  }
+}
+
+/* The rule being read keeps the marker stroke a row gets under the pointer,
+   the way a legal page marks the clause you're on. */
+[data-track-item][data-current="true"] .row-mark {
+  opacity: 0.22;
+  scale: 1 1;
+}
+
+/* The QR's viewfinder corners, breathing: something to point a camera at. */
+.viewfinder {
+  animation: viewfinder 2.8s var(--ease-out-soft) infinite;
+}
+
+@keyframes viewfinder {
+  0%,
+  100% {
+    opacity: 0.35;
+    scale: 0.9;
+  }
+  50% {
+    opacity: 1;
+    scale: 1.06;
+  }
+}
+
+/* For anything that appears after the page has settled — what happens next,
+   once a teammate lands — where a scroll-triggered entrance would never fire. */
+.arrive-in {
+  animation: arrive-in 0.7s var(--ease-out-soft) both;
+}
+
+@keyframes arrive-in {
+  from {
+    opacity: 0;
+    translate: 0 1.4rem;
+  }
+}

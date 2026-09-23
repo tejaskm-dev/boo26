@@ -10,4 +10,6 @@ export const STORAGE = {
   seen: "boo:seen",
   /** iPhone and iPad only: motion access was granted this visit */
   tilt: "boo-tilt-granted",
+  /** registering: what's been typed so far, so a reload doesn't lose it; cleared once it's sent */
+  draft: "boo:register-draft",
 } as const;

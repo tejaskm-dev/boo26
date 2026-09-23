@@ -18,8 +18,8 @@ export const EVENT = {
      Kerala is UTC+5:30 and the offset is written out so the countdown means
      the same thing from anywhere. */
   startsAt: "2026-10-24T14:00:00+05:30",
-  /* Registration isn't open yet, so every register CTA lands on the
-     coming-soon page. Point this at the real form when it exists. */
+  /* Every register CTA lands here. Until registration opens, /register and
+     everything under it is the coming-soon page (src/lib/register/mode.ts). */
   registerHref: "/register",
   /* A temporary address until BOO! has its own. Change it here and the
      legal pages follow. */
@@ -262,7 +262,7 @@ export const LEGAL = [
 ] as const;
 
 /** the date on all three, until one of them changes on its own */
-export const LEGAL_UPDATED = "22 Sep 2026";
+export const LEGAL_UPDATED = "23 Sep 2026";
 
 /** Handwritten margin notes, kept in one place so they stay rationed. */
 export const NOTES = {

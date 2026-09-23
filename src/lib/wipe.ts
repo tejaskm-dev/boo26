@@ -74,5 +74,6 @@ export const WIPE_BOOT = `(function () {
     return new Promise(function (r) { done = r; });
   };
   c.stop = function () { cancelAnimationFrame(raf); raf = 0; done = null; };
-  raf = requestAnimationFrame(tick);
+  // a hop through the wipe shows no loader, so there's nothing to count
+  if (m !== "arrive") raf = requestAnimationFrame(tick);
 })();`;
