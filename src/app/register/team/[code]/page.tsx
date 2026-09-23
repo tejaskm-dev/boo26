@@ -5,9 +5,9 @@ import JoinDoor from "@/components/register/JoinDoor";
 import RegisterHeader from "@/components/register/RegisterHeader";
 import TeamRoom from "@/components/register/TeamRoom";
 import { codeFromPath, isCode, joinPath, teamPath } from "@/lib/register/code";
-import { registrationOpen, TEAMS_ARE_TEMPORARY } from "@/lib/register/mode";
+import { registrationOpen } from "@/lib/register/mode";
 import { registerMeta } from "@/lib/register/meta";
-import { getTeam } from "@/lib/register/store";
+import { getTeam, teamsAreTemporary } from "@/lib/register/store";
 import { EVENT } from "@/lib/site";
 
 export const metadata = registerMeta({
@@ -61,7 +61,7 @@ export default async function TeamPage({
           team={team}
           link={`${proto}://${host}${joinPath(code)}`}
           arrived={q.new === "1" ? "new" : q.joined === "1" ? "joined" : null}
-          preview={TEAMS_ARE_TEMPORARY}
+          preview={teamsAreTemporary()}
         />
       </main>
     </>

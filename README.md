@@ -32,12 +32,26 @@ Unset means open. Set it in `.env.local` here, or in the host's environment
 variables for a deploy. It's read where the pages are built, so changing it
 needs a new build — on Vercel, a redeploy.
 
-Teams are still kept in the server's memory (`src/lib/register/store.ts`):
-they go when it restarts, and a deploy running more than one instance can
-lose them between requests. Swapping those three functions for a database is
-what makes registration real; `TEAMS_ARE_TEMPORARY` in
-`src/lib/register/mode.ts` turns the "trying it out" notes off in the same
-change.
+### Where teams are kept
+
+Registrations live in Supabase. Set up once:
+
+1. Create a project at [supabase.com](https://supabase.com).
+2. SQL Editor → paste [`db/schema.sql`](db/schema.sql) → Run. It makes the two
+   tables, the rules that keep them honest (one team per name, one person per
+   email/number/ID, two seats a team), and a `registrations` view with
+   everyone in one place for the night.
+3. Project Settings → API: copy the project URL and the `service_role` key
+   into `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` — in `.env.local` here,
+   and in the host's environment variables for a deploy.
+
+The `service_role` key goes past row level security, so it belongs on the
+server only: never `NEXT_PUBLIC_`, never in the repo.
+
+With those unset the site keeps teams in its own memory instead. The whole
+flow still runs on one machine, but a deploy runs several and a team made on
+one request is a stranger to the next — so the pages say teams aren't kept
+for good yet, until the database answers.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
