@@ -18,6 +18,27 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Registration
+
+`/register` and everything under it is either the sign-up or the coming-soon
+page, decided by one environment variable (see `.env.example`):
+
+```bash
+BOO_REGISTRATION_OPEN=true    # the sign-up: the fork, the rules, the judging
+BOO_REGISTRATION_OPEN=false   # the coming-soon page on every /register path
+```
+
+Unset means open. Set it in `.env.local` here, or in the host's environment
+variables for a deploy. It's read where the pages are built, so changing it
+needs a new build — on Vercel, a redeploy.
+
+Teams are still kept in the server's memory (`src/lib/register/store.ts`):
+they go when it restarts, and a deploy running more than one instance can
+lose them between requests. Swapping those three functions for a database is
+what makes registration real; `TEAMS_ARE_TEMPORARY` in
+`src/lib/register/mode.ts` turns the "trying it out" notes off in the same
+change.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

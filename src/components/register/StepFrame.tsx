@@ -206,7 +206,8 @@ export default function StepFrame({
           {preview ? (
             <p className="label mt-[clamp(2.5rem,6vh,3.5rem)] flex items-start gap-3 leading-[1.7] text-bone/35">
               <span aria-hidden="true" className="mt-[0.45em] h-[0.38rem] w-[0.38rem] shrink-0 rotate-45 bg-lime/70" />
-              Preview: teams live in this server&rsquo;s memory and vanish when it restarts.
+              Trying it out: teams live in the server&rsquo;s memory. They go when it restarts, and a deploy can lose them
+              between requests.
             </p>
           ) : null}
         </form>

@@ -5,7 +5,7 @@ import JoinDoor from "@/components/register/JoinDoor";
 import RegisterHeader from "@/components/register/RegisterHeader";
 import TeamRoom from "@/components/register/TeamRoom";
 import { codeFromPath, isCode, joinPath, teamPath } from "@/lib/register/code";
-import { registrationMode } from "@/lib/register/mode";
+import { registrationOpen, TEAMS_ARE_TEMPORARY } from "@/lib/register/mode";
 import { registerMeta } from "@/lib/register/meta";
 import { getTeam } from "@/lib/register/store";
 import { EVENT } from "@/lib/site";
@@ -29,8 +29,7 @@ export default async function TeamPage({
   params: Promise<{ code: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const mode = registrationMode();
-  if (mode === "soon") return <Closed />;
+  if (!registrationOpen()) return <Closed />;
 
   const { code: raw } = await params;
   const code = codeFromPath(raw);
@@ -62,7 +61,7 @@ export default async function TeamPage({
           team={team}
           link={`${proto}://${host}${joinPath(code)}`}
           arrived={q.new === "1" ? "new" : q.joined === "1" ? "joined" : null}
-          preview={mode === "preview"}
+          preview={TEAMS_ARE_TEMPORARY}
         />
       </main>
     </>

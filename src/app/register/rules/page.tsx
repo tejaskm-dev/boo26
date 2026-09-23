@@ -8,7 +8,7 @@ import RegisterHeader from "@/components/register/RegisterHeader";
 import Hero, { Blob, Diamonds } from "@/components/register/Hero";
 import NextStop from "@/components/register/NextStop";
 import { GUIDE, RULES, RULES_SHORT } from "@/lib/register/content";
-import { registrationMode } from "@/lib/register/mode";
+import { registrationOpen } from "@/lib/register/mode";
 import { registerMeta } from "@/lib/register/meta";
 import { EVENT, TIMELINE } from "@/lib/site";
 
@@ -24,7 +24,7 @@ const pad = (i: number) => String(i + 1).padStart(2, "0");
  * one anybody reads — then the practical side of the night.
  */
 export default function RulesPage() {
-  if (registrationMode() === "soon") return <Closed />;
+  if (!registrationOpen()) return <Closed />;
   return (
     <>
       <RegisterHeader back={{ href: "/register", label: "Register" }} />

@@ -1,7 +1,7 @@
 import Closed from "@/components/register/Closed";
 import Hub from "@/components/register/Hub";
 import RegisterHeader from "@/components/register/RegisterHeader";
-import { registrationMode } from "@/lib/register/mode";
+import { registrationOpen } from "@/lib/register/mode";
 import { registerMeta } from "@/lib/register/meta";
 import { EVENT } from "@/lib/site";
 
@@ -11,7 +11,7 @@ export const metadata = registerMeta({
 });
 
 export default function RegisterPage() {
-  if (registrationMode() === "soon") return <Closed />;
+  if (!registrationOpen()) return <Closed />;
   return (
     <>
       <RegisterHeader back={{ href: "/", label: `${EVENT.name} home` }} />

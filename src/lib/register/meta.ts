@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { EVENT } from "@/lib/site";
-import { registrationMode } from "./mode";
+import { registrationOpen } from "./mode";
 
 const SOON: Metadata = {
   title: `Registration coming soon — ${EVENT.name} ${EVENT.year}`,
@@ -8,9 +8,9 @@ const SOON: Metadata = {
 };
 
 /**
- * A register page's metadata — or, while registration is still to come, the
+ * A register page's metadata — or, while registration is switched off, the
  * coming-soon page's, because that's what every one of them shows.
  */
 export function registerMeta(meta: Metadata): Metadata {
-  return registrationMode() === "soon" ? SOON : meta;
+  return registrationOpen() ? meta : SOON;
 }

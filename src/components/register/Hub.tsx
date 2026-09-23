@@ -9,6 +9,7 @@ import Countdown from "@/components/fx/Countdown";
 import CodeEntry from "./CodeEntry";
 import ForkSign from "./ForkSign";
 import { BAND, EVENT, NOTES } from "@/lib/site";
+import { TEAMS_ARE_TEMPORARY } from "@/lib/register/mode";
 import { HOW, JUDGING, RULES } from "@/lib/register/content";
 import type { SpriteName } from "@/lib/sprites";
 
@@ -54,6 +55,13 @@ export default function Hub() {
           <p data-anim="rise" className="label label-loose text-bone/45">
             Registration · {EVENT.date}
           </p>
+          {/* said here too, not only once someone is inside a form */}
+          {TEAMS_ARE_TEMPORARY ? (
+            <p data-anim="rise" className="label mt-3 flex items-start gap-3 leading-[1.7] text-bone/35">
+              <span aria-hidden="true" className="mt-[0.45em] h-[0.38rem] w-[0.38rem] shrink-0 rotate-45 bg-lime/70" />
+              Trying it out: you can go through all of it, but teams aren&rsquo;t kept for good yet.
+            </p>
+          ) : null}
 
           {/* On a phone it runs question, the two paths, then the facts. On a
               wide screen the paths take the right half, so both are on the

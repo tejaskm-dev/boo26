@@ -1,7 +1,7 @@
 import Closed from "@/components/register/Closed";
 import CreateTeam from "@/components/register/CreateTeam";
 import RegisterHeader from "@/components/register/RegisterHeader";
-import { registrationMode } from "@/lib/register/mode";
+import { registrationOpen, TEAMS_ARE_TEMPORARY } from "@/lib/register/mode";
 import { registerMeta } from "@/lib/register/meta";
 import { EVENT } from "@/lib/site";
 
@@ -11,13 +11,12 @@ export const metadata = registerMeta({
 });
 
 export default function CreatePage() {
-  const mode = registrationMode();
-  if (mode === "soon") return <Closed />;
+  if (!registrationOpen()) return <Closed />;
   return (
     <>
       <RegisterHeader back={{ href: "/register", label: "Register" }} />
       <main className="relative overflow-x-clip">
-        <CreateTeam preview={mode === "preview"} />
+        <CreateTeam preview={TEAMS_ARE_TEMPORARY} />
       </main>
     </>
   );

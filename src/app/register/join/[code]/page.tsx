@@ -4,7 +4,7 @@ import JoinDoor from "@/components/register/JoinDoor";
 import JoinTeam from "@/components/register/JoinTeam";
 import RegisterHeader from "@/components/register/RegisterHeader";
 import { codeFromPath, isCode, joinPath, showCode, teamPath } from "@/lib/register/code";
-import { registrationMode } from "@/lib/register/mode";
+import { registrationOpen, TEAMS_ARE_TEMPORARY } from "@/lib/register/mode";
 import { registerMeta } from "@/lib/register/meta";
 import { getTeam } from "@/lib/register/store";
 import { EVENT } from "@/lib/site";
@@ -22,8 +22,7 @@ export const metadata = registerMeta({
  * address first.
  */
 export default async function JoinCodePage({ params }: { params: Promise<{ code: string }> }) {
-  const mode = registrationMode();
-  if (mode === "soon") return <Closed />;
+  if (!registrationOpen()) return <Closed />;
 
   const { code: raw } = await params;
   const code = codeFromPath(raw);
@@ -55,7 +54,7 @@ export default async function JoinCodePage({ params }: { params: Promise<{ code:
             </Problem>
           </JoinDoor>
         ) : (
-          <JoinTeam team={team} preview={mode === "preview"} />
+          <JoinTeam team={team} preview={TEAMS_ARE_TEMPORARY} />
         )}
       </main>
     </>
