@@ -4,6 +4,8 @@ import { listTeams } from "@/lib/register/store";
 const HEAD = [
   "team_code",
   "team_name",
+  "state",
+  "note",
   "reaction",
   "seat",
   "name",
@@ -42,7 +44,7 @@ export async function GET() {
   for (const t of teams) {
     for (const m of t.members) {
       rows.push(
-        [t.code, t.name, t.reaction, m.seat, m.name, m.email, `+91${m.phone}`, m.collegeId, m.department, m.year, m.joinedAt]
+        [t.code, t.name, t.state, t.note, t.reaction, m.seat, m.name, m.email, `+91${m.phone}`, m.collegeId, m.department, m.year, m.joinedAt]
           .map(cell)
           .join(","),
       );

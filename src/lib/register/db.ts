@@ -57,6 +57,11 @@ export async function write(table: string, row: Record<string, unknown>): Promis
   await ask(table, { method: "POST", body: JSON.stringify(row), headers: { Prefer: "return=minimal" } });
 }
 
+/** Whatever the query matches, changed. */
+export async function patch(query: string, row: Record<string, unknown>): Promise<void> {
+  await ask(query, { method: "PATCH", body: JSON.stringify(row), headers: { Prefer: "return=minimal" } });
+}
+
 /** Whatever the query matches, gone. */
 export async function del(query: string): Promise<void> {
   await ask(query, { method: "DELETE", headers: { Prefer: "return=minimal" } });

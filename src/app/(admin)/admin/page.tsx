@@ -2,14 +2,16 @@ import Dashboard from "@/components/admin/Dashboard";
 import SignIn from "@/components/admin/SignIn";
 import Trouble from "@/components/admin/Trouble";
 import { currentAdmin, missingSetup } from "@/lib/admin/session";
-import { listTeams, recentAdminActions, teamsAreTemporary } from "@/lib/register/store";
-import { origin } from "@/lib/origin";
+import { isState, listTeams, recentAdminActions, teamsAreTemporary } from "@/lib/register/store";
 
 /**
  * The core team's view of registration. Nothing links here from the site, and
  * it's never indexed; the cookie that keeps a session is scoped to /admin, so
  * a request for any public page doesn't even carry it.
  */
+
+const one = (v: string | string[] | undefined) => (typeof v === "string" ? v : "");
+
 export default async function AdminPage({
   searchParams,
 }: {
@@ -17,10 +19,15 @@ export default async function AdminPage({
 }) {
   const query = await searchParams;
   const who = await currentAdmin();
-  if (!who) return <SignIn missing={missingSetup()} trouble={typeof query.trouble === "string" ? query.trouble : undefined} />;
+  if (!who) return <SignIn missing={missingSetup()} trouble={one(query.trouble) || undefined} />;
 
-  const where = await origin();
-  const state = query.state === "complete" || query.state === "waiting" ? query.state : "all";
+  const seats = one(query.seats);
+  const state = one(query.state);
+  const filters = {
+    q: one(query.q),
+    state: isState(state) ? state : "all",
+    seats: seats === "complete" || seats === "waiting" ? seats : "any",
+  };
 
   // The teams are the page. If they can't be read, say so in words an event
   // manager can act on rather than letting the whole thing fall over.
@@ -40,9 +47,8 @@ export default async function AdminPage({
       who={who}
       teams={teams}
       log={log}
-      q={typeof query.q === "string" ? query.q : ""}
-      state={state}
-      origin={where}
+      filters={filters}
+      said={one(query.said) || undefined}
       temporary={teamsAreTemporary()}
     />
   );

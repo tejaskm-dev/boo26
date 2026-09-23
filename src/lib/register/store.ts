@@ -1,7 +1,7 @@
 import "server-only";
 import { connection } from "next/server";
 import { newCode } from "./code";
-import { del, read, run, usingDatabase, write } from "./db";
+import { del, patch, read, run, usingDatabase, write } from "./db";
 import { firstName, type Member, type TeamDetails } from "./fields";
 
 /**
@@ -16,11 +16,14 @@ import { firstName, type Member, type TeamDetails } from "./fields";
  * server's memory instead, so the whole flow still runs. They go when it
  * restarts, and the pages say so (teamsAreTemporary).
  *
- * Three functions are the whole contract either way, and nothing that calls
- * them knows which of the two is answering.
+ * The sign-up asks three things of this file; the dashboard asks the rest.
+ * Nothing that calls either knows which of the two stores is answering.
  */
 
 export const TEAM_SIZE = 2;
+
+/** The seats, in order, whether or not anyone is in them. */
+export const SEATS = [1, 2] as const;
 
 /**
  * What a page may show about a team. Anyone holding the code can see it, so
@@ -55,11 +58,33 @@ export function teamsAreTemporary(): boolean {
 }
 
 /* ------------------------------------------------------------------ *
+ * Where a team is in the review
+ *
+ * One word per team, moved by hand from the dashboard. Every team starts at
+ * 'new'; the rest are the core team's decisions, and nothing in the sign-up
+ * reads them.
+ * ------------------------------------------------------------------ */
+
+export const STATES = [
+  { value: "new", label: "New", hint: "Registered. Nobody has looked yet." },
+  { value: "verified", label: "Verified", hint: "Details check out: real students, reachable." },
+  { value: "shortlisted", label: "Shortlisted", hint: "They're in." },
+  { value: "waitlisted", label: "Waitlisted", hint: "In if a place opens up." },
+  { value: "rejected", label: "Rejected", hint: "Not taking part." },
+] as const;
+
+export type TeamState = (typeof STATES)[number]["value"];
+
+export const isState = (v: string): v is TeamState => STATES.some((s) => s.value === v);
+
+export const stateLabel = (v: string): string => STATES.find((s) => s.value === v)?.label ?? v;
+
+/* ------------------------------------------------------------------ *
  * The database (db/schema.sql)
  * ------------------------------------------------------------------ */
 
 type Row = { code: string; name: string; reaction: string; members: { name: string; seat: number }[] };
-type Answer = { ok: true; code: string } | { ok: false; clashes?: string[]; reason?: "missing" | "full" };
+type Answer = { ok: true; code?: string } | { ok: false; clashes?: string[]; reason?: "missing" | "full" };
 
 /** what the sign-up asks for, under the names the database gives the columns */
 const asRow = (m: Member) => ({
@@ -75,7 +100,16 @@ const asRow = (m: Member) => ({
  * The memory, for a laptop without credentials
  * ------------------------------------------------------------------ */
 
-type Team = { code: string; name: string; reaction: string; members: Member[] };
+type Seated = Member & { seat: number; joinedAt: string };
+type Team = {
+  code: string;
+  name: string;
+  reaction: string;
+  state: TeamState;
+  note: string;
+  createdAt: string;
+  members: Seated[];
+};
 type Teams = Map<string, Team>;
 const shared = globalThis as typeof globalThis & { __booTeams?: Teams };
 // on globalThis, so a hot reload in development doesn't empty it
@@ -85,15 +119,23 @@ const kept: Teams = (shared.__booTeams ??= new Map());
  * One person, one team: the same email, number or college ID can't be
  * registered twice. Every one that's taken comes back at once, so nobody fixes
  * one just to be told about the next. The database does this in SQL.
+ *
+ * `except` is whoever is being edited — their own details aren't a clash with
+ * themselves.
  */
-function keptClashes(m: Member): string[] {
-  const everyone = [...kept.values()].flatMap((t) => t.members);
+function keptClashes(m: Member, except?: { code: string; seat: number }): string[] {
+  const everyone = [...kept.values()]
+    .flatMap((t) => t.members.map((x) => ({ ...x, code: t.code })))
+    .filter((x) => !(except && x.code === except.code && x.seat === except.seat));
   const taken: string[] = [];
-  if (everyone.some((x) => x.email === m.email)) taken.push("email");
+  if (everyone.some((x) => x.email.toLowerCase() === m.email.toLowerCase())) taken.push("email");
   if (everyone.some((x) => x.phone === m.phone)) taken.push("phone");
-  if (everyone.some((x) => x.collegeId === m.collegeId)) taken.push("college_id");
+  if (everyone.some((x) => x.collegeId.toUpperCase() === m.collegeId.toUpperCase())) taken.push("college_id");
   return taken;
 }
+
+/** The seat nobody is in, or nothing if the team is full. */
+const freeSeatIn = (members: { seat: number }[]) => SEATS.find((s) => !members.some((m) => m.seat === s));
 
 /* ------------------------------------------------------------------ *
  * The three things the sign-up asks
@@ -125,7 +167,7 @@ export async function getTeam(code: string): Promise<TeamView | null> {
     code: team.code,
     name: team.name,
     reaction: team.reaction,
-    members: team.members.map((m) => firstName(m.name)),
+    members: [...team.members].sort((a, b) => a.seat - b.seat).map((m) => firstName(m.name)),
     full: team.members.length >= TEAM_SIZE,
   };
 }
@@ -144,7 +186,7 @@ export async function addTeam(
         p_reaction: details.reaction,
         p_member: asRow(captain),
       });
-      if (answer.ok) return { ok: true, code: answer.code };
+      if (answer.ok) return { ok: true, code: answer.code as string };
       const taken = answer.clashes ?? [];
       if (!taken.includes("retry")) return { ok: false, clashes: clashesFrom(taken) };
     }
@@ -158,7 +200,16 @@ export async function addTeam(
 
   let code = newCode();
   while (kept.has(code)) code = newCode();
-  kept.set(code, { code, name: details.name, reaction: details.reaction, members: [captain] });
+  const now = new Date().toISOString();
+  kept.set(code, {
+    code,
+    name: details.name,
+    reaction: details.reaction,
+    state: "new",
+    note: "",
+    createdAt: now,
+    members: [{ ...captain, seat: 1, joinedAt: now }],
+  });
   return { ok: true, code };
 }
 
@@ -176,27 +227,32 @@ export async function addMember(
 
   const team = kept.get(code);
   if (!team) return { ok: false, reason: "missing" };
-  if (team.members.length >= TEAM_SIZE) return { ok: false, reason: "full" };
+  const seat = freeSeatIn(team.members);
+  if (!seat) return { ok: false, reason: "full" };
   const taken = keptClashes(member);
   if (taken.length) return { ok: false, clashes: clashesFrom(taken) };
-  team.members.push(member);
+  team.members.push({ ...member, seat, joinedAt: new Date().toISOString() });
   return { ok: true };
 }
 
 /* ------------------------------------------------------------------ *
- * What the core team sees (src/app/(admin))
+ * What the core team works with (src/app/(admin))
  *
  * Everything above hands out first names only, because anyone with a code can
- * ask. These are for the dashboard, behind the sign-in: whole records, and
- * the two fixes an event needs on the night.
+ * ask. These are for the dashboard, behind the sign-in: whole records, the
+ * review, and the corrections a night like this needs to be able to make.
  * ------------------------------------------------------------------ */
+
+export type MemberRecord = Member & { seat: number; joinedAt: string };
 
 export type TeamRecord = {
   code: string;
   name: string;
   reaction: string;
+  state: TeamState;
+  note: string;
   createdAt: string;
-  members: (Member & { seat: number; joinedAt: string })[];
+  members: MemberRecord[];
 };
 
 export type AdminAction = { at: string; who: string; did: string; about: string };
@@ -212,7 +268,20 @@ type MemberRow = {
   created_at: string;
 };
 
-const asMemberRecord = (m: MemberRow) => ({
+type TeamRow = {
+  code: string;
+  name: string;
+  reaction: string;
+  state: string;
+  note: string | null;
+  created_at: string;
+  members: MemberRow[];
+};
+
+const TEAM_COLUMNS =
+  "code,name,reaction,state,note,created_at,members(seat,name,email,phone,college_id,department,year,created_at)";
+
+const asMemberRecord = (m: MemberRow): MemberRecord => ({
   seat: m.seat,
   name: m.name,
   email: m.email,
@@ -223,32 +292,143 @@ const asMemberRecord = (m: MemberRow) => ({
   joinedAt: m.created_at,
 });
 
+const asTeamRecord = (t: TeamRow): TeamRecord => ({
+  code: t.code,
+  name: t.name,
+  reaction: t.reaction,
+  state: isState(t.state) ? t.state : "new",
+  note: t.note ?? "",
+  createdAt: t.created_at,
+  members: [...t.members].sort((a, b) => a.seat - b.seat).map(asMemberRecord),
+});
+
+const asRecord = (t: Team): TeamRecord => ({
+  code: t.code,
+  name: t.name,
+  reaction: t.reaction,
+  state: t.state,
+  note: t.note,
+  createdAt: t.createdAt,
+  members: [...t.members].sort((a, b) => a.seat - b.seat),
+});
+
 /** Every team, newest first, with both people in full. */
 export async function listTeams(): Promise<TeamRecord[]> {
   await connection();
 
   if (usingDatabase) {
-    const rows = await read<
-      { code: string; name: string; reaction: string; created_at: string; members: MemberRow[] }[]
-    >(
-      "teams?select=code,name,reaction,created_at,members(seat,name,email,phone,college_id,department,year,created_at)&order=created_at.desc",
-    );
-    return rows.map((t) => ({
-      code: t.code,
-      name: t.name,
-      reaction: t.reaction,
-      createdAt: t.created_at,
-      members: [...t.members].sort((a, b) => a.seat - b.seat).map(asMemberRecord),
-    }));
+    const rows = await read<TeamRow[]>(`teams?select=${TEAM_COLUMNS}&order=created_at.desc`);
+    return rows.map(asTeamRecord);
   }
 
-  return [...kept.values()].reverse().map((t) => ({
-    code: t.code,
-    name: t.name,
-    reaction: t.reaction,
-    createdAt: new Date().toISOString(),
-    members: t.members.map((m, i) => ({ ...m, seat: i + 1, joinedAt: new Date().toISOString() })),
-  }));
+  return [...kept.values()].reverse().map(asRecord);
+}
+
+/** One team, in full. */
+export async function getTeamRecord(code: string): Promise<TeamRecord | null> {
+  await connection();
+
+  if (usingDatabase) {
+    const rows = await read<TeamRow[]>(`teams?code=eq.${encodeURIComponent(code)}&select=${TEAM_COLUMNS}&limit=1`);
+    return rows[0] ? asTeamRecord(rows[0]) : null;
+  }
+
+  const team = kept.get(code);
+  return team ? asRecord(team) : null;
+}
+
+/** Moves a team along the review. */
+export async function setState(code: string, state: TeamState): Promise<void> {
+  if (usingDatabase) {
+    await patch(`teams?code=eq.${encodeURIComponent(code)}`, { state });
+    return;
+  }
+  const team = kept.get(code);
+  if (team) team.state = state;
+}
+
+/** The same, to everything that was ticked. */
+export async function setStateMany(codes: string[], state: TeamState): Promise<number> {
+  const wanted = codes.filter(Boolean);
+  if (!wanted.length) return 0;
+
+  if (usingDatabase) {
+    const list = wanted.map((c) => `"${encodeURIComponent(c)}"`).join(",");
+    await patch(`teams?code=in.(${list})`, { state });
+    return wanted.length;
+  }
+
+  let touched = 0;
+  for (const code of wanted) {
+    const team = kept.get(code);
+    if (team) {
+      team.state = state;
+      touched++;
+    }
+  }
+  return touched;
+}
+
+/** The note beside a team: whatever the core team needs to remember about it. */
+export async function setNote(code: string, note: string): Promise<void> {
+  if (usingDatabase) {
+    await patch(`teams?code=eq.${encodeURIComponent(code)}`, { note });
+    return;
+  }
+  const team = kept.get(code);
+  if (team) team.note = note;
+}
+
+/** A team renamed, or its answer changed. One team per name still holds. */
+export async function renameTeam(
+  code: string,
+  name: string,
+  reaction: string,
+): Promise<{ ok: true } | { ok: false; clashes: Clash[] }> {
+  if (usingDatabase) {
+    const answer = await run<Answer>("rename_team", { p_code: code, p_name: name, p_reaction: reaction });
+    return answer.ok ? { ok: true } : { ok: false, clashes: clashesFrom(answer.clashes ?? []) };
+  }
+
+  const team = kept.get(code);
+  if (!team) return { ok: false, clashes: [] };
+  const wanted = name.trim().toLowerCase();
+  if ([...kept.values()].some((t) => t.code !== code && t.name.trim().toLowerCase() === wanted)) {
+    return { ok: false, clashes: clashesFrom(["team_name"]) };
+  }
+  team.name = name.trim();
+  team.reaction = reaction;
+  return { ok: true };
+}
+
+/** Somebody's details corrected. Their own details aren't a clash with themselves. */
+export async function editMember(
+  code: string,
+  seat: number,
+  member: Member,
+): Promise<{ ok: true } | { ok: false; clashes: Clash[] }> {
+  if (usingDatabase) {
+    const answer = await run<Answer>("edit_member", { p_code: code, p_seat: seat, p_member: asRow(member) });
+    return answer.ok ? { ok: true } : { ok: false, clashes: clashesFrom(answer.clashes ?? []) };
+  }
+
+  const team = kept.get(code);
+  const at = team ? team.members.findIndex((m) => m.seat === seat) : -1;
+  if (!team || at < 0) return { ok: false, clashes: [] };
+  const taken = keptClashes(member, { code, seat });
+  if (taken.length) return { ok: false, clashes: clashesFrom(taken) };
+  team.members[at] = { ...member, seat, joinedAt: team.members[at].joinedAt };
+  return { ok: true };
+}
+
+/** Takes one person off a team. The seat they leave can be filled again. */
+export async function removeMember(code: string, seat: number): Promise<void> {
+  if (usingDatabase) {
+    await del(`members?team_code=eq.${encodeURIComponent(code)}&seat=eq.${seat}`);
+    return;
+  }
+  const team = kept.get(code);
+  if (team) team.members = team.members.filter((m) => m.seat !== seat);
 }
 
 /** Takes a team off the list — a duplicate, a test, a pair who dropped out. */
@@ -259,16 +439,6 @@ export async function removeTeam(code: string): Promise<void> {
     return;
   }
   kept.delete(code);
-}
-
-/** Empties the second seat, so someone else can take the invite. */
-export async function freeSeat(code: string): Promise<void> {
-  if (usingDatabase) {
-    await del(`members?team_code=eq.${encodeURIComponent(code)}&seat=eq.2`);
-    return;
-  }
-  const team = kept.get(code);
-  if (team) team.members = team.members.slice(0, 1);
 }
 
 type Log = AdminAction[];
@@ -296,10 +466,18 @@ export async function logAdmin(who: string, did: string, about: string): Promise
 export async function recentAdminActions(limit = 20): Promise<AdminAction[]> {
   await connection();
   if (usingDatabase) {
-    const rows = await read<{ at: string; who: string; did: string; about: string }[]>(
-      `admin_log?select=at,who,did,about&order=at.desc&limit=${limit}`,
-    );
-    return rows;
+    return read<AdminAction[]>(`admin_log?select=at,who,did,about&order=at.desc&limit=${limit}`);
   }
   return loggedHere.slice(0, limit);
+}
+
+/** Everything that has been done to one team. */
+export async function teamHistory(code: string, limit = 20): Promise<AdminAction[]> {
+  await connection();
+  if (usingDatabase) {
+    return read<AdminAction[]>(
+      `admin_log?about=eq.${encodeURIComponent(code)}&select=at,who,did,about&order=at.desc&limit=${limit}`,
+    );
+  }
+  return loggedHere.filter((e) => e.about === code).slice(0, limit);
 }
