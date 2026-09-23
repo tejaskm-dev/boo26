@@ -29,8 +29,15 @@ async function ask(path: string, init?: RequestInit): Promise<unknown> {
     },
   });
   if (!answer.ok) {
-    // the message, never the key
-    throw new Error(`Supabase ${answer.status} on ${path}: ${(await answer.text()).slice(0, 300)}`);
+    // the message, never the key: PostgREST answers with JSON that names what
+    // it couldn't find, which is the useful half of a page full of markup
+    const body = await answer.text();
+    let said = body.slice(0, 200);
+    try {
+      const { message, hint } = JSON.parse(body) as { message?: string; hint?: string };
+      if (message) said = hint ? `${message} (${hint})` : message;
+    } catch {}
+    throw new Error(`Supabase ${answer.status} on ${path.split("?")[0]}: ${said}`);
   }
   return answer.status === 204 ? null : answer.json();
 }

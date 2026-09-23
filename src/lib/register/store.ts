@@ -274,11 +274,20 @@ export async function freeSeat(code: string): Promise<void> {
 type Log = AdminAction[];
 const loggedHere = ((globalThis as typeof globalThis & { __booAdminLog?: Log }).__booAdminLog ??= []);
 
-/** Writes down who changed what. */
+/**
+ * Writes down who changed what. The change itself has already happened by the
+ * time this runs, so a log that won't write is reported to the server's own
+ * logs and otherwise let go: losing the note is better than leaving the admin
+ * with an error page after a fix that worked.
+ */
 export async function logAdmin(who: string, did: string, about: string): Promise<void> {
   const at = new Date().toISOString();
   if (usingDatabase) {
-    await write("admin_log", { who, did, about });
+    try {
+      await write("admin_log", { who, did, about });
+    } catch (trouble) {
+      console.error("admin_log", trouble);
+    }
     return;
   }
   loggedHere.unshift({ at, who, did, about });

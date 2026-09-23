@@ -33,7 +33,7 @@ export default function Dashboard({
 }: {
   who: string;
   teams: TeamRecord[];
-  log: AdminAction[];
+  log: AdminAction[] | null;
   q: string;
   state: "all" | "complete" | "waiting";
   origin: string;
@@ -249,7 +249,12 @@ export default function Dashboard({
         )}
       </section>
 
-      {log.length ? (
+      {log === null ? (
+        <p className="label mt-8 flex items-start gap-3 leading-[1.7] text-bone/40">
+          <span aria-hidden="true" className="mt-[0.45em] h-[0.38rem] w-[0.38rem] shrink-0 rotate-45 bg-lime/70" />
+          The record of changes isn&rsquo;t readable — run db/schema.sql, which adds the table it&rsquo;s kept in.
+        </p>
+      ) : log.length ? (
         <details className="mt-8 border border-bone/15 px-5 py-3">
           <summary className="label cursor-pointer text-bone/55">What&rsquo;s been changed here</summary>
           <ul className="mt-4 space-y-2">
