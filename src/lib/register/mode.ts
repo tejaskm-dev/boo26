@@ -15,11 +15,3 @@ export function registrationOpen(): boolean {
   if (set === "false" || set === "0" || set === "off" || set === "no") return false;
   return true;
 }
-
-/**
- * Teams are still kept in the server's memory (src/lib/register/store.ts),
- * so the pages say so: they don't survive a restart, and a host that runs
- * more than one instance may not find them again. Set this to false in the
- * same change that wires a database in, and the notes go.
- */
-export const TEAMS_ARE_TEMPORARY = true;
