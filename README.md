@@ -36,6 +36,19 @@ Unset means open. Set it in `.env.local` here, or in the host's environment
 variables for a deploy. It's read where the pages are built, so changing it
 needs a new build — on Vercel, a redeploy.
 
+### What people pick, and what's checked
+
+A department is one of the college's own — AI, DS, EBE, ECE, EEE, CSE, RA, ME,
+CE, MBA, M.Tech — rather than a typed answer, so the same department can't
+arrive in three spellings and counting them is arithmetic instead of
+guesswork. The year is the same kind of choice, as it always was.
+
+A college ID is checked while it's being typed, against everybody already
+registered. The sign-up is told only that an ID is taken — never who has it,
+because anyone at all can reach that check and college IDs run in sequence.
+The dashboard, behind the sign-in, is told the name and the team, since the
+whole record is on the page in front of it anyway.
+
 ### Where teams are kept
 
 Registrations live in Supabase. Set up once:
@@ -59,10 +72,36 @@ for good yet, until the database answers.
 
 ### The dashboard
 
-`/admin` is the core team's page: every team with both people in full, who's
-still short a teammate, counts by department and year, a search, a CSV export,
-and the two fixes a night like this needs — free a second seat, remove a team.
-Every fix is written down with who did it.
+`/admin` is the core team's page, in two halves.
+
+**The list** is for looking: how many teams and people, the split by
+department and year, a search across names, emails, numbers, codes and notes,
+and filters for where a team is in the review or whether it's still short a
+teammate. The review filters are toggles — shortlisted alone, or everything
+that isn't — and teams can be ordered newest first, by year (1st to 4th) or by
+department (A to Z), and gathered into departments or years that fold shut.
+Nothing needs applying: each control takes effect as it's changed, and writes
+itself into the address, so a view worth coming back to is a link. Ticking a
+few teams marks them all at once, and the whole lot exports to CSV.
+
+Where a team's two people disagree — one from CSE, one from ECE — it's the
+one who started the team that decides where it's grouped and ordered.
+
+**A team's own page** (`/admin/team/<code>`) is for changing, and holds every
+control:
+
+| | |
+| --- | --- |
+| Review | New → Verified → Shortlisted, Waitlisted or Rejected |
+| Note | A line the core team can leave on a team; searchable, never shown to students |
+| The team | Rename it, change the answer it's going for |
+| Each person | Correct a name, email, number, college ID, department or year — the ID says whose it is if it's taken |
+| Taking off | Either person (the seat opens and the invite works again), or the whole team |
+
+Every change is written down with who made it, and shows on both that team's
+page and the list. The rules the sign-up holds people to hold here too: one
+team per name, one person per email, number and college ID — a correction
+can't put in what the form itself would have refused.
 
 Sign-in is Google, and only the emails you list get in. Set up once:
 
@@ -76,6 +115,10 @@ Sign-in is Google, and only the emails you list get in. Set up once:
 4. `ADMIN_EMAILS`: the Google accounts allowed in, comma separated.
 5. `ADMIN_SESSION_SECRET`: a long random string, which signs the cookie that
    keeps an admin signed in — `openssl rand -base64 32`.
+
+After pulling a change that touches the dashboard, run
+[`db/schema.sql`](db/schema.sql) again — it's written to be safe to re-run,
+and it's where the review state, the notes and the action log live.
 
 Until all four are set the page says which ones are missing rather than
 failing quietly. Nothing else has to happen: no invites, no accounts, no
