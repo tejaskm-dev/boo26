@@ -9,20 +9,21 @@
 
 export type Params = { q: string; state: string; seats: string; sort: string; group: string };
 
+// short enough to read in a select on a phone
 export const SORTS = [
-  { value: "new", label: "Newest first" },
-  { value: "year", label: "Year, 1st to 4th" },
-  { value: "dept", label: "Department, A to Z" },
+  { value: "new", label: "Newest" },
+  { value: "year", label: "Year 1→4" },
+  { value: "dept", label: "Dept A→Z" },
 ];
 
 export const GROUPS = [
-  { value: "none", label: "Nothing" },
+  { value: "none", label: "None" },
   { value: "dept", label: "Department" },
   { value: "year", label: "Year" },
 ];
 
 export const SEATS_SHOWN = [
-  { value: "any", label: "Either way" },
+  { value: "any", label: "Any" },
   { value: "complete", label: "Complete" },
   { value: "waiting", label: "Waiting" },
 ];

@@ -26,27 +26,36 @@ export default async function AdminTeamPage({
   if (!who) return <SignIn missing={missingSetup()} />;
 
   const code = codeFromPath(raw);
-  const where = await origin();
 
-  let team;
-  try {
-    team = await getTeamRecord(code);
-  } catch (trouble) {
+  // together, not one after the other: two round trips to the database is
+  // two round trips of waiting before anything is on the screen
+  const [asked, history, where] = await Promise.all([
+    getTeamRecord(code).then(
+      (team) => ({ team }),
+      (trouble: unknown) => ({ trouble }),
+    ),
+    teamHistory(code).catch(() => null),
+    origin(),
+  ]);
+
+  if (!("team" in asked)) {
+    const trouble = asked.trouble;
     return <Trouble message={trouble instanceof Error ? trouble.message : String(trouble)} />;
   }
+  const team = asked.team;
 
   if (!team) {
     return (
-      <main className="grid min-h-svh place-items-center px-[var(--edge)] py-16">
-        <div className="w-full max-w-[32rem]">
-          <p className="label label-loose text-bone/40">BOO! 2026</p>
-          <h1 className="display mt-4 text-[clamp(1.8rem,4vw,2.6rem)] leading-[0.95]">No team by that code</h1>
-          <p className="body-copy mt-4 text-[0.95rem] text-bone/60">
+      <main className="grid min-h-svh place-items-center px-[clamp(1rem,4vw,2rem)] py-16">
+        <div className="card w-full max-w-[32rem] px-7 py-8">
+          <p className="eyebrow">BOO! 2026</p>
+          <h1 className="figure mt-3 text-[clamp(1.7rem,4vw,2.3rem)]">No team by that code</h1>
+          <p className="muted mt-3 text-[0.9rem] leading-[1.6]">
             It may have been removed, or the code may be a letter out.
           </p>
           <Link
             href="/admin"
-            className="label mt-8 inline-block text-[0.7rem] text-lime underline decoration-lime/40 underline-offset-4 hover:decoration-lime"
+            className="btn btn-go mt-6"
           >
             ← All teams
           </Link>
@@ -55,7 +64,6 @@ export default async function AdminTeamPage({
     );
   }
 
-  const history = await teamHistory(code).catch(() => null);
   const seat = Number(one(query.seat));
 
   return (
