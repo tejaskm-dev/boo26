@@ -236,6 +236,48 @@ export async function addMember(
 }
 
 /* ------------------------------------------------------------------ *
+ * Asked while somebody is still typing
+ *
+ * The sign-up already refuses a college ID that's registered, but only once
+ * the form is sent. These answer the same question early, so nobody fills in
+ * the rest of a page that was never going to go through.
+ * ------------------------------------------------------------------ */
+
+/** Whether anybody at all holds this ID. Nothing about who: anyone can ask. */
+export async function idIsTaken(collegeId: string): Promise<boolean> {
+  if (usingDatabase) {
+    // the value is checked against the ID pattern before it gets here, so it
+    // carries none of ilike's wildcards; ilike is only for the case
+    const rows = await read<{ seat: number }[]>(
+      `members?college_id=ilike.${encodeURIComponent(collegeId)}&select=seat&limit=1`,
+    );
+    return rows.length > 0;
+  }
+  return [...kept.values()].some((t) =>
+    t.members.some((m) => m.collegeId.toUpperCase() === collegeId.toUpperCase()),
+  );
+}
+
+/** Who holds it, for the dashboard, where the whole record is on the page anyway. */
+export async function whoHasId(
+  collegeId: string,
+): Promise<{ name: string; team: string; code: string; seat: number } | null> {
+  if (usingDatabase) {
+    const rows = await read<{ name: string; seat: number; team_code: string; teams: { name: string } | null }[]>(
+      `members?college_id=ilike.${encodeURIComponent(collegeId)}&select=name,seat,team_code,teams(name)&limit=1`,
+    );
+    const row = rows[0];
+    return row ? { name: row.name, team: row.teams?.name ?? "", code: row.team_code, seat: row.seat } : null;
+  }
+
+  for (const team of kept.values()) {
+    const member = team.members.find((m) => m.collegeId.toUpperCase() === collegeId.toUpperCase());
+    if (member) return { name: member.name, team: team.name, code: team.code, seat: member.seat };
+  }
+  return null;
+}
+
+/* ------------------------------------------------------------------ *
  * What the core team works with (src/app/(admin))
  *
  * Everything above hands out first names only, because anyone with a code can

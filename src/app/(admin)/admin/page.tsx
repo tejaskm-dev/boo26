@@ -22,11 +22,15 @@ export default async function AdminPage({
   if (!who) return <SignIn missing={missingSetup()} trouble={one(query.trouble) || undefined} />;
 
   const seats = one(query.seats);
-  const state = one(query.state);
-  const filters = {
+  const sort = one(query.sort);
+  const group = one(query.group);
+  const params = {
     q: one(query.q),
-    state: isState(state) ? state : "all",
+    // several at once: the chips are toggles, not one choice
+    state: one(query.state).split(",").filter(isState).join(","),
     seats: seats === "complete" || seats === "waiting" ? seats : "any",
+    sort: sort === "year" || sort === "dept" ? sort : "new",
+    group: group === "dept" || group === "year" ? group : "none",
   };
 
   // The teams are the page. If they can't be read, say so in words an event
@@ -47,7 +51,7 @@ export default async function AdminPage({
       who={who}
       teams={teams}
       log={log}
-      filters={filters}
+      params={params}
       said={one(query.said) || undefined}
       temporary={teamsAreTemporary()}
     />

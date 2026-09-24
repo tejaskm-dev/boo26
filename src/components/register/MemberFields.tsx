@@ -1,5 +1,14 @@
 import { CheckField, ChoiceField, TextField } from "./Fields";
-import { YEARS, cleanPhone, showPhone, typePhone, type Errors, type Member } from "@/lib/register/fields";
+import { useTakenId } from "./useTakenId";
+import {
+  DEPARTMENT_OPTIONS,
+  YEARS,
+  cleanPhone,
+  showPhone,
+  typePhone,
+  type Errors,
+  type Member,
+} from "@/lib/register/fields";
 
 /**
  * The two steps both people fill in, the captain and the teammate alike —
@@ -77,22 +86,25 @@ export function YouFields({ prefix, member, errors, set, touch, ok }: Props) {
 }
 
 export function CampusFields({ prefix, member, errors, set, touch, ok }: Props) {
+  // the same answer the form would give on being sent, only sooner
+  const taken = useTakenId(member.collegeId);
+
   return (
     <>
-      <TextField
+      {/* the college's own list, rather than a box that took three spellings
+          of the same department */}
+      <ChoiceField
         id={`${prefix}-department`}
         index="01"
         label="Department"
+        name={`${prefix}-department`}
+        options={DEPARTMENT_OPTIONS}
         value={member.department}
-        onChange={(v) => set("department", v)}
-        onBlur={() => touch("department")}
-        ok={ok("department")}
+        onChange={(v) => {
+          set("department", v);
+          touch("department");
+        }}
         error={errors.department}
-        placeholder="CSE, ECE, ME…"
-        autoComplete="off"
-        autoCapitalize="characters"
-        enterKeyHint="next"
-        maxLength={40}
       />
       <ChoiceField
         id={`${prefix}-year`}
@@ -111,8 +123,8 @@ export function CampusFields({ prefix, member, errors, set, touch, ok }: Props) 
         value={member.collegeId}
         onChange={(v) => set("collegeId", v)}
         onBlur={() => touch("collegeId")}
-        ok={ok("collegeId")}
-        error={errors.collegeId}
+        ok={ok("collegeId") && !taken}
+        error={errors.collegeId ?? taken ?? undefined}
         hint="As printed on your ID card. Bring the card too."
         autoComplete="off"
         autoCapitalize="characters"

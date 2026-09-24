@@ -8,6 +8,32 @@
  * and to /privacy, which lists what's collected.
  */
 
+/**
+ * The departments anyone signing up can be in — the college's own list, in the
+ * order it gives them. Typed answers were letting the same department in three
+ * spellings, which made counting them guesswork.
+ */
+export const DEPARTMENTS = [
+  "AI",
+  "DS",
+  "EBE",
+  "ECE",
+  "EEE",
+  "CSE",
+  "RA",
+  "ME",
+  "CE",
+  "MBA",
+  "M.Tech",
+] as const;
+
+export type Department = (typeof DEPARTMENTS)[number];
+
+export const DEPARTMENT_OPTIONS = DEPARTMENTS.map((d) => ({ value: d, label: d }));
+
+/** Whatever was typed before the list existed still has to be readable. */
+export const isDepartment = (v: string): v is Department => (DEPARTMENTS as readonly string[]).includes(v);
+
 export const YEARS = [
   { value: "1", label: "1st" },
   { value: "2", label: "2nd" },
@@ -75,6 +101,12 @@ export function showPhone(phone: string): string {
   return phone.length === 10 ? `+91 ${phone.slice(0, 5)} ${phone.slice(5)}` : phone;
 }
 
+/** A college ID as it's kept: squashed, upper case. */
+export const cleanId = (raw: string) => squash(raw).toUpperCase();
+
+/** What one looks like. Nothing in it is a wildcard, which the lookups rely on. */
+export const looksLikeId = (id: string) => /^[A-Z0-9][A-Z0-9/ .-]{2,23}$/.test(id);
+
 export function cleanMember(m: Member): Member {
   return {
     name: squash(m.name),
@@ -82,7 +114,7 @@ export function cleanMember(m: Member): Member {
     phone: cleanPhone(m.phone),
     department: squash(m.department),
     year: m.year,
-    collegeId: squash(m.collegeId).toUpperCase(),
+    collegeId: cleanId(m.collegeId),
   };
 }
 
@@ -115,12 +147,12 @@ export function checkCampus(raw: Member): Errors<Member> {
   const m = cleanMember(raw);
   const e: Errors<Member> = {};
   if (!m.department) e.department = "Which department are you in?";
-  else if (m.department.length > 40) e.department = "Keep it under 40 characters.";
+  else if (!isDepartment(m.department)) e.department = "Pick one of these.";
 
   if (!YEARS.some((y) => y.value === m.year)) e.year = "Pick your year.";
 
   if (!m.collegeId) e.collegeId = "It's on your college ID card.";
-  else if (!/^[A-Z0-9][A-Z0-9/ .-]{2,23}$/.test(m.collegeId)) e.collegeId = "Letters and numbers, as printed on your card.";
+  else if (!looksLikeId(m.collegeId)) e.collegeId = "Letters and numbers, as printed on your card.";
   return e;
 }
 

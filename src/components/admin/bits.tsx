@@ -108,11 +108,17 @@ export function Choice({
       <select
         name={name}
         defaultValue={defaultValue}
-        className="body-copy mt-1.5 w-full border-b border-bone/20 bg-ink pb-1.5 text-[0.95rem] text-bone outline-none transition-colors focus:border-lime"
+        // the colour scheme is what the browser draws the open menu with:
+        // without it the list comes up white-on-white against this page
+        className="body-copy mt-1.5 w-full border-b border-bone/20 bg-ink pb-1.5 text-[0.95rem] text-bone outline-none transition-colors [color-scheme:dark] focus:border-lime"
       >
-        {blank ? <option value="">{blank}</option> : null}
+        {blank ? (
+          <option value="" className="bg-ink text-bone">
+            {blank}
+          </option>
+        ) : null}
         {options.map((o) => (
-          <option key={o.value} value={o.value}>
+          <option key={o.value} value={o.value} className="bg-ink text-bone">
             {o.label}
           </option>
         ))}
@@ -163,7 +169,10 @@ const SAID: Record<string, { tone: "good" | "bad"; text: string }> = {
   "email-taken": { tone: "bad", text: "Somebody else is registered with that email." },
   "phone-taken": { tone: "bad", text: "Somebody else is registered with that number." },
   "id-taken": { tone: "bad", text: "Somebody else is registered with that college ID." },
-  "details-no": { tone: "bad", text: "Those details didn't pass the same checks the sign-up makes." },
+  "details-no": {
+    tone: "bad",
+    text: "Those details didn't pass the same checks the sign-up makes — look at the email, the number, the ID, and whether a department is picked.",
+  },
   no: { tone: "bad", text: "That didn't go through." },
 };
 

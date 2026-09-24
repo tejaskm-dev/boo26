@@ -36,6 +36,19 @@ Unset means open. Set it in `.env.local` here, or in the host's environment
 variables for a deploy. It's read where the pages are built, so changing it
 needs a new build — on Vercel, a redeploy.
 
+### What people pick, and what's checked
+
+A department is one of the college's own — AI, DS, EBE, ECE, EEE, CSE, RA, ME,
+CE, MBA, M.Tech — rather than a typed answer, so the same department can't
+arrive in three spellings and counting them is arithmetic instead of
+guesswork. The year is the same kind of choice, as it always was.
+
+A college ID is checked while it's being typed, against everybody already
+registered. The sign-up is told only that an ID is taken — never who has it,
+because anyone at all can reach that check and college IDs run in sequence.
+The dashboard, behind the sign-in, is told the name and the team, since the
+whole record is on the page in front of it anyway.
+
 ### Where teams are kept
 
 Registrations live in Supabase. Set up once:
@@ -64,8 +77,15 @@ for good yet, until the database answers.
 **The list** is for looking: how many teams and people, the split by
 department and year, a search across names, emails, numbers, codes and notes,
 and filters for where a team is in the review or whether it's still short a
-teammate. Ticking a few teams marks them all at once, and the whole lot
-exports to CSV.
+teammate. The review filters are toggles — shortlisted alone, or everything
+that isn't — and teams can be ordered newest first, by year (1st to 4th) or by
+department (A to Z), and gathered into departments or years that fold shut.
+Nothing needs applying: each control takes effect as it's changed, and writes
+itself into the address, so a view worth coming back to is a link. Ticking a
+few teams marks them all at once, and the whole lot exports to CSV.
+
+Where a team's two people disagree — one from CSE, one from ECE — it's the
+one who started the team that decides where it's grouped and ordered.
 
 **A team's own page** (`/admin/team/<code>`) is for changing, and holds every
 control:
@@ -75,7 +95,7 @@ control:
 | Review | New → Verified → Shortlisted, Waitlisted or Rejected |
 | Note | A line the core team can leave on a team; searchable, never shown to students |
 | The team | Rename it, change the answer it's going for |
-| Each person | Correct a name, email, number, college ID, department or year |
+| Each person | Correct a name, email, number, college ID, department or year — the ID says whose it is if it's taken |
 | Taking off | Either person (the seat opens and the invite works again), or the whole team |
 
 Every change is written down with who made it, and shows on both that team's

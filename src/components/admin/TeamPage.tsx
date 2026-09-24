@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Copy from "./Copy";
 import { Choice, Chip, Confirm, Field, Go, Heading, Said, Seats } from "./bits";
+import LiveId from "./LiveId";
 import {
   editMemberAction,
   removeMemberAction,
@@ -11,7 +12,7 @@ import {
 } from "@/lib/admin/actions";
 import { joinPath, showCode } from "@/lib/register/code";
 import { REACTIONS } from "@/lib/register/content";
-import { showPhone, YEARS } from "@/lib/register/fields";
+import { DEPARTMENT_OPTIONS, isDepartment, showPhone, YEARS } from "@/lib/register/fields";
 import { SEATS, STATES, type AdminAction, type MemberRecord, type TeamRecord } from "@/lib/register/store";
 
 /**
@@ -66,8 +67,22 @@ function Person({ member, code, editing }: { member: MemberRecord; code: string;
               <Field label="Name" name="name" defaultValue={member.name} maxLength={60} />
               <Field label="Email" name="email" type="email" defaultValue={member.email} inputMode="email" />
               <Field label="Phone" name="phone" defaultValue={member.phone} inputMode="tel" maxLength={14} />
-              <Field label="College ID" name="collegeId" defaultValue={member.collegeId} maxLength={24} />
-              <Field label="Department" name="department" defaultValue={member.department} maxLength={24} />
+              <LiveId code={code} seat={member.seat} defaultValue={member.collegeId} />
+              <Choice
+                label="Department"
+                name="department"
+                defaultValue={member.department}
+                options={DEPARTMENT_OPTIONS}
+                // anyone registered before the list existed has whatever they
+                // typed; it shows, but it has to be swapped for one of these
+                blank={
+                  isDepartment(member.department)
+                    ? undefined
+                    : member.department
+                      ? `${member.department} — pick one below`
+                      : "Pick one"
+                }
+              />
               <Choice label="Year" name="year" defaultValue={member.year} options={[...YEARS]} />
             </div>
             <p className="mt-4">
