@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import TeamDetail, { TeamHeading } from "./TeamDetail";
 import { Pill, Said, Seats } from "./bits";
 import { setStateManyAction } from "@/lib/admin/actions";
-import { addressFor, GROUPS, SEATS_SHOWN, SORTS, type Params } from "@/lib/admin/view";
+import { addressFor, GROUPS, queryFor, SEATS_SHOWN, SORTS, type Params } from "@/lib/admin/view";
 import { showCode } from "@/lib/register/code";
 import { YEARS } from "@/lib/register/fields";
 import { creatorOf, STATES, type TeamRecord } from "@/lib/register/teams";
@@ -296,9 +296,19 @@ export default function TeamList({
         </div>
       </div>
 
-      <p className="faint mt-3 text-[0.78rem]">
-        {shown.length === teams.length ? `${teams.length} teams` : `${shown.length} of ${teams.length} teams`}
-      </p>
+      <div className="mt-3 flex flex-wrap items-baseline justify-between gap-3">
+        <p className="faint text-[0.78rem]">
+          {shown.length === teams.length ? `${teams.length} teams` : `${shown.length} of ${teams.length} teams`}
+        </p>
+        {/* whatever is on screen, as a spreadsheet: the export page starts
+            from this same view rather than from everything */}
+        <a
+          href={`/admin/export${queryFor(params) ? `?${queryFor(params)}` : ""}`}
+          className="faint text-[0.78rem] underline underline-offset-2 hover:text-[var(--ink)]"
+        >
+          Export {shown.length === teams.length ? "these" : `these ${shown.length}`} →
+        </a>
+      </div>
 
       <form action={setStateManyAction} className="card mt-2 overflow-hidden">
         {shown.length ? (
