@@ -2,30 +2,18 @@ import type { ReactNode } from "react";
 import { SEATS, stateLabel, type TeamState } from "@/lib/register/teams";
 
 /**
- * The small parts the two admin pages share. Everything here is server-
- * rendered and styled with what the site already has — ink, bone, lime, the
- * same three type classes — so the dashboard looks like it belongs to the
- * same thing without carrying any of the site's motion.
+ * The small parts the dashboard is built from. Everything here is server-
+ * rendered and dressed by admin.css, so a button looks like a button in every
+ * place one turns up, and the JSX stays about what a thing is rather than
+ * what it's painted.
  */
 
-/** Where a team is, as a word you can see across a room. */
-const CHIP: Record<TeamState, string> = {
-  new: "border-bone/25 text-bone/55",
-  verified: "border-lime/50 text-lime",
-  shortlisted: "border-lime bg-lime text-ink",
-  waitlisted: "border-dashed border-bone/40 text-bone/70",
-  rejected: "border-bone/15 text-bone/30 line-through decoration-bone/30",
-};
-
-export function Chip({ state, className = "" }: { state: TeamState; className?: string }) {
-  return (
-    <span className={`label inline-flex items-center border px-2.5 py-1 text-[0.68rem] leading-none ${CHIP[state]} ${className}`}>
-      {stateLabel(state)}
-    </span>
-  );
+/** Where a team stands, as a word you can pick out of a list. */
+export function Pill({ state, className = "" }: { state: TeamState; className?: string }) {
+  return <span className={`pill pill-${state} ${className}`}>{stateLabel(state)}</span>;
 }
 
-/** Two little squares: who's in the team, at a glance. */
+/** Two squares: who's on the team, at a glance. */
 export function Seats({ taken }: { taken: number[] }) {
   return (
     <span className="inline-flex items-center gap-1" aria-label={`${taken.length} of ${SEATS.length} seats taken`}>
@@ -33,18 +21,16 @@ export function Seats({ taken }: { taken: number[] }) {
         <span
           key={seat}
           aria-hidden="true"
-          className={`h-2 w-2 ${taken.includes(seat) ? "bg-lime" : "border border-dashed border-bone/35"}`}
+          className={`h-2.5 w-2.5 rounded-[1px] ${
+            taken.includes(seat) ? "bg-[var(--accent-deep)]" : "border border-dashed border-[var(--line-firm)]"
+          }`}
         />
       ))}
     </span>
   );
 }
 
-/**
- * A panel: the unit the dashboard is built out of. One tier up from the page
- * behind it, a hairline around it, and its own heading — so a screen of
- * controls reads as a few things rather than one long column.
- */
+/** A sheet of paper with a heading on it. */
 export function Panel({
   title,
   note,
@@ -60,14 +46,14 @@ export function Panel({
   bare?: boolean;
 }) {
   return (
-    <section className={`border border-bone/10 bg-bone/[0.018] ${className}`}>
+    <section className={`card ${className}`}>
       {title ? (
-        <header className="flex flex-wrap items-baseline justify-between gap-x-5 gap-y-1 border-b border-bone/10 px-5 py-3">
-          <h2 className="label text-[0.66rem] text-bone/50">{title}</h2>
-          {note ? <p className="body-copy text-[0.8rem] text-bone/30">{note}</p> : null}
+        <header className="card-head">
+          <h2 className="eyebrow">{title}</h2>
+          {note ? <p className="faint text-[0.78rem]">{note}</p> : null}
         </header>
       ) : null}
-      <div className={bare ? "" : "p-5"}>{children}</div>
+      <div className={bare ? "" : "card-body"}>{children}</div>
     </section>
   );
 }
@@ -75,18 +61,18 @@ export function Panel({
 /** One number, said plainly. */
 export function Stat({ label, value, under }: { label: string; value: number | string; under?: string }) {
   return (
-    <div className="bg-ink px-5 py-4">
-      <p className="label text-[0.64rem] text-bone/40">{label}</p>
-      <p className="display mt-2.5 text-[clamp(1.8rem,3.2vw,2.5rem)] leading-none">{value}</p>
-      {under ? <p className="body-copy mt-2 text-[0.78rem] text-bone/30">{under}</p> : null}
+    <div className="card px-4 py-3 sm:px-5 sm:py-4">
+      <p className="eyebrow text-[0.62rem] sm:text-[0.7rem]">{label}</p>
+      <p className="figure mt-2 text-[clamp(1.5rem,3vw,2.2rem)]">{value}</p>
+      {under ? <p className="faint mt-1 text-[0.74rem] sm:text-[0.78rem]">{under}</p> : null}
     </div>
   );
 }
 
 /**
- * How the sign-ups have come in, a day at a time. Bars rather than a line:
- * at this size a line has to be smoothed to look like anything, and a
- * smoothed line invents days that never happened.
+ * How the sign-ups have come in, a day at a time. Bars rather than a line: at
+ * this size a line has to be smoothed to look like anything, and a smoothed
+ * line invents days that never happened.
  */
 export function Spark({ at, days = 14 }: { at: string[]; days?: number }) {
   const today = new Date();
@@ -106,17 +92,18 @@ export function Spark({ at, days = 14 }: { at: string[]; days?: number }) {
   const step = width / days;
 
   return (
-    <svg viewBox={`0 0 ${width} 30`} preserveAspectRatio="none" className="h-14 w-full" aria-hidden="true">
+    <svg viewBox={`0 0 ${width} 30`} preserveAspectRatio="none" className="h-12 w-full" aria-hidden="true">
       {buckets.map((b, i) => {
-        const h = b.n ? Math.max(1.5, (b.n / most) * 28) : 0.7;
+        const h = b.n ? Math.max(2, (b.n / most) * 28) : 1;
         return (
           <rect
             key={b.key}
-            x={i * step + step * 0.22}
+            x={i * step + step * 0.2}
             y={30 - h}
-            width={step * 0.56}
+            width={step * 0.6}
             height={h}
-            className={b.n ? (i === days - 1 ? "fill-lime" : "fill-lime/45") : "fill-bone/15"}
+            rx={0.6}
+            fill={b.n ? (i === days - 1 ? "var(--accent-deep)" : "rgb(91 107 0 / 0.45)") : "var(--line-firm)"}
           />
         );
       })}
@@ -146,7 +133,7 @@ export function Field({
 }) {
   return (
     <label className="block">
-      <span className="label block text-[0.68rem] text-bone/40">{label}</span>
+      <span className="eyebrow mb-1.5 block text-[0.66rem]">{label}</span>
       <input
         type={type}
         name={name}
@@ -156,7 +143,7 @@ export function Field({
         maxLength={maxLength}
         inputMode={inputMode}
         size={1}
-        className="body-copy mt-1.5 w-full border-b border-bone/20 bg-transparent pb-1.5 text-[0.95rem] text-bone caret-lime outline-none transition-colors placeholder:text-bone/20 focus:border-lime"
+        className="field"
       />
     </label>
   );
@@ -178,21 +165,11 @@ export function Choice({
 }) {
   return (
     <label className="block">
-      <span className="label block text-[0.68rem] text-bone/40">{label}</span>
-      <select
-        name={name}
-        defaultValue={defaultValue}
-        // the colour scheme is what the browser draws the open menu with:
-        // without it the list comes up white-on-white against this page
-        className="body-copy mt-1.5 w-full border-b border-bone/20 bg-ink pb-1.5 text-[0.95rem] text-bone outline-none transition-colors [color-scheme:dark] focus:border-lime"
-      >
-        {blank ? (
-          <option value="" className="bg-ink text-bone">
-            {blank}
-          </option>
-        ) : null}
+      <span className="eyebrow mb-1.5 block text-[0.66rem]">{label}</span>
+      <select name={name} defaultValue={defaultValue} className="field">
+        {blank ? <option value="">{blank}</option> : null}
         {options.map((o) => (
-          <option key={o.value} value={o.value} className="bg-ink text-bone">
+          <option key={o.value} value={o.value}>
             {o.label}
           </option>
         ))}
@@ -201,17 +178,10 @@ export function Choice({
   );
 }
 
-/** A button that means it. */
-export function Go({ children, quiet = false }: { children: ReactNode; quiet?: boolean }) {
+/** A button that submits the form it's in. */
+export function Go({ children, tone = "go" }: { children: ReactNode; tone?: "go" | "quiet" | "danger" }) {
   return (
-    <button
-      type="submit"
-      className={`label cursor-pointer px-4 py-2.5 text-[0.7rem] outline-none transition-colors duration-200 focus-visible:ring-1 focus-visible:ring-lime ${
-        quiet
-          ? "border border-bone/20 text-bone/70 hover:border-lime hover:text-lime"
-          : "bg-lime text-ink hover:bg-bone"
-      }`}
-    >
+    <button type="submit" className={`btn ${tone === "go" ? "btn-go" : tone === "danger" ? "btn-danger" : ""}`}>
       {children}
     </button>
   );
@@ -221,13 +191,13 @@ export function Go({ children, quiet = false }: { children: ReactNode; quiet?: b
 export function Confirm({ summary, children }: { summary: string; children: ReactNode }) {
   return (
     <details className="group">
-      <summary className="label inline-flex cursor-pointer list-none items-center gap-2 text-[0.68rem] text-bone/45 transition-colors hover:text-lime">
+      <summary className="muted inline-flex cursor-pointer list-none items-center gap-2 text-[0.84rem] hover:text-[var(--ink)]">
         <span aria-hidden="true" className="inline-block transition-transform duration-200 group-open:rotate-45">
           +
         </span>
         {summary}
       </summary>
-      <div className="mt-3 border-l-2 border-lime/50 pl-4">{children}</div>
+      <div className="mt-3 border-l-2 border-[var(--accent-deep)] pl-4">{children}</div>
     </details>
   );
 }
@@ -255,8 +225,10 @@ export function Said({ said }: { said?: string }) {
   if (!it) return null;
   return (
     <p
-      className={`body-copy mt-6 flex items-start gap-3 border-l-2 pl-4 text-[0.92rem] leading-[1.7] ${
-        it.tone === "good" ? "border-lime text-bone/80" : "border-bone/40 text-bone/70"
+      className={`mt-5 rounded-[2px] border px-4 py-3 text-[0.86rem] leading-[1.5] ${
+        it.tone === "good"
+          ? "border-[#cbe06a] bg-[#f2f9d6] text-[#40500a]"
+          : "border-[#e3bdb7] bg-[#fbeeec] text-[#8a3227]"
       }`}
     >
       {it.text}

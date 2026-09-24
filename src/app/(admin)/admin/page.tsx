@@ -3,6 +3,8 @@ import SignIn from "@/components/admin/SignIn";
 import Trouble from "@/components/admin/Trouble";
 import { currentAdmin, missingSetup } from "@/lib/admin/session";
 import { isState, listTeams, recentAdminActions, teamsAreTemporary } from "@/lib/register/store";
+import { codeFromPath } from "@/lib/register/code";
+import { origin } from "@/lib/origin";
 
 /**
  * The core team's view of registration. Nothing links here from the site, and
@@ -24,7 +26,9 @@ export default async function AdminPage({
   const seats = one(query.seats);
   const sort = one(query.sort);
   const group = one(query.group);
+  const team = codeFromPath(one(query.team));
   const params = {
+    team: team || undefined,
     q: one(query.q),
     // several at once: the chips are toggles, not one choice
     state: one(query.state).split(",").filter(isState).join(","),
@@ -42,12 +46,13 @@ export default async function AdminPage({
   // manager can act on rather than letting the whole thing fall over. The log
   // is a nicety by comparison — if it's the only thing missing, an older
   // database without its table, the dashboard still works.
-  const [asked, log] = await Promise.all([
+  const [asked, log, where] = await Promise.all([
     listTeams().then(
       (rows) => ({ rows }),
       (trouble: unknown) => ({ trouble }),
     ),
     recentAdminActions(15).catch(() => null),
+    origin(),
   ]);
 
   if (!("rows" in asked)) {
@@ -62,7 +67,9 @@ export default async function AdminPage({
       teams={teams}
       log={log}
       params={params}
+      origin={where}
       said={one(query.said) || undefined}
+      seat={Number(one(query.seat)) === 1 || Number(one(query.seat)) === 2 ? Number(one(query.seat)) : undefined}
       temporary={teamsAreTemporary()}
     />
   );

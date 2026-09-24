@@ -36,6 +36,16 @@ import {
 
 const teamPath = (code: string) => `/admin/team/${code}`;
 
+/**
+ * Where to land afterwards. A form on a team's own page goes back to it; the
+ * same form in the drawer beside the list goes back to the list with that
+ * team still open, so nobody is thrown out of what they were doing.
+ */
+const back = (form: FormData, code: string, said: string) =>
+  String(form.get("from") ?? "") === "list"
+    ? `/admin?team=${code}&said=${said}`
+    : `${teamPath(code)}?said=${said}`;
+
 /** Both pages show the same teams, so both are stale after a change. */
 function refresh(code?: string) {
   revalidatePath("/admin");
@@ -93,7 +103,7 @@ export async function setNoteAction(form: FormData) {
   await setNote(asked.code, note);
   await logAdmin(asked.who, note ? "wrote a note on" : "cleared the note on", asked.code);
   refresh(asked.code);
-  redirect(`${teamPath(asked.code)}?said=saved`);
+  redirect(back(form, asked.code, "saved"));
 }
 
 /* ------------------------------------------------------------------ *
@@ -109,18 +119,18 @@ export async function renameTeamAction(form: FormData) {
     reaction: String(form.get("reaction") ?? ""),
   });
   if (!team.name || team.name.length < 2 || team.name.length > 32) {
-    redirect(`${teamPath(asked.code)}?said=name-no`);
+    redirect(back(form, asked.code, "name-no"));
   }
   if (team.reaction && !(REACTIONS as readonly string[]).includes(team.reaction)) {
-    redirect(`${teamPath(asked.code)}?said=reaction-no`);
+    redirect(back(form, asked.code, "reaction-no"));
   }
 
   const answer = await renameTeam(asked.code, team.name, team.reaction);
-  if (!answer.ok) redirect(`${teamPath(asked.code)}?said=${saidFor(answer.clashes)}`);
+  if (!answer.ok) redirect(back(form, asked.code, saidFor(answer.clashes)));
 
   await logAdmin(asked.who, `renamed the team to ${team.name}`, asked.code);
   refresh(asked.code);
-  redirect(`${teamPath(asked.code)}?said=saved`);
+  redirect(back(form, asked.code, "saved"));
 }
 
 export async function editMemberAction(form: FormData) {
@@ -140,14 +150,14 @@ export async function editMemberAction(form: FormData) {
   );
   // the same rules the sign-up holds people to, so a correction can't put in
   // what the form itself would have refused
-  if (hasErrors(checkMember(member))) redirect(`${teamPath(asked.code)}?said=details-no&seat=${seat}`);
+  if (hasErrors(checkMember(member))) redirect(`${back(form, asked.code, "details-no")}&seat=${seat}`);
 
   const answer = await editMember(asked.code, seat, member);
-  if (!answer.ok) redirect(`${teamPath(asked.code)}?said=${saidFor(answer.clashes)}&seat=${seat}`);
+  if (!answer.ok) redirect(`${back(form, asked.code, saidFor(answer.clashes))}&seat=${seat}`);
 
   await logAdmin(asked.who, `edited ${member.name} on`, asked.code);
   refresh(asked.code);
-  redirect(`${teamPath(asked.code)}?said=saved`);
+  redirect(back(form, asked.code, "saved"));
 }
 
 /* ------------------------------------------------------------------ *
@@ -163,7 +173,7 @@ export async function removeMemberAction(form: FormData) {
   await removeMember(asked.code, seat);
   await logAdmin(asked.who, `took ${name} off`, asked.code);
   refresh(asked.code);
-  redirect(`${teamPath(asked.code)}?said=removed`);
+  redirect(back(form, asked.code, "removed"));
 }
 
 export async function removeTeamAction(form: FormData) {

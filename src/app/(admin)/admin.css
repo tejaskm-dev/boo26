@@ -1,0 +1,347 @@
+/* ------------------------------------------------------------------ *
+ * The dashboard's own surface
+ *
+ * The site is a black room with a light on. This is the clipboard someone
+ * carries around it: paper, plain contrast, one green marker. The brand is
+ * still here — Archivo on the headings, the same green, the same squared
+ * labels — but everything that was theatre on the site is quiet here, because
+ * this page is read for an hour at a time and mostly on a phone at a desk.
+ * ------------------------------------------------------------------ */
+
+/* globals.css lifts the site's <main> onto its own layer, which would trap
+   anything fixed inside it under the bar. The dashboard has no such layers. */
+.admin main {
+  position: static;
+  z-index: auto;
+}
+
+.admin {
+  --page: #f4f2ec;
+  --paper: #ffffff;
+  --sunk: #faf9f5;
+  --ink: #16150f;
+  --soft: #55534a;
+  --faint: #6f6c63;
+  --line: #e2dfd4;
+  --line-firm: #cfcbbd;
+  --accent: #c9ea1b;
+  --accent-deep: #5b6b00;
+  --shadow: 0 1px 2px rgb(22 21 15 / 0.05), 0 1px 12px rgb(22 21 15 / 0.03);
+
+  background: var(--page);
+  color: var(--ink);
+  font-family: var(--font-mono);
+}
+
+/* paper */
+.card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  box-shadow: var(--shadow);
+}
+
+.card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1.25rem;
+  padding: 0.85rem 1.15rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.card-body {
+  padding: 1.15rem;
+}
+
+/* words */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.7rem;
+  line-height: 1;
+  color: var(--faint);
+}
+
+.figure {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-variation-settings: "wdth" 112;
+  letter-spacing: -0.03em;
+  line-height: 0.9;
+}
+
+.muted {
+  color: var(--soft);
+}
+
+.faint {
+  color: var(--faint);
+}
+
+/* things you press */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid var(--line-firm);
+  background: var(--paper);
+  color: var(--ink);
+  padding: 0.5rem 0.85rem;
+  border-radius: 2px;
+  font-size: 0.82rem;
+  line-height: 1.2;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.btn:hover {
+  border-color: var(--ink);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--accent-deep);
+  outline-offset: 1px;
+}
+
+.btn[disabled] {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.btn-go {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--page);
+}
+
+.btn-go:hover {
+  background: #000;
+}
+
+.btn-danger:hover {
+  border-color: #a32b1f;
+  color: #a32b1f;
+}
+
+.btn-plain {
+  border-color: transparent;
+  background: transparent;
+  color: var(--soft);
+  padding: 0.35rem 0.5rem;
+}
+
+.btn-plain:hover {
+  border-color: transparent;
+  color: var(--ink);
+  background: var(--sunk);
+}
+
+/* a filter that is either on or off */
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid var(--line-firm);
+  background: var(--paper);
+  color: var(--soft);
+  padding: 0.42rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.toggle:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+.toggle[aria-pressed="true"] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--page);
+}
+
+.toggle .count {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.6;
+}
+
+/* things you type in */
+.field {
+  width: 100%;
+  border: 1px solid var(--line-firm);
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 2px;
+  padding: 0.55rem 0.7rem;
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  line-height: 1.4;
+  transition: border-color 0.15s ease;
+}
+
+.field::placeholder {
+  color: var(--faint);
+}
+
+.field:focus {
+  outline: none;
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px rgb(201 234 27 / 0.35);
+}
+
+select.field {
+  color-scheme: light;
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--soft) 50%),
+    linear-gradient(135deg, var(--soft) 50%, transparent 50%);
+  background-position:
+    calc(100% - 15px) calc(50% + 2px),
+    calc(100% - 10px) calc(50% + 2px);
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 2rem;
+}
+
+/* where a team stands */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--line-firm);
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.74rem;
+  line-height: 1.4;
+  white-space: nowrap;
+  color: var(--soft);
+}
+
+.pill::before {
+  content: "";
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.pill-new {
+  color: var(--soft);
+}
+.pill-verified {
+  color: #1f6d3a;
+  border-color: #b9d9c5;
+  background: #eef7f1;
+}
+.pill-shortlisted {
+  color: #40500a;
+  border-color: #cbe06a;
+  background: #f2f9d6;
+}
+.pill-waitlisted {
+  color: #7a5200;
+  border-color: #e4cc93;
+  background: #fbf3e0;
+}
+.pill-rejected {
+  color: #8a3227;
+  border-color: #e3bdb7;
+  background: #fbeeec;
+}
+
+/* the list */
+.row {
+  display: grid;
+  align-items: center;
+  gap: 0 1rem;
+  padding: 0.7rem 1.15rem;
+  border-bottom: 1px solid var(--line);
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.row:hover {
+  background: var(--sunk);
+}
+
+.row[data-open="true"] {
+  background: #f1f6d9;
+  box-shadow: inset 3px 0 0 var(--accent-deep);
+}
+
+.row-head {
+  display: grid;
+  gap: 0 1rem;
+  padding: 0.55rem 1.15rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--sunk);
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+/* room for the columns: this has to come after both rules above, since they
+   carry the same weight and the last one written is the one that lands */
+@media (min-width: 64rem) {
+  .row,
+  .row-head {
+    grid-template-columns: 1.5rem minmax(0, 1fr) 7.5rem 3.5rem 5rem 4rem 9rem;
+  }
+}
+
+/* the panel that slides in with one team in it */
+.scrim {
+  position: fixed;
+  inset: 0;
+  background: rgb(22 21 15 / 0.35);
+  /* over the bar as well as the list: the blurred bar makes its own stacking
+     context, so it needs clearing by more than one */
+  z-index: 90;
+  animation: scrim-in 0.18s ease both;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(34rem, 100vw);
+  background: var(--page);
+  border-left: 1px solid var(--line-firm);
+  box-shadow: -8px 0 30px rgb(22 21 15 / 0.12);
+  z-index: 91;
+  display: flex;
+  flex-direction: column;
+  animation: drawer-in 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes scrim-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes drawer-in {
+  from {
+    transform: translate3d(1.5rem, 0, 0);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scrim,
+  .drawer {
+    animation: none;
+  }
+}

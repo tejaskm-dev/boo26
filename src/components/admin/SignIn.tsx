@@ -1,5 +1,5 @@
 /**
- * The whole of /admin until someone is signed in: one button, and — if the
+ * The whole of /admin until somebody is signed in: one button, and — if the
  * environment isn't set up yet — exactly which pieces are missing, so it says
  * what to do instead of failing quietly.
  */
@@ -14,39 +14,36 @@ export default function SignIn({ missing, trouble }: { missing: string[]; troubl
           : null;
 
   return (
-    <main className="grid min-h-svh place-items-center px-[var(--edge)] py-16">
-      <div className="w-full max-w-[32rem]">
-        <p className="label label-loose text-bone/45">BOO! 2026</p>
-        <h1 className="display mt-4 text-[clamp(2rem,5vw,3rem)] leading-[0.95]">Registrations</h1>
-        <p className="body-copy mt-4 text-[0.98rem] text-bone/65">
+    <main className="grid min-h-svh place-items-center px-[clamp(1rem,4vw,2rem)] py-16">
+      <div className="card w-full max-w-[30rem] px-7 py-8">
+        <p className="eyebrow">BOO! 2026</p>
+        <h1 className="figure mt-3 text-[clamp(1.8rem,4vw,2.4rem)]">Registrations</h1>
+        <p className="muted mt-3 text-[0.92rem] leading-[1.6]">
           Students&rsquo; names, emails and numbers live behind this page. Only the core team gets in.
         </p>
 
         {problem ? (
-          <p className="body-copy mt-6 flex gap-3 border-l-2 border-lime pl-4 text-[0.95rem] text-bone/80">{problem}</p>
+          <p className="mt-5 rounded-[2px] border border-[#e3bdb7] bg-[#fbeeec] px-4 py-3 text-[0.88rem] leading-[1.5] text-[#8a3227]">
+            {problem}
+          </p>
         ) : null}
 
         {missing.length ? (
-          <div className="mt-8 border-t border-bone/15 pt-6">
-            <p className="label text-bone/45">Not set up yet</p>
-            <p className="body-copy mt-3 text-[0.95rem] text-bone/70">
-              Sign-in needs these in the environment before it can work:
-            </p>
+          <div className="mt-7 border-t border-[var(--line)] pt-5">
+            <p className="eyebrow">Not set up yet</p>
+            <p className="muted mt-3 text-[0.9rem]">Sign-in needs these in the environment before it can work:</p>
             <ul className="mt-3 space-y-1.5">
               {missing.map((name) => (
-                <li key={name} className="body-copy text-[0.92rem] text-bone">
-                  <code className="rounded bg-bone/10 px-2 py-0.5">{name}</code>
+                <li key={name} className="text-[0.88rem]">
+                  <code className="rounded-[2px] bg-[var(--sunk)] px-2 py-0.5">{name}</code>
                 </li>
               ))}
             </ul>
-            <p className="body-copy mt-4 text-[0.9rem] text-bone/50">See README → Registration → The dashboard.</p>
+            <p className="faint mt-4 text-[0.84rem]">See README → Registration → The dashboard.</p>
           </div>
         ) : (
-          <a
-            href="/admin/signin"
-            className="label mt-8 inline-flex items-center gap-3 bg-lime px-6 py-4 text-ink outline-none transition-transform duration-300 hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-lime focus-visible:ring-offset-2 focus-visible:ring-offset-ink"
-          >
-            <svg viewBox="0 0 18 18" className="h-[1.1rem] w-[1.1rem]" aria-hidden="true">
+          <a href="/admin/signin" className="btn btn-go mt-7 justify-center py-3 text-[0.92rem]">
+            <svg viewBox="0 0 18 18" className="h-[1.05rem] w-[1.05rem]" aria-hidden="true">
               <path
                 fill="currentColor"
                 d="M17.6 9.2c0-.6-.1-1.2-.2-1.8H9v3.5h4.8a4.1 4.1 0 0 1-1.8 2.7v2.2h2.9c1.7-1.6 2.7-3.9 2.7-6.6Z"
