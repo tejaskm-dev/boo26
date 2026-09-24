@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { SEATS, STATES, stateLabel, type TeamState } from "@/lib/register/store";
+import { SEATS, stateLabel, type TeamState } from "@/lib/register/teams";
 
 /**
  * The small parts the two admin pages share. Everything here is server-
@@ -40,13 +40,87 @@ export function Seats({ taken }: { taken: number[] }) {
   );
 }
 
-/** A heading for a block of controls. */
-export function Heading({ children, note }: { children: ReactNode; note?: string }) {
+/**
+ * A panel: the unit the dashboard is built out of. One tier up from the page
+ * behind it, a hairline around it, and its own heading — so a screen of
+ * controls reads as a few things rather than one long column.
+ */
+export function Panel({
+  title,
+  note,
+  children,
+  className = "",
+  bare = false,
+}: {
+  title?: string;
+  note?: string;
+  children: ReactNode;
+  className?: string;
+  /** no padding inside: for lists that draw their own rows */
+  bare?: boolean;
+}) {
   return (
-    <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-bone/12 pb-3">
-      <h2 className="label label-loose text-bone/50">{children}</h2>
-      {note ? <p className="body-copy text-[0.82rem] text-bone/35">{note}</p> : null}
+    <section className={`border border-bone/10 bg-bone/[0.018] ${className}`}>
+      {title ? (
+        <header className="flex flex-wrap items-baseline justify-between gap-x-5 gap-y-1 border-b border-bone/10 px-5 py-3">
+          <h2 className="label text-[0.66rem] text-bone/50">{title}</h2>
+          {note ? <p className="body-copy text-[0.8rem] text-bone/30">{note}</p> : null}
+        </header>
+      ) : null}
+      <div className={bare ? "" : "p-5"}>{children}</div>
+    </section>
+  );
+}
+
+/** One number, said plainly. */
+export function Stat({ label, value, under }: { label: string; value: number | string; under?: string }) {
+  return (
+    <div className="bg-ink px-5 py-4">
+      <p className="label text-[0.64rem] text-bone/40">{label}</p>
+      <p className="display mt-2.5 text-[clamp(1.8rem,3.2vw,2.5rem)] leading-none">{value}</p>
+      {under ? <p className="body-copy mt-2 text-[0.78rem] text-bone/30">{under}</p> : null}
     </div>
+  );
+}
+
+/**
+ * How the sign-ups have come in, a day at a time. Bars rather than a line:
+ * at this size a line has to be smoothed to look like anything, and a
+ * smoothed line invents days that never happened.
+ */
+export function Spark({ at, days = 14 }: { at: string[]; days?: number }) {
+  const today = new Date();
+  const buckets = Array.from({ length: days }, (_, i) => {
+    const day = new Date(today);
+    day.setDate(today.getDate() - (days - 1 - i));
+    return { key: day.toISOString().slice(0, 10), n: 0 };
+  });
+  const where = new Map(buckets.map((b, i) => [b.key, i]));
+  for (const iso of at) {
+    const i = where.get(iso.slice(0, 10));
+    if (i !== undefined) buckets[i].n += 1;
+  }
+
+  const most = Math.max(1, ...buckets.map((b) => b.n));
+  const width = 100;
+  const step = width / days;
+
+  return (
+    <svg viewBox={`0 0 ${width} 30`} preserveAspectRatio="none" className="h-14 w-full" aria-hidden="true">
+      {buckets.map((b, i) => {
+        const h = b.n ? Math.max(1.5, (b.n / most) * 28) : 0.7;
+        return (
+          <rect
+            key={b.key}
+            x={i * step + step * 0.22}
+            y={30 - h}
+            width={step * 0.56}
+            height={h}
+            className={b.n ? (i === days - 1 ? "fill-lime" : "fill-lime/45") : "fill-bone/15"}
+          />
+        );
+      })}
+    </svg>
   );
 }
 
@@ -189,5 +263,3 @@ export function Said({ said }: { said?: string }) {
     </p>
   );
 }
-
-export const STATE_OPTIONS = STATES.map((s) => ({ value: s.value, label: s.label }));

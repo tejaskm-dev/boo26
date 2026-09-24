@@ -3,6 +3,15 @@ import { connection } from "next/server";
 import { newCode } from "./code";
 import { del, patch, read, run, usingDatabase, write } from "./db";
 import { firstName, type Member, type TeamDetails } from "./fields";
+import {
+  isState,
+  SEATS,
+  TEAM_SIZE,
+  type AdminAction,
+  type MemberRecord,
+  type TeamRecord,
+  type TeamState,
+} from "./teams";
 
 /**
  * Where teams are kept.
@@ -20,10 +29,8 @@ import { firstName, type Member, type TeamDetails } from "./fields";
  * Nothing that calls either knows which of the two stores is answering.
  */
 
-export const TEAM_SIZE = 2;
-
-/** The seats, in order, whether or not anyone is in them. */
-export const SEATS = [1, 2] as const;
+// the shape of a team is in ./teams, which the browser half can import too
+export * from "./teams";
 
 /**
  * What a page may show about a team. Anyone holding the code can see it, so
@@ -56,28 +63,6 @@ const clashesFrom = (taken: string[]): Clash[] => taken.map((t) => CLASH[t]).fil
 export function teamsAreTemporary(): boolean {
   return !usingDatabase;
 }
-
-/* ------------------------------------------------------------------ *
- * Where a team is in the review
- *
- * One word per team, moved by hand from the dashboard. Every team starts at
- * 'new'; the rest are the core team's decisions, and nothing in the sign-up
- * reads them.
- * ------------------------------------------------------------------ */
-
-export const STATES = [
-  { value: "new", label: "New", hint: "Registered. Nobody has looked yet." },
-  { value: "verified", label: "Verified", hint: "Details check out: real students, reachable." },
-  { value: "shortlisted", label: "Shortlisted", hint: "They're in." },
-  { value: "waitlisted", label: "Waitlisted", hint: "In if a place opens up." },
-  { value: "rejected", label: "Rejected", hint: "Not taking part." },
-] as const;
-
-export type TeamState = (typeof STATES)[number]["value"];
-
-export const isState = (v: string): v is TeamState => STATES.some((s) => s.value === v);
-
-export const stateLabel = (v: string): string => STATES.find((s) => s.value === v)?.label ?? v;
 
 /* ------------------------------------------------------------------ *
  * The database (db/schema.sql)
@@ -284,20 +269,6 @@ export async function whoHasId(
  * ask. These are for the dashboard, behind the sign-in: whole records, the
  * review, and the corrections a night like this needs to be able to make.
  * ------------------------------------------------------------------ */
-
-export type MemberRecord = Member & { seat: number; joinedAt: string };
-
-export type TeamRecord = {
-  code: string;
-  name: string;
-  reaction: string;
-  state: TeamState;
-  note: string;
-  createdAt: string;
-  members: MemberRecord[];
-};
-
-export type AdminAction = { at: string; who: string; did: string; about: string };
 
 type MemberRow = {
   seat: number;

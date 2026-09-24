@@ -35,16 +35,26 @@ export default async function AdminPage({
 
   // The teams are the page. If they can't be read, say so in words an event
   // manager can act on rather than letting the whole thing fall over.
-  let teams;
-  try {
-    teams = await listTeams();
-  } catch (trouble) {
+  // Both at once: neither waits on the other, and one after the other is two
+  // round trips to the database on every load of the page.
+  //
+  // The teams are the page: if they can't be read, say so in words an event
+  // manager can act on rather than letting the whole thing fall over. The log
+  // is a nicety by comparison — if it's the only thing missing, an older
+  // database without its table, the dashboard still works.
+  const [asked, log] = await Promise.all([
+    listTeams().then(
+      (rows) => ({ rows }),
+      (trouble: unknown) => ({ trouble }),
+    ),
+    recentAdminActions(15).catch(() => null),
+  ]);
+
+  if (!("rows" in asked)) {
+    const trouble = asked.trouble;
     return <Trouble message={trouble instanceof Error ? trouble.message : String(trouble)} />;
   }
-
-  // The log is a nicety by comparison: if it's the only thing that won't read
-  // — an older database without its table — the dashboard still works.
-  const log = await recentAdminActions(15).catch(() => null);
+  const teams = asked.rows;
 
   return (
     <Dashboard
