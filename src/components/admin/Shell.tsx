@@ -48,7 +48,16 @@ export default function Shell({
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-[86rem] px-[clamp(1rem,3vw,2rem)] pb-24 pt-6">{children}</main>
+      <main className="mx-auto flex w-full max-w-[86rem] flex-col px-[clamp(1rem,3vw,2rem)] pt-6 pb-8">
+        {children}
+
+        {/* the page has a bottom even when there's little on it, rather than
+            trailing off into empty paper */}
+        <footer className="mt-auto flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t border-[var(--line)] pt-5 text-[0.76rem] text-[var(--faint)]">
+          <p>BOO! 2026 · 24–25 October · ASIET, Kalady</p>
+          <p>Only the core team can see this page.</p>
+        </footer>
+      </main>
     </>
   );
 }

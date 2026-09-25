@@ -116,6 +116,8 @@ export default function TeamList({
 }) {
   const [params, setParams] = useState<Params>(initial);
   const [open, setOpen] = useState<string | null>(initial.team ?? null);
+  const [per, setPer] = useState(25);
+  const [page, setPage] = useState(1);
   const { q, state, seats, sort, group } = params;
 
   const address = useMemo(() => {
@@ -157,7 +159,11 @@ export default function TeamList({
     return () => window.removeEventListener("keydown", key);
   }, [open]);
 
-  const set = useCallback((change: Partial<Params>) => setParams((was) => ({ ...was, ...change })), []);
+  const set = useCallback((change: Partial<Params>) => {
+    setParams((was) => ({ ...was, ...change }));
+    // a narrower list is a different list: page 7 of it probably isn't there
+    setPage(1);
+  }, []);
 
   const wanted = useMemo(() => (state ? state.split(",").filter(Boolean) : []), [state]);
 
@@ -217,6 +223,14 @@ export default function TeamList({
   const grouped = group === "dept" || group === "year";
   const filtered = Boolean(q || wanted.length || seats !== "any");
   const opened = open ? teams.find((t) => t.code === open) : undefined;
+
+  // gathered into departments or years, the groups are the way around it and
+  // a page number on top of them only gets in the way
+  const paged = !grouped && per > 0 && shown.length > per;
+  const pages = paged ? Math.ceil(shown.length / per) : 1;
+  const here = Math.min(page, pages);
+  const from = (here - 1) * per;
+  const onPage = paged ? [{ name: "", teams: groups[0].teams.slice(from, from + per) }] : groups;
 
   const fold = (isOpen: boolean) => {
     for (const box of document.querySelectorAll<HTMLDetailsElement>("details[data-group]")) box.open = isOpen;
@@ -341,7 +355,7 @@ export default function TeamList({
           </div>
         ) : null}
 
-        {groups.map(({ name, teams: list }) =>
+        {onPage.map(({ name, teams: list }) =>
           name ? (
             <details key={name} data-group open className="group/fold">
               <summary className="flex cursor-pointer items-center gap-3 border-b border-[var(--line)] bg-[var(--sunk)] px-5 py-2.5 text-[0.82rem]">
@@ -363,6 +377,72 @@ export default function TeamList({
             </div>
           ),
         )}
+
+        {/* which of them you're looking at — only once there are enough of
+            them for that to be a question */}
+        {!grouped && (paged || shown.length > 25) ? (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-[var(--line)] px-4 py-2.5">
+            <p className="faint text-[0.78rem]">
+              {paged ? `${from + 1}–${Math.min(from + per, shown.length)} of ${shown.length}` : `All ${shown.length}`}
+            </p>
+
+            {paged ? (
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setPage(here - 1)}
+                  disabled={here === 1}
+                  className="btn btn-plain text-[0.8rem]"
+                >
+                  ← Back
+                </button>
+                {Array.from({ length: pages }, (_, i) => i + 1)
+                  // the first, the last, and a couple either side of here
+                  .filter((n) => n === 1 || n === pages || Math.abs(n - here) <= 1)
+                  .map((n, i, kept) => (
+                    <span key={n} className="flex items-center gap-1.5">
+                      {i && n - kept[i - 1] > 1 ? <span className="faint text-[0.78rem]">…</span> : null}
+                      <button
+                        type="button"
+                        onClick={() => setPage(n)}
+                        aria-current={n === here}
+                        className={`btn text-[0.8rem] ${n === here ? "btn-go" : "btn-plain"}`}
+                      >
+                        {n}
+                      </button>
+                    </span>
+                  ))}
+                <button
+                  type="button"
+                  onClick={() => setPage(here + 1)}
+                  disabled={here === pages}
+                  className="btn btn-plain text-[0.8rem]"
+                >
+                  Next →
+                </button>
+              </div>
+            ) : null}
+
+            <label className="faint ml-auto flex items-center gap-2 text-[0.78rem]">
+              Per page
+              <select
+                value={per}
+                onChange={(e) => {
+                  setPer(Number(e.target.value));
+                  setPage(1);
+                }}
+                className="field w-auto py-1 text-[0.8rem]"
+              >
+                {[25, 50, 100].map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+                <option value={0}>All</option>
+              </select>
+            </label>
+          </div>
+        ) : null}
 
         {shown.length ? (
           <div className="sticky bottom-0 flex flex-wrap items-center gap-2 border-t border-[var(--line)] bg-[var(--sunk)] px-4 py-3">
