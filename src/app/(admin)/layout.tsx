@@ -29,7 +29,7 @@ export const metadata: Metadata = {
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${archivo.variable} ${grotesk.variable}`}>
+    <html lang="en" className={`admin-root ${archivo.variable} ${grotesk.variable}`}>
       {/* the class carries the dashboard's own colours (admin.css); the
           inline background is here because globals.css styles `body` outside
           Tailwind's layers, and unlayered rules win over layered ones */}

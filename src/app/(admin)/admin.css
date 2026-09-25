@@ -8,6 +8,12 @@
  * this page is read for an hour at a time and mostly on a phone at a desk.
  * ------------------------------------------------------------------ */
 
+/* globals.css paints <html> the site's black, which shows through above and
+   below a short page — and a dashboard with three teams on it is short. */
+html.admin-root {
+  background: #f4f2ec;
+}
+
 /* globals.css lifts the site's <main> onto its own layer, which would trap
    anything fixed inside it under the bar. The dashboard has no such layers. */
 .admin main {
@@ -31,6 +37,12 @@
   background: var(--page);
   color: var(--ink);
   font-family: var(--font-mono);
+  min-height: 100svh;
+}
+
+/* the paper reaches the bottom of the screen even with one team on it */
+.admin main {
+  min-height: calc(100svh - 8rem);
 }
 
 /* paper */

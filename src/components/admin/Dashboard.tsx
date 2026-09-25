@@ -116,8 +116,13 @@ export default function Dashboard({
 
       <TeamList teams={teams} initial={params} origin={origin} said={said} seat={seat} />
 
-      <details className="mt-6">
-        <summary className="btn btn-plain inline-flex text-[0.84rem]">Breakdown, and what&rsquo;s been changed</summary>
+      <details className="group mt-6">
+        <summary className="btn inline-flex cursor-pointer text-[0.84rem]">
+          <span aria-hidden="true" className="transition-transform duration-200 group-open:rotate-90">
+            ›
+          </span>
+          Breakdown, and what&rsquo;s been changed
+        </summary>
         <div className="mt-3 grid gap-3 lg:grid-cols-3">
           <Panel title="The review">
             <Bars rows={STATES.map((s) => [s.label, teams.filter((t) => t.state === s.value).length])} />
