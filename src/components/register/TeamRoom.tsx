@@ -166,7 +166,7 @@ export default function TeamRoom({
               {team.full ? "Two of you.\nSee you on the 24th." : "One down.\nOne to go."}
             </p>
             <RiseIn key={team.full ? "full" : "waiting"} className="pointer-events-none absolute bottom-0 right-0" start="top 100%">
-              <Sprite name={team.full ? "cat-treasure" : "cat-box"} scale={team.full ? 0.42 : 0.4} idle={5} />
+              <Sprite name={team.full ? "cat-parchment" : "cat-box"} scale={team.full ? 0.42 : 0.4} idle={5} />
             </RiseIn>
           </div>
 

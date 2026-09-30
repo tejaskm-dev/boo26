@@ -201,7 +201,7 @@ export default function Hub() {
             <p data-write className="hand mt-6 max-w-[14ch] -rotate-[3deg] whitespace-pre-line text-[clamp(1.15rem,2vw,1.8rem)] text-ink/70">
               {"Read the map.\nIt's short."}
             </p>
-            <Sprite name="treasure-map" data-pop scale={0.46} drift={12} idle={4} className="mt-8 hidden -rotate-[6deg] lg:block" />
+            <Sprite name="parchment" data-pop scale={0.46} drift={12} idle={4} className="mt-8 hidden -rotate-[6deg] lg:block" />
           </div>
 
           <nav aria-label="Before you start">

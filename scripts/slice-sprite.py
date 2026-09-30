@@ -363,7 +363,12 @@ def declutter(im):
             for nx, ny in ((cx - 1, cy), (cx + 1, cy), (cx, cy - 1), (cx, cy + 1)):
                 if 0 <= nx < w and 0 <= ny < h:
                     ni = ny * w + nx
-                    if ni not in seen and px[nx, ny][3] > 0:
+                    # Only through the faint halo. Following any alpha at all
+                    # walked the soft glow straight into the piece being kept
+                    # and erased it too — which is how the witch-hat cat, the
+                    # pumpkin cat, the sheet ghost, the sneaking cat and both
+                    # tapes shipped as fully transparent files.
+                    if ni not in seen and 0 < px[nx, ny][3] <= SOLID:
                         seen.add(ni)
                         stack.append(ni)
     return im.crop(im.getchannel("A").point(lambda v: 255 if v > FAINT else 0).getbbox())
@@ -434,7 +439,8 @@ def cut_all(found):
         print(f"  {name:22} {asset.size[0]:4}x{asset.size[1]:<4} {path.stat().st_size/1024:6.1f} kB")
 
 
-found = sheets()
-if not found:
-    sys.exit(f"no transparent sheets in {DESIGN}")
-contact(found) if "--contact" in sys.argv else cut_all(found)
+if __name__ == "__main__":
+    found = sheets()
+    if not found:
+        sys.exit(f"no transparent sheets in {DESIGN}")
+    contact(found) if "--contact" in sys.argv else cut_all(found)

@@ -160,10 +160,10 @@ function TreasureHunt() {
         <div ref={scene} data-scrub="up" data-scrub-amount="12" className="relative order-2 min-h-[clamp(16rem,26vw,22rem)] lg:order-1">
           <Sprite name="trail-dash" scale={0.42} drift={22} className="absolute left-[30%] top-[22%]" />
           <Sprite name="trail-dash" scale={0.5} drift={26} className="absolute left-[44%] top-[50%]" />
-          <Sprite name="treasure-x" scale={0.4} drift={18} className="absolute right-[10%] top-[30%]" />
+          <Sprite name="x-mark" scale={0.4} drift={18} className="absolute right-[10%] top-[30%]" />
           <Sprite name="map-pin" scale={0.2} drift={12} className="absolute right-[4%] bottom-[14%] opacity-70" />
           <Sprite
-            name="cat-treasure"
+            name="cat-parchment"
             scale={1.12}
             drift={16}
             idle={5}
