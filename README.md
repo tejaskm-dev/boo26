@@ -22,6 +22,52 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Coming soon, or the full site
+
+The whole site is one of two things, decided by one environment variable (see
+`.env.example`):
+
+```bash
+LIVE_STATUS=true     # the full site: the night, the schedule, the dates
+LIVE_STATUS=false    # the coming-soon teaser, and nothing that would date it
+```
+
+**Unset means the teaser**, on purpose: the organisers asked for no dates or
+timings anywhere until it's announced, and a variable someone forgot to set
+should never be what publishes them. It's read where the site is built, like
+`BOO_REGISTRATION_OPEN`, so flipping it takes a new build — on Vercel, change
+the variable and redeploy. In exchange the switch costs nothing when someone
+visits: both versions are static pages, with no middleware, no check per
+request and nothing extra in the browser.
+
+While the teaser is up:
+
+| | |
+| --- | --- |
+| `/` | the teaser (`src/app/(site)/soon/page.tsx`), served at `/` by a rewrite in `next.config.ts` |
+| `/register/*` | "Not yet." — the sign-up is closed whatever `BOO_REGISTRATION_OPEN` says |
+| `/terms`, `/code-of-conduct` | redirect home: both describe the night itself |
+| `/privacy` | stays, with a date-free band |
+| `/shh` | a hidden page for whoever reads the console |
+| `/admin` | unaffected |
+
+**The two sides are edited separately.** Every word on the teaser is in
+`src/lib/soon.ts` (with the rules for writing new ones at the top), and its
+sections are in `src/components/soon/`. The full site's words stay in
+`src/lib/site.ts` and its sections in `src/components/sections/`. What they
+share is the design system — the header, the menu, the footer, the hero and
+the loading screen — and those take their words as props from the page that
+uses them. That's also what keeps the dates out of the teaser's JavaScript:
+nothing a browser downloads imports `site.ts`. Anything that has to be the
+same on both sides without dating anything (the name, the venue, the
+channels) is in `src/lib/brand.ts`.
+
+In `next dev` the teaser is always at `/soon` too, so it can be worked on
+while the full site is the one on `/`.
+
+The teaser's art is cut by `scripts/cut-teaser-assets.py` from
+`design/teaser/` and the older boards in `design/`.
+
 ## Registration
 
 `/register` and everything under it is either the sign-up or the coming-soon
