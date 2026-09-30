@@ -1,12 +1,34 @@
 "use client";
 
+import { Fragment } from "react";
 import HeroField from "./HeroField";
 import HeroLockup from "./HeroLockup";
 import BlobButton from "@/components/ui/BlobButton";
 import { Sparkle } from "@/components/ui/Glyphs";
-import { EVENT } from "@/lib/site";
 
-export default function Hero() {
+/** One fact in the hero's row. `phoneOnly` ones sit in the phone's pill and not the desktop row. */
+export type HeroFact = { text: string; phoneOnly?: boolean };
+
+/**
+ * The hero is the same on both sides of LIVE_STATUS; only the words change.
+ * They arrive as props from the page — HERO in site.ts for the full site,
+ * SOON in soon.ts for the teaser — and never by importing either here, which
+ * would put the full site's dates in every bundle this hero is part of.
+ */
+export default function Hero({
+  format,
+  facts,
+  cta,
+  next,
+}: {
+  format: string;
+  facts: readonly HeroFact[];
+  cta: { label: string; href: string };
+  /** the phone's arrow at the bottom of the frame */
+  next: { href: string; label: string };
+}) {
+  // the desktop row puts a hairline between the facts it shows
+  const firsts = facts.filter((f) => !f.phoneOnly)[0];
   return (
     <section
       id="top"
@@ -36,7 +58,7 @@ export default function Hero() {
           data-anim="rise"
           className="label max-w-[15ch] leading-[1.9] text-ink/70 md:hidden"
         >
-          {EVENT.format}
+          {format}
         </p>
 
         {/* oversized on purpose — it runs wider than any column on the page */}
@@ -51,28 +73,33 @@ export default function Hero() {
           <div className="rounded-2xl bg-ink/95 px-5 py-4 md:contents">
             {/* Mobile facts sit directly above the register button over the dark ink mass */}
             <div className="label label-loose grid grid-cols-[auto_auto] justify-start gap-x-[clamp(1.25rem,6vw,2.5rem)] gap-y-[clamp(0.5rem,1.4vh,0.9rem)] font-medium text-bone/95 md:flex md:items-baseline md:gap-6 md:font-normal md:text-bone/80">
-              <span data-anim="rise">{EVENT.date}</span>
-              <span data-anim="rise" className="md:hidden">{EVENT.duration}</span>
-              <span aria-hidden="true" className="hidden h-3 w-px bg-bone/30 md:block" />
-              <span data-anim="rise">{EVENT.venue}</span>
-              <span data-anim="rise" className="md:hidden">{EVENT.team}</span>
+              {facts.map((f, i) => (
+                <Fragment key={i}>
+                  {!f.phoneOnly && f !== firsts ? (
+                    <span aria-hidden="true" className="hidden h-3 w-px bg-bone/30 md:block" />
+                  ) : null}
+                  <span data-anim="rise" className={f.phoneOnly ? "md:hidden" : undefined}>
+                    {f.text}
+                  </span>
+                </Fragment>
+              ))}
             </div>
 
             {/* coming back from /register, the page wipe closes into this */}
-            <BlobButton data-anim="rise" data-wipe-origin href={EVENT.registerHref} size="lg">
-              Register now
+            <BlobButton data-anim="rise" data-wipe-origin href={cta.href} size="lg">
+              {cta.label}
             </BlobButton>
           </div>
         </div>
       </div>
 
       <p className="label absolute bottom-[clamp(1.1rem,2.4vh,2rem)] left-1/2 z-10 hidden -translate-x-1/2 text-ink/45 md:block">
-        {EVENT.format}
+        {format}
       </p>
 
       <a
-        href="#night"
-        aria-label="Skip to The Night"
+        href={next.href}
+        aria-label={next.label}
         className="absolute bottom-[clamp(1.5rem,3vh,2.5rem)] left-1/2 z-10 -translate-x-1/2 text-ink/45 outline-none transition-colors duration-300 hover:text-ink focus-visible:text-lime md:hidden"
       >
         <svg viewBox="0 0 16 30" className="h-[1.85rem] w-4 animate-[cue_2.2s_var(--ease-out-soft)_infinite]" fill="none" stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" aria-hidden="true">

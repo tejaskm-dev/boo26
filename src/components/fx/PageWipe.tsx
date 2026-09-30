@@ -2,7 +2,6 @@
 
 import { useEffect, useRef } from "react";
 import Image from "next/image";
-import { EVENT } from "@/lib/site";
 import { MD, OPEN_EVENT, prefersReducedMotion } from "@/lib/motion";
 import { getLenis } from "@/lib/lenis";
 import { STORAGE } from "@/lib/storage";
@@ -146,7 +145,18 @@ function compact() {
   return window.matchMedia("(hover: none) and (pointer: coarse)").matches || !window.matchMedia(MD).matches;
 }
 
-export default function PageWipe() {
+export default function PageWipe({
+  corner,
+  venue,
+  line,
+}: {
+  /** top left, beside the lime diamond — the date, on the full site */
+  corner: string;
+  /** top right */
+  venue: string;
+  /** bottom right, on wide screens — handed in by the layout, never imported, so no date rides along in the teaser's bundle */
+  line: string;
+}) {
   const root = useRef<HTMLDivElement>(null);
   const ink = useRef<HTMLDivElement>(null);
   const bone = useRef<HTMLDivElement>(null);
@@ -371,10 +381,10 @@ export default function PageWipe() {
           <div className="flex items-start justify-between gap-6">
             <p data-bit className="label label-loose flex items-center gap-3 text-ink/60">
               <span className="h-[0.42rem] w-[0.42rem] shrink-0 rotate-45 bg-lime" />
-              {EVENT.date}
+              {corner}
             </p>
             <p data-bit className="label label-loose text-right text-ink/60">
-              {EVENT.venue}
+              {venue}
             </p>
           </div>
 
@@ -416,7 +426,7 @@ export default function PageWipe() {
               </p>
             </div>
             <p data-bit className="label label-loose hidden max-w-[24ch] text-right leading-[1.9] text-ink/50 md:block">
-              {EVENT.format}
+              {line}
             </p>
           </div>
         </div>

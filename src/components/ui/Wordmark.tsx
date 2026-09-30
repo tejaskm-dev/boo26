@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { EVENT } from "@/lib/site";
+import { BRAND as EVENT } from "@/lib/brand";
 
 /**
  * The supplied drippy BOO! wordmark plus the year. Both tones are rendered and

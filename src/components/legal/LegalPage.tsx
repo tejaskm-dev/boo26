@@ -9,8 +9,14 @@ import Words from "@/components/fx/Words";
 import RiseIn from "@/components/fx/RiseIn";
 import Marquee from "@/components/fx/Marquee";
 import LegalToc from "./LegalToc";
-import { BAND, EVENT, LEGAL } from "@/lib/site";
+import { BAND, EVENT, LEGAL as ALL_LEGAL } from "@/lib/site";
+import { SOON } from "@/lib/soon";
+import { siteLive } from "@/lib/live";
+
 import type { SpriteName } from "@/lib/sprites";
+
+/** while the teaser is up, the terms and the code of conduct wait (next.config.ts) */
+const LEGAL = siteLive() ? ALL_LEGAL : ALL_LEGAL.filter((l) => l.href === "/privacy");
 
 export type Clause = { id: string; title: string; body: React.ReactNode };
 
@@ -217,7 +223,7 @@ export default function LegalPage({ doc }: { doc: LegalDoc }) {
 
           {/* the facts, running, as they close every page */}
           <div className="mt-[clamp(3rem,8vh,5rem)] border-y border-bone/12 py-[clamp(0.85rem,2.2vh,1.5rem)]">
-            <Marquee items={BAND} speed={42} className="display text-[clamp(1.6rem,4.4vw,3.4rem)] leading-none text-bone/70" />
+            <Marquee items={siteLive() ? BAND : SOON.closed.band} speed={42} className="display text-[clamp(1.6rem,4.4vw,3.4rem)] leading-none text-bone/70" />
           </div>
         </Section>
       </main>

@@ -9,9 +9,24 @@ import SocialIcon from "@/components/ui/SocialIcon";
 import SoonLink from "@/components/ui/SoonLink";
 import Micro from "@/components/ui/Micro";
 import Words from "@/components/fx/Words";
-import { EVENT, FOOTER_NAV, LEGAL, NOTES, SOCIALS } from "@/lib/site";
+import { BRAND, SOCIALS } from "@/lib/brand";
 import { prefersReducedMotion } from "@/lib/motion";
 import { comingSoon } from "@/lib/toast";
+
+/** Everything the footer says. The full site's words are the default. */
+export type FooterContent = {
+  kicker: string;
+  statement: string;
+  sub: string;
+  updates: { title: string; note: string };
+  nav: readonly { title: string; links: readonly { label: string; href: string }[] }[];
+  details: { title: string; rows: readonly (readonly [string, string])[] };
+  /** either side of the host's name, which is set through <Micro> */
+  credit: { before: string; after: string };
+  legal: readonly { label: string; href: string }[];
+  desk: string;
+  sign: string;
+};
 
 /**
  * The desk the night was built on.
@@ -21,7 +36,12 @@ import { comingSoon } from "@/lib/toast";
  * The statement, the newsletter and the columns are an ordinary three-band
  * footer underneath all of it.
  */
-export default function Footer() {
+/**
+ * The words arrive as a prop — FOOTER in site.ts, or the teaser's in soon.ts —
+ * so this component never imports the full site's, dates and all, into a
+ * bundle the teaser shares.
+ */
+export default function Footer({ content }: { content: FooterContent }) {
   const [email, setEmail] = useState("");
   const root = useRef<HTMLElement>(null);
   const inner = useRef<HTMLDivElement>(null);
@@ -95,24 +115,24 @@ export default function Footer() {
         <div className="grid items-start gap-[clamp(2rem,5vw,4.5rem)] lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
           <div>
             <p className="label label-loose whitespace-pre-line text-bone/40">
-              Build{"\n"}break{"\n"}haunt{"\n"}repeat.
+              {content.kicker}
             </p>
 
             <h2 className="brush mt-[clamp(1.5rem,4vh,2.5rem)] -rotate-[1.3deg] select-none text-[clamp(2.6rem,8.5vw,7rem)] leading-[0.88]">
-              <Words>{"See you at"}</Words>
+              <Words>{content.statement}</Words>
               <span className="mt-[0.06em] flex flex-wrap items-baseline gap-[0.18em] text-lime">
-                <Words>{EVENT.name}</Words>
-                <span className="display text-[0.3em] tracking-tight">{EVENT.year}</span>
+                <Words>{BRAND.name}</Words>
+                <span className="display text-[0.3em] tracking-tight">{BRAND.year}</span>
               </span>
             </h2>
 
             <p className="label label-loose mt-[clamp(1.25rem,3vh,2rem)] whitespace-pre-line text-bone/45">
-              Come make{"\n"}someone react.
+              {content.sub}
             </p>
           </div>
 
           <div className="w-full lg:pt-[clamp(1rem,4vh,3rem)]">
-            <h3 className="label label-loose text-bone/70">Don&rsquo;t miss updates</h3>
+            <h3 className="label label-loose text-bone/70">{content.updates.title}</h3>
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -144,18 +164,18 @@ export default function Footer() {
               </button>
             </form>
             <p className="body-copy mt-3 max-w-[42ch] text-[0.88rem] text-bone/50">
-              Event updates, announcements and a few spooky surprises. No spam, promise.
+              {content.updates.note}
             </p>
 
             <p className="hand mt-[clamp(1.5rem,4vh,2.5rem)] max-w-[14ch] whitespace-pre-line text-[clamp(1.05rem,1.5vw,1.4rem)] text-bone/45">
-              {NOTES.desk}
+              {content.desk}
             </p>
           </div>
         </div>
 
         {/* band 2 — the links, on their own clear ground */}
         <div data-stagger className="mt-[clamp(3rem,8vh,5rem)] grid gap-x-[clamp(1.5rem,3vw,3rem)] gap-y-[clamp(2rem,5vh,3rem)] border-t border-bone/12 pt-[clamp(2rem,5vh,3rem)] sm:grid-cols-2 lg:grid-cols-4">
-          {FOOTER_NAV.map((col) => (
+          {content.nav.map((col) => (
             <nav key={col.title} aria-label={col.title}>
               <h3 className="label text-bone/40">{col.title}</h3>
               <ul className="mt-5 space-y-3">
@@ -200,14 +220,9 @@ export default function Footer() {
           </nav>
 
           <div>
-            <h3 className="label text-bone/40">Event details</h3>
+            <h3 className="label text-bone/40">{content.details.title}</h3>
             <dl className="mt-5 space-y-3 text-[0.95rem]">
-              {[
-                ["Where", EVENT.venueLong],
-                ["When", EVENT.dateLong],
-                ["Runs for", "20 hours, from 2 PM"],
-                ["Teams", "2 per team"],
-              ].map(([k, v]) => (
+              {content.details.rows.map(([k, v]) => (
                 <div key={k}>
                   <dt className="sr-only">{k}</dt>
                   <dd className="body-copy text-bone/80">{v}</dd>
@@ -237,20 +252,21 @@ export default function Footer() {
             <span className="relative block w-[clamp(3.5rem,5vw,4.75rem)]" style={{ aspectRatio: "1475 / 657" }}>
               <Image
                 src="/assets/wordmark-light.webp"
-                alt={`${EVENT.name} ${EVENT.year}`}
+                alt={`${BRAND.name} ${BRAND.year}`}
                 fill
                 sizes="80px"
                 className="object-contain"
               />
             </span>
             <p className="label whitespace-pre-line text-bone/40">
-              A hackathon by the {EVENT.name} core team{"\n"}
-              under the <Micro>{EVENT.host}</Micro> banner
+              {content.credit.before}
+              <Micro>{BRAND.host}</Micro>
+              {content.credit.after}
             </p>
           </div>
 
           <ul className="flex flex-wrap items-center gap-x-6 gap-y-2">
-            {LEGAL.map((l) => (
+            {content.legal.map((l) => (
               <li key={l.label}>
                 <SoonLink
                   href={l.href}
@@ -263,7 +279,7 @@ export default function Footer() {
             ))}
           </ul>
 
-          <p className="hand text-[clamp(1.05rem,1.5vw,1.35rem)] text-bone/60">{NOTES.footer}</p>
+          <p className="hand text-[clamp(1.05rem,1.5vw,1.35rem)] text-bone/60">{content.sign}</p>
         </div>
       </div>
       </div>

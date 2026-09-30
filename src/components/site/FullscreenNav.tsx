@@ -8,7 +8,8 @@ import CloseButton from "@/components/ui/CloseButton";
 import BlobButton from "@/components/ui/BlobButton";
 import Wordmark from "@/components/ui/Wordmark";
 import { GlowEyes, Sparkle } from "@/components/ui/Glyphs";
-import { EVENT, NAV, SOCIALS } from "@/lib/site";
+import { SOCIALS } from "@/lib/brand";
+import type { NavItem } from "@/lib/site";
 import { prefersReducedMotion } from "@/lib/motion";
 import { getLenis } from "@/lib/lenis";
 import SocialIcon from "@/components/ui/SocialIcon";
@@ -55,7 +56,9 @@ function wipe() {
  * and smaller, which is what keeps every line inside the off-white field
  * instead of running out into the ink.
  */
-const ITEM = [
+export type NavLook = { wdth: number; size: number; indent: number; tilt: number };
+
+const ITEM: NavLook[] = [
   { wdth: 118, size: 1.1, indent: 0, tilt: -1.9 },   // The Night
   { wdth: 86, size: 0.9, indent: 2.6, tilt: 1.3 },   // Experience
   { wdth: 112, size: 1.05, indent: 0.9, tilt: -0.7 }, // 20 Hours
@@ -68,9 +71,19 @@ const ITEM = [
 export default function FullscreenNav({
   open,
   onClose,
+  items: nav,
+  looks = ITEM,
+  facts,
+  cta,
 }: {
   open: boolean;
   onClose: () => void;
+  /** the index, and how each line of it is set (the full site's cuts by default) */
+  items: readonly NavItem[];
+  looks?: readonly NavLook[];
+  /** the small print beside the button */
+  facts: readonly string[];
+  cta: { label: string; href: string };
 }) {
   const root = useRef<HTMLDivElement>(null);
   const inkDiv = useRef<HTMLDivElement>(null);
@@ -351,8 +364,8 @@ export default function FullscreenNav({
         {/* the index */}
         <nav className="absolute inset-x-0 top-[47%] -translate-y-1/2 px-[var(--edge)] md:pl-[7vw]">
           <ul className="flex flex-col items-start gap-[clamp(0.1rem,0.7vh,0.7rem)]">
-            {NAV.map((item, i) => {
-              const art = ITEM[i % ITEM.length];
+            {nav.map((item, i) => {
+              const art = looks[i % looks.length];
               return (
                 <li
                   key={item.href}
@@ -439,11 +452,12 @@ export default function FullscreenNav({
 
           <div className="flex flex-col items-start gap-4 md:items-end md:gap-5">
             <p className="label flex flex-col gap-1.5 whitespace-nowrap text-ink/70 md:label-loose md:items-end md:gap-2 md:text-bone/80">
-              <span>{EVENT.date}</span>
-              <span>{EVENT.venue}</span>
+              {facts.map((f) => (
+                <span key={f}>{f}</span>
+              ))}
             </p>
-            <BlobButton href={EVENT.registerHref} onClick={onClose}>
-              Register now
+            <BlobButton href={cta.href} onClick={onClose}>
+              {cta.label}
             </BlobButton>
           </div>
         </div>

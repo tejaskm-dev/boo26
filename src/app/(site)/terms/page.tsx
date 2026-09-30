@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import LegalPage, { type LegalDoc } from "@/components/legal/LegalPage";
 import { A, Item, List, P } from "@/components/legal/Prose";
 import { EVENT, LEGAL_UPDATED } from "@/lib/site";
+import { siteLive } from "@/lib/live";
 
-export const metadata: Metadata = {
+// The terms describe the night itself (its date, what happens in it), so
+// they wait for the full site; the teaser redirects this address home.
+export const metadata: Metadata = !siteLive() ? {} : {
   title: `Terms of Service — ${EVENT.name} ${EVENT.year}`,
   description: `The terms for taking part in ${EVENT.name} ${EVENT.year}, a Halloween-night hackathon at ASIET, Kalady, on ${EVENT.dateLong}.`,
 };
@@ -187,5 +191,6 @@ const TERMS: LegalDoc = {
 };
 
 export default function TermsPage() {
+  if (!siteLive()) notFound();
   return <LegalPage doc={TERMS} />;
 }

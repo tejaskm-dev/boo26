@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import LegalPage, { type LegalDoc } from "@/components/legal/LegalPage";
 import { A, Item, List, P } from "@/components/legal/Prose";
 import { EVENT, LEGAL_UPDATED } from "@/lib/site";
+import { siteLive } from "@/lib/live";
 
-export const metadata: Metadata = {
+// Written about the night (the haunted house, the hunt, the games), so it
+// waits for the full site; the teaser redirects this address home.
+export const metadata: Metadata = !siteLive() ? {} : {
   title: `Code of Conduct — ${EVENT.name} ${EVENT.year}`,
   description: `How everyone at ${EVENT.name} ${EVENT.year} looks after each other: make people react, never make them unsafe.`,
 };
@@ -153,5 +157,6 @@ const CONDUCT: LegalDoc = {
 };
 
 export default function CodeOfConductPage() {
+  if (!siteLive()) notFound();
   return <LegalPage doc={CONDUCT} />;
 }

@@ -11,7 +11,9 @@ import Scrollbar from "@/components/fx/Scrollbar";
 import SectionMotion from "@/components/fx/SectionMotion";
 import Toaster from "@/components/ui/Toaster";
 import PageWipe from "@/components/fx/PageWipe";
-import { EVENT } from "@/lib/site";
+import { EVENT, PRELOADER } from "@/lib/site";
+import { SOON } from "@/lib/soon";
+import { siteLive } from "@/lib/live";
 import { WIPE_BOOT } from "@/lib/wipe";
 import "lenis/dist/lenis.css";
 import "../globals.css";
@@ -47,16 +49,29 @@ const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
 });
 
-export const metadata: Metadata = {
+const ICONS: Metadata["icons"] = {
+  icon: [
+    { url: "/favicon.ico" },
+    { url: "/icon.png", type: "image/png", sizes: "32x32" },
+  ],
+  apple: "/apple-touch-icon.png",
+};
+
+/**
+ * Every page that doesn't name itself carries these — the 404s included — so
+ * while the teaser is up they carry no date, and no "Halloween" either.
+ */
+const TEASER: Metadata = {
+  title: SOON.meta.title,
+  description: SOON.meta.description,
+  icons: ICONS,
+  openGraph: { title: SOON.meta.title, description: SOON.meta.description, type: "website" },
+};
+
+export const metadata: Metadata = !siteLive() ? TEASER : {
   title: `${EVENT.name} ${EVENT.year} — ${EVENT.date}, ${EVENT.venue}`,
   description: `A Halloween-night creative technology hackathon at ASIET, Kalady. One challenge: build something that makes someone react. ${EVENT.dateLong}.`,
-  icons: {
-    icon: [
-      { url: "/favicon.ico" },
-      { url: "/icon.png", type: "image/png", sizes: "32x32" },
-    ],
-    apple: "/apple-touch-icon.png",
-  },
+  icons: ICONS,
   openGraph: {
     title: `${EVENT.name} ${EVENT.year}`,
     description: `Most hackathons start with a problem. ${EVENT.name} starts with a reaction. ${EVENT.dateLong}, ASIET Kalady.`,
@@ -93,7 +108,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
         {/* Ahead of the page in the markup, so on a slow connection the first
             thing drawn is the cover rather than a glimpse of what it hides.
             After SmoothScroll, whose Lenis it holds still while covered. */}
-        <PageWipe />
+        <PageWipe {...(siteLive() ? PRELOADER : SOON.preloader)} />
         {children}
         <Toaster />
         <Scrollbar />
