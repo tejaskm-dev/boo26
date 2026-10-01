@@ -268,19 +268,30 @@ export default function Critters({
           return;
         }
       }
-      for (let i = 0; i < 5; i++) {
-        const a = rand(-Math.PI * 0.95, -Math.PI * 0.05);
-        const v = rand(170, 290);
-        flock.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0, p: rand(0, 4), w: batWidth() * 0.8, life: 2.4, dir: Math.sign(Math.cos(a)) || 1 });
-      }
+      burst(x, y, 5);
       for (const w of lights) {
         if (Math.hypot(w.x - x, w.y - y) < 200) w.kick = 1;
       }
     };
+    /** bats out of a point, in section coordinates */
+    function burst(x: number, y: number, n: number) {
+      for (let i = 0; i < n; i++) {
+        const a = rand(-Math.PI * 0.95, -Math.PI * 0.05);
+        const v = rand(170, 300);
+        flock.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v, t: 0, p: rand(0, 4), w: batWidth() * 0.8, life: 2.4, dir: Math.sign(Math.cos(a)) || 1 });
+      }
+    }
+    // anything in the section can ask for bats: dispatch "soon:bats" with { x, y } on screen
+    const onBats = (e: Event) => {
+      const d = (e as CustomEvent<{ x: number; y: number; n?: number }>).detail;
+      if (d) burst(d.x, d.y + scrollY() - top, d.n ?? 8);
+    };
     section.addEventListener("pointerdown", onTap, { passive: true });
+    section.addEventListener("soon:bats", onBats);
 
     // --- the frame -------------------------------------------------------------------------
     let visible = false;
+    let blank = false;
     const draw = (_t: number, dms: number) => {
       if (!visible || document.hidden || root.dataset.idle === "true" || isNavActive() || root.dataset.wipe || root.dataset.wiping) return;
       const dt = Math.min(0.05, (dms || 16.7) / 1000);
@@ -289,6 +300,12 @@ export default function Critters({
       const oy = top - y0;
       const f = focus();
       const near = f.real && inArea(f.x, f.y, 120);
+
+      // nothing alive and nothing left on the canvas: leave it alone, so an
+      // empty canvas doesn't cost a full-screen clear every frame
+      const empty = !flock.length && !lights.length && !spooks.length && !mist.length && !eyes.length && !glows.length;
+      if (empty && blank) return;
+      blank = empty;
 
       ctx.clearRect(0, 0, W, H);
       const onScreen = (y: number, pad = 80) => y + oy > -pad && y + oy < H + pad;
@@ -504,6 +521,7 @@ export default function Critters({
       window.removeEventListener("touchstart", onTouch);
       window.removeEventListener("touchmove", onTouch);
       section.removeEventListener("pointerdown", onTap);
+      section.removeEventListener("soon:bats", onBats);
       for (const e of eyes) {
         e.el.style.translate = "";
         delete e.el.dataset.shut;

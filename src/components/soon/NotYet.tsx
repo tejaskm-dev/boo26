@@ -15,7 +15,8 @@ import Critters from "./Critters";
 import InkEyes from "./InkEyes";
 import { answer } from "./troll";
 
-const BAR = "▇▇▇▇▇▇";
+/** what a silenced rumour says instead — block glyphs read as a broken font, not a redaction */
+const HUSH = "SHH.";
 /** these stay readable: the band still has to say where */
 const KEEP = new Set(["ASIET, KALADY", "BOO! 2026"]);
 
@@ -31,7 +32,7 @@ const KEEP = new Set(["ASIET, KALADY", "BOO! 2026"]);
  * you and shutting if you get too close, wisps that come and circle you, a
  * couple of the bats from 01. The cat jumps if you poke it.
  *
- * The band runs the rumours, with a different couple blacked out on every
+ * The band runs the rumours, with a different couple hushed on every
  * visit and one that knows what you're holding. That's decided after the page
  * loads, under the loading screen, so the server and the browser never
  * disagree about it.
@@ -46,7 +47,7 @@ export default function NotYet() {
     const open = items.map((s, i) => (KEEP.has(s) ? -1 : i)).filter((i) => i >= 0);
     for (let n = 0; n < 2 && open.length; n++) {
       const pick = open.splice(Math.floor(Math.random() * open.length), 1)[0];
-      items[pick] = BAR;
+      items[pick] = HUSH;
     }
     const ua = navigator.userAgent;
     const hi = /iPhone|iPad|iPod/.test(ua) ? "HI, IPHONE." : /Android/.test(ua) ? "HI, ANDROID." : "HI, LAPTOP.";

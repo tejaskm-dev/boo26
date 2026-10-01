@@ -6,9 +6,11 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Section, { SectionLabel } from "@/components/sections/Section";
 import Sprite from "@/components/ui/Sprite";
 import Awake from "./Awake";
+import Critters from "./Critters";
 import InkEyes from "./InkEyes";
 import InkField from "./InkField";
 import { HERO_FIELD } from "@/lib/shapes";
+import { getLenis } from "@/lib/lenis";
 import { prefersReducedMotion, useReducedMotion } from "@/lib/motion";
 import { SOON, TROLL } from "@/lib/soon";
 import { buzz, shiver, troll } from "./troll";
@@ -25,15 +27,22 @@ const GIGGLE = {
 };
 /** the hero's cat-head field, out of its corner */
 const HEAD = { view: "-180 540 620 480", d: HERO_FIELD.shapes[1] };
-/** the two masses that close in on "lean in" */
-const CLOSE_L = {
+/** the mass that closes in on "lean in" — the right one is the same, mirrored */
+const CLOSE = {
   view: "0 0 600 1000",
   d: "M-200 120C-100 60 40 40 140 70C240 100 260 160 330 210C400 260 520 300 540 400C560 500 430 540 440 620C450 700 560 760 500 840C440 920 300 900 200 930C100 960 0 990 -200 960Z",
 };
-const CLOSE_R = {
-  view: "0 0 600 1000",
-  d: "M800 80C700 40 560 60 480 110C400 160 410 230 330 280C250 330 90 330 70 430C50 530 200 560 180 650C160 740 60 780 110 860C160 940 330 930 430 950C530 970 660 990 800 960Z",
-};
+/** what's watching from the dark while it counts — more of them each count */
+const COUNT_EYES: { at: string; from: number; tilt: number }[] = [
+  { at: "left-[6%] top-[14%] w-[4.2rem] md:w-[6rem]", from: 0, tilt: -8 },
+  { at: "right-[7%] top-[70%] w-[3.4rem] md:w-[5rem]", from: 0, tilt: 9 },
+  { at: "right-[10%] top-[16%] w-[2.6rem] md:w-[3.6rem]", from: 1, tilt: 6 },
+  { at: "left-[9%] top-[74%] w-[2.8rem] md:w-[4rem]", from: 1, tilt: -4 },
+  { at: "left-[24%] top-[6%] w-[2rem] md:w-[2.6rem]", from: 2, tilt: 4 },
+  { at: "right-[26%] top-[86%] w-[2.2rem] md:w-[3rem]", from: 2, tilt: -10 },
+  { at: "left-[3%] top-[44%] w-[2.4rem] md:w-[3.2rem]", from: 2, tilt: 12 },
+];
+
 /** where each "ha" is scrawled round LAUGH */
 const HA_AT = [
   "left-[6%] top-[16%] -rotate-[12deg] text-[clamp(1.6rem,3vw,2.6rem)]",
@@ -101,20 +110,38 @@ export default function ThePoint() {
     const grain = document.querySelector<HTMLElement>(".grain");
 
     const ctx = gsap.context(() => {
-      // jump scare in 3… 2… 1… — and then nothing
+      // jump scare in 3… 2… 1… — the room darkens a step each count, more
+      // eyes in it each time — and then nothing. Relax. And while you're
+      // relaxing, the page carries you on, down to the real one.
       ScrollTrigger.create({
         trigger: fake.current,
-        start: "top 78%",
+        start: "top top",
         once: true,
         onEnter: () => {
+          buzz(14);
           t.fakeout.forEach((_, i) => {
-            if (i) timers.push(window.setTimeout(() => setStep(i), i * 800));
+            if (i)
+              timers.push(
+                window.setTimeout(() => {
+                  setStep(i);
+                  buzz(14);
+                }, i * 950),
+              );
           });
+          const calm = t.fakeout.length * 950 + 700;
+          timers.push(window.setTimeout(() => setRelaxed(true), calm));
           timers.push(
             window.setTimeout(() => {
-              setRelaxed(true);
-              troll("fakeout", TROLL.justKidding);
-            }, t.fakeout.length * 800 + 900),
+              // only if you're still here, watching it
+              const r = fake.current?.getBoundingClientRect();
+              const lenis = getLenis();
+              if (!r || !lenis || r.bottom < window.innerHeight * 0.5 || r.top > window.innerHeight * 0.25) return;
+              lenis.scrollTo(jump.current!, {
+                offset: -window.innerHeight * 0.06,
+                duration: 1.9,
+                easing: (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2),
+              });
+            }, calm + 1500),
           );
         },
       });
@@ -159,6 +186,15 @@ export default function ThePoint() {
           shiver(jump.current, 10);
           buzz(70);
           troll("jump", TROLL.jump);
+          // and everything that was hiding in the ink comes out of it
+          const r = splash.current?.getBoundingClientRect();
+          if (r) {
+            timers.push(
+              window.setTimeout(() => {
+                section.dispatchEvent(new CustomEvent("soon:bats", { detail: { x: r.left + r.width / 2, y: r.top + r.height * 0.45, n: 10 } }));
+              }, 120),
+            );
+          }
         },
       });
       // and it won't stop hopping while it's on screen
@@ -311,36 +347,46 @@ export default function ThePoint() {
       className="pb-[clamp(4rem,11vh,8rem)] pt-[clamp(5rem,14vh,11rem)] md:pt-[clamp(5rem,20vh,11rem)]"
     >
       <Awake />
+      <Critters bats={0} wisps={0} ghosts={0} className="z-[6]" />
 
       <div className="px-[var(--edge)]">
         <SectionLabel index="03">{t.label}</SectionLabel>
       </div>
 
-      {/* the warning, counting down in the site's hollow numerals */}
-      <div ref={fake} className="relative mt-[clamp(2.5rem,7vh,4.5rem)] flex min-h-[clamp(11rem,30vw,20rem)] flex-col items-center justify-center gap-3 px-[var(--edge)] text-center">
-        <span
-          key={count}
-          aria-hidden="true"
-          className={`soon-count ghost-index pointer-events-none absolute left-1/2 select-none top-1/2 -translate-x-1/2 -translate-y-1/2 text-[clamp(10rem,30vw,22rem)] transition-opacity duration-700 ${
-            relaxed || still ? "!opacity-0" : ""
-          }`}
+      {/* the warning: a whole screen, held while it counts, getting darker */}
+      <div ref={fake} className="relative h-[150svh]">
+        <div
+          className="soon-countdown sticky top-0 grid h-[100svh] place-items-center overflow-hidden px-[var(--edge)] text-center"
+          data-step={still ? t.fakeout.length - 1 : step}
+          data-relaxed={relaxed || still ? "true" : "false"}
         >
-          {count}
-        </span>
-        <p className="label label-loose relative flex items-center gap-3 text-ink/70" aria-live="off">
-          <span aria-hidden="true" className="h-[0.42rem] w-[0.42rem] shrink-0 rotate-45 bg-lime [box-shadow:0_0_0_1px_rgba(8,8,8,0.35)]" />
-          {t.fakeout[still ? t.fakeout.length - 1 : step]}
-        </p>
-        <p
-          className={`relative flex items-center gap-2 transition-opacity duration-700 ${relaxed || still ? "opacity-100" : "opacity-0"}`}
-        >
-          <span className="hand -rotate-[3deg] text-[clamp(1.1rem,1.6vw,1.45rem)] text-ink/55">{t.relax}</span>
-          <Sprite name="zzz" scale={0.16} className="-mt-4 rotate-[8deg]" />
-        </p>
+          <span aria-hidden="true" className="soon-vignette" />
+          {COUNT_EYES.map((e, i) => (
+            <span key={i} data-look={!still && !relaxed && step >= e.from ? "true" : "false"} className="contents">
+              <InkEyes className={e.at} tilt={e.tilt} blink={4 + (i % 3)} delay={i * 0.08} />
+            </span>
+          ))}
+          <div className="relative flex flex-col items-center gap-3">
+            <span
+              key={count}
+              aria-hidden="true"
+              className={`soon-count ghost-index pointer-events-none select-none text-[clamp(13rem,42vw,30rem)] leading-[0.8] transition-opacity duration-700 ${
+                relaxed || still ? "!opacity-0" : ""
+              }`}
+            >
+              {count}
+            </span>
+            <p className="label label-loose flex items-center gap-3 text-ink/70" aria-live="off">
+              <span aria-hidden="true" className="h-[0.42rem] w-[0.42rem] shrink-0 rotate-45 bg-lime [box-shadow:0_0_0_1px_rgba(8,8,8,0.35)]" />
+              {t.fakeout[still ? t.fakeout.length - 1 : step]}
+            </p>
+            <p className={`flex items-center gap-2 transition-opacity duration-700 ${relaxed || still ? "opacity-100" : "opacity-0"}`}>
+              <span className="hand -rotate-[3deg] text-[clamp(1.3rem,2vw,1.8rem)] text-ink/60">{t.relax}</span>
+              <Sprite name="zzz" scale={0.18} className="-mt-4 rotate-[8deg]" />
+            </p>
+          </div>
+        </div>
       </div>
-
-      {/* room to relax in */}
-      <div aria-hidden="true" className="h-[30svh]" />
 
       {/* JUMP — onto a splash of ink, with something in it */}
       <div ref={jump} data-look="false" className="relative grid min-h-[86svh] place-items-center px-[var(--edge)]">
@@ -371,6 +417,10 @@ export default function ThePoint() {
         <div className="sticky top-0 grid h-[100svh] place-items-center px-[var(--edge)]">
           <div className="relative">
             <h3 className={`${word} rotate-[1.5deg] text-[clamp(4.6rem,20vw,16rem)]`}>{t.words.freeze}</h3>
+            {/* the bats from JUMP, stopped mid-flap */}
+            <Sprite name="bat-up" scale={0.36} className="absolute -left-[8%] -top-[40%] rotate-[-18deg]" />
+            <Sprite name="bat-down" scale={0.28} className="absolute left-[30%] -top-[70%] rotate-[12deg]" />
+            <Sprite name="bat-level" scale={0.32} className="absolute -bottom-[34%] right-[18%] rotate-[8deg]" />
             {/* the cat from JUMP, stopped mid-air */}
             <Sprite name="cat-pop-jump" scale={0.4} className="absolute -right-[6%] -top-[62%] -rotate-[16deg] md:-right-[10%] md:-top-[48%]" />
             <p className="hand mt-[clamp(1rem,3vh,2rem)] -rotate-[2deg] whitespace-pre-line text-center text-[clamp(1.1rem,1.7vw,1.5rem)] leading-[1.15] text-ink/60">
@@ -420,15 +470,15 @@ export default function ThePoint() {
 
       {/* lean in — and the dark leans in with you */}
       <div ref={lean} data-look="false" className="relative grid min-h-[112svh] place-items-center overflow-x-clip px-[var(--edge)] text-center">
-        <div ref={closeL} className="pointer-events-none absolute inset-y-[4%] left-0 w-[52%]">
-          <InkField ns="lean-l" view={CLOSE_L.view} shape={CLOSE_L.d} className="inset-0" />
-          <InkEyes className="left-[56%] top-[38%] w-[18%]" tilt={-6} blink={5} />
+        <div ref={closeL} className="pointer-events-none absolute inset-y-[6%] left-0 w-[52%]">
+          <InkField ns="lean-l" view={CLOSE.view} shape={CLOSE.d} className="inset-0" />
+          <InkEyes className="left-[24%] top-[36%] w-[20%]" tilt={-6} blink={5} />
         </div>
-        <div ref={closeR} className="pointer-events-none absolute inset-y-[7%] right-0 w-[52%]">
-          <InkField ns="lean-r" view={CLOSE_R.view} shape={CLOSE_R.d} className="inset-0" />
-          <InkEyes className="left-[26%] top-[56%] w-[14%]" tilt={8} blink={6.2} delay={0.3} />
+        <div ref={closeR} className="pointer-events-none absolute inset-y-[6%] right-0 w-[52%]">
+          <InkField ns="lean-r" view={CLOSE.view} shape={CLOSE.d} className="inset-0 -scale-x-100" />
+          <InkEyes className="left-[56%] top-[36%] w-[20%]" tilt={6} blink={6.2} delay={0.3} />
         </div>
-        <div className="relative">
+        <div className="absolute left-1/2 top-[41%] -translate-x-1/2 -translate-y-1/2">
           <p className="label text-[0.6rem] tracking-[0.34em] text-ink/75">{t.words.lean}</p>
           <p className="soon-lean-up label mt-2 text-[0.44rem] tracking-[0.3em] text-ink/45">{t.leanUp}</p>
         </div>
@@ -452,6 +502,9 @@ export default function ThePoint() {
             </span>
           ))}
         </h3>
+        {/* the slam, going out in rings */}
+        <span aria-hidden="true" className="soon-shock" />
+        <span aria-hidden="true" className="soon-shock soon-shock-late" />
         {/* it heard that */}
         <span aria-hidden="true" className="soon-slam-pop absolute right-[6%] top-[14%] block md:right-[14%]">
           <Sprite name="mark-bang" scale={0.36} />

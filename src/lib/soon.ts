@@ -69,43 +69,30 @@ export const SOON = {
       "the cats know something.",
     ],
     card: {
-      title: "What we know",
       rows: [
         { k: "What", hidden: "nice try" },
         { k: "When", hidden: "nice try", opens: "when you least expect it." },
         { k: "Why", hidden: "nice try" },
       ],
       where: EVENT.venue,
-      leak: { label: "leaked schedule", href: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
     },
-    /** tapping a black bar, in order; the last one repeats */
-    taps: ["nice try.", "still no.", "bro really thought", "noted."],
+    leak: { label: "leaked schedule", href: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
+    /** what the black bars say back, on the bar itself — a little more each tap, across all three */
+    taps: ["nice try.", "still no.", "bro really thought", "noted.", "stop.", "STOP.", "last warning."],
+    /** after the last warning something comes out of them; then they say this */
+    after: ["told you.", "again?", "you like this, huh."],
     /** tapping WHEN this many times finally opens it */
     whenOpensAfter: 10,
   },
 
-  /** 02 — the room it's being set up in */
+  /** 02 — the room, with the lights off, and what's asleep in it */
   dark: {
     label: "In the dark",
     kicker: "LIGHTS OFF.\nEYES OPEN.",
-    heading: "Look\ncloser.",
-    body: "We’ve been setting something up. Have a look around. Don’t touch anything.",
-    /** only ever seen inside the torch beam */
-    whispers: [
-      "hey. not yet.",
-      "who let you in?",
-      "don’t touch that.",
-      "that’s not finished.",
-      "chunnambu undo?",
-      "that’s the cat. probably.",
-      "this is fine.",
-      "ok, that one’s fine.",
-    ],
-    /** appears the first time the torch cuts out */
-    moved: "that wasn’t there before.",
-    scared: "me after hearing\none (1) noise:",
-    door: "thekkini.\ndo not open.",
-    dont: "DON’T",
+    heading: "Don’t\nwake it.",
+    /** by the torch, while it's asleep — and once it isn't */
+    sleeping: "shh. it’s sleeping.",
+    oops: "…oops.",
     handle: "drag me",
   },
 
@@ -190,19 +177,12 @@ export const TROLL = {
   closer: "not that close.",
   boo: "boo.",
   poke: "rude.",
+  awake: "it’s awake.",
+  fell: "you fell for it.",
   seen: "it saw that.",
   lightMode: "light mode? this part’s gonna hurt.",
   darkMode: "they’re here.",
-  camera: "IT’S ME.",
-  calling: "unknown is calling…",
-  inside: "the call’s coming from inside the house.",
-  ghost: "and i would’ve gotten away with it too.",
-  treat: "here. don’t tell anyone.",
-  trick: "heeere’s kitty.",
-  skeleton: "2spooky4me.",
-  dying: "your torch is dying. like your phone.",
   brave: "brave.",
-  justKidding: "just kidding.",
   jump: "emotional damage.",
   cheating: "that’s cheating.",
   shared: "good. now act normal.",
