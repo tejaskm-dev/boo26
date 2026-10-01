@@ -8,7 +8,7 @@ import BlobButton from "@/components/ui/BlobButton";
 import Marquee from "@/components/fx/Marquee";
 import HeroLockup from "@/components/hero/HeroLockup";
 import { prefersReducedMotion } from "@/lib/motion";
-import { SECRETS, SOON, TROLL } from "@/lib/soon";
+import { CUTS, SECRETS, SOON, TROLL } from "@/lib/soon";
 import Awake from "./Awake";
 import Critters from "./Critters";
 import Cut from "./Cut";
@@ -100,7 +100,7 @@ export default function NotYet() {
             gsap.delayedCall(0.42, () => {
               shiver(st, 12);
               buzz(80);
-              cue("slam");
+              cue("braam");
               st.dataset.slammed = "true";
             });
           }
@@ -164,7 +164,7 @@ export default function NotYet() {
       forms={[{ shape: "spillLeft", tone: "bone", at: "inset-x-0 top-0 w-full h-[13vh] md:h-[21vh]" }]}
       className="flex flex-col"
     >
-      <Cut title={t.kicker} />
+      <Cut lines={CUTS.drop} />
       <Awake />
       <Critters bats={2} wisps={10} ghosts={0} sky={[0.06, 0.24]} ground={[0.2, 0.9]} className="z-[1]" />
 
@@ -193,7 +193,7 @@ export default function NotYet() {
               ref={title}
               onClick={patience}
               aria-label={t.heading.replace("\n", " ")}
-              className="brush -mt-[0.15em] -rotate-[1.5deg] cursor-default select-none text-center text-[clamp(3.6rem,11vw,8.5rem)] leading-[0.84] text-lime"
+              className="soon-glitch brush -mt-[0.15em] -rotate-[1.5deg] cursor-default select-none text-center text-[clamp(3.6rem,11vw,8.5rem)] leading-[0.84] text-lime"
             >
               {t.heading.split("\n").map((l) => (
                 <span key={l} className="block overflow-hidden pb-[0.06em]" aria-hidden="true">

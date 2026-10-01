@@ -58,6 +58,8 @@ export const SOON = {
   heard: {
     label: "Rumours",
     heading: "Heard\nanything?",
+    /** the same heading, when you scroll back up to it after the room */
+    again: "Heard\nthat?",
     body: "BOO! is coming to ASIET. That’s about all we’re allowed to tell you.",
     /** rumours in the dark — they only read clearly up close */
     whispers: [
@@ -90,6 +92,8 @@ export const SOON = {
     label: "In the dark",
     kicker: "LIGHTS OFF.\nEYES OPEN.",
     heading: "Don’t\nwake it.",
+    /** and once you have */
+    woke: "You\nwoke it.",
     /** by the torch, while it's asleep — and once it isn't */
     sleeping: "shh. it’s sleeping.",
     oops: "…oops.",
@@ -101,6 +105,8 @@ export const SOON = {
     label: "The point",
     fakeout: ["jump scare in 3…", "jump scare in 3… 2…", "jump scare in 3… 2… 1…"],
     relax: "relax.",
+    /** under "relax." — it's not true */
+    promise: "no jump scares on this site. promise.",
     words: { jump: "Jump.", freeze: "Freeze.", laugh: "Laugh.", lean: "lean in.", what: "What the—" },
     /** under FREEZE, where something only sees you while you're moving */
     still: "it can’t see you\nif you don’t move.",
@@ -172,6 +178,18 @@ export const SOON = {
 } as const;
 
 /**
+ * What comes up in the dark between acts (Cut.tsx), one line at a time.
+ */
+export const CUTS = {
+  /** after the hero, into the rumours */
+  open: ["SHH.", "DID YOU HEAR THAT?"],
+  /** into the room */
+  dark: ["LIGHTS OFF.", "EYES OPEN.", "SOMETHING’S BREATHING."],
+  /** into the end */
+  drop: ["YOU MADE IT.", "MOST DON’T.", "WHEN IT DROPS,"],
+} as const;
+
+/**
  * The lines hidden on things — hover with a mouse and a note appears by it,
  * or long-press on a phone. See HoverNotes.tsx.
  */
@@ -186,10 +204,10 @@ export const SECRETS = {
   window: "tap it. go on.",
   camera: "smile.",
   sleeper: "light sleeper.",
-  jump: "you flinched.",
+  jump: "is this a jump scare?",
   freeze: "don’t. move.",
   laugh: "it’s not that funny.",
-  lean: "closer.",
+  lean: "closer. closer.",
   what: "we heard that.",
   why: "that’s the whole brief.",
   boo: "almost.",
@@ -207,6 +225,9 @@ export const TROLL = {
   awake: "it’s awake.",
   fell: "you fell for it.",
   seen: "it saw that.",
+  safe: "bro thought he was safe 💀",
+  peek: "they don’t know i’m here.",
+  winning: "are you winning, son?",
   lightMode: "light mode? this part’s gonna hurt.",
   darkMode: "they’re here.",
   brave: "brave.",

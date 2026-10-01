@@ -226,6 +226,25 @@
   100% { transform: scale(1.32) translate(0, 0); }
 }
 
+/* the other one: black, and the eyes rushing up out of it */
+.soon-scare[data-kind="eyes"] {
+  background: #030303;
+}
+
+.soon-scare-rush {
+  animation-name: soon-scare-rush;
+}
+
+@keyframes soon-scare-rush {
+  0% { transform: scale(0.12); }
+  10% { transform: scale(1.35); }
+  16% { transform: scale(1.2) translate(-1.2%, 0.8%); }
+  24% { transform: scale(1.26) translate(1.4%, -0.6%); }
+  32% { transform: scale(1.22) translate(-0.8%, 0.5%); }
+  60% { transform: scale(1.26); }
+  100% { transform: scale(1.9); }
+}
+
 .soon-scare-eyes {
   transform-box: fill-box;
   transform-origin: center;
@@ -868,7 +887,19 @@ html[data-js="true"] .soon-room[data-torch] .soon-shade {
 }
 
 /* ------------------------------------------------------ the cuts (Cut)
-   Fade to black between acts, a title card in the dark. */
+   A scene of its own between acts: a screen and a bit of page, black, with
+   the lines coming up one at a time. The dark is fixed to the screen. */
+.soon-cut-room {
+  position: relative;
+  height: max(125svh, 46rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .soon-cut-room {
+    display: none;
+  }
+}
+
 .soon-cut {
   position: fixed;
   inset: 0;
@@ -876,20 +907,98 @@ html[data-js="true"] .soon-room[data-torch] .soon-shade {
   display: grid;
   place-items: center;
   padding: 0 var(--edge);
+  overflow: hidden;
   background: #050505;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
 }
 
-.soon-cut-card.label {
-  color: var(--color-bone);
-  font-size: clamp(0.8rem, 1.4vw, 1.05rem);
-  letter-spacing: 0.42em;
-  line-height: 2.1;
+/* film: grain that crawls, and a projector that can't hold its light */
+.soon-cut-grain {
+  position: absolute;
+  inset: -50%;
+  background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='160' height='160' filter='url(%23n)' opacity='0.5'/></svg>");
+  background-size: 160px 160px;
+  opacity: 0.12;
+  animation: soon-grain 0.6s steps(4, end) infinite;
+}
+
+@keyframes soon-grain {
+  0% { translate: 0 0; }
+  25% { translate: -6% 4%; }
+  50% { translate: 5% -7%; }
+  75% { translate: -3% -4%; }
+  100% { translate: 0 0; }
+}
+
+.soon-cut-flicker {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(70% 60% at 50% 50%, rgba(243, 240, 231, 0.06), rgba(0, 0, 0, 0) 70%);
+  animation: soon-projector 2.6s steps(1, end) infinite;
+}
+
+/* never more than a couple of dips a second — it's a projector, not a strobe */
+@keyframes soon-projector {
+  0%, 100% { opacity: 1; }
+  37% { opacity: 0.55; }
+  41% { opacity: 1; }
+  78% { opacity: 0.75; }
+}
+
+.soon-cut-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.9rem, 2.6vh, 1.6rem);
   text-align: center;
-  white-space: pre-line;
-  text-indent: 0.42em;
+}
+
+.soon-cut-line.label {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7em;
+  color: var(--color-bone);
+  font-size: clamp(1rem, 2.5vw, 1.9rem);
+  letter-spacing: 0.34em;
+  text-indent: 0.34em;
+  white-space: nowrap;
+  opacity: 0;
+  translate: 0 0.6em;
+  transition:
+    opacity 0.45s ease,
+    translate 0.7s var(--ease-out-soft),
+    scale 0.7s var(--ease-out-soft),
+    color 0.5s ease;
+}
+
+.soon-cut-line[data-on="true"] {
+  opacity: 1;
+  translate: 0 0;
+}
+
+.soon-cut-line[data-past="true"] {
+  opacity: 0.32;
+  scale: 0.62;
+}
+
+/* the last line is the one that matters */
+.soon-cut-line:last-child[data-on="true"] {
+  color: var(--color-lime);
+  text-shadow: 0 0 18px rgba(216, 255, 40, 0.35);
+}
+
+.soon-cut-rule {
+  display: block;
+  width: 2.6em;
+  height: 1px;
+  background: var(--color-lime);
+  transform-origin: 50% 50%;
+  scale: 0 1;
 }
 
 /* ----------------------------------------- the hidden lines (HoverNotes) */
@@ -924,6 +1033,116 @@ html[data-js="true"] .soon-room[data-torch] .soon-shade {
 .soon-hint[data-on="true"] > p {
   opacity: 1;
   scale: 1;
+}
+
+/* ------------------------------------------- what follows you (Peeker) */
+.soon-peeker {
+  position: fixed;
+  bottom: 0;
+  left: 9vw;
+  z-index: 55;
+  translate: 0 105%;
+  transition: translate 0.32s cubic-bezier(0.5, 0, 0.75, 0);
+}
+
+.soon-peeker[data-side="right"] {
+  left: auto;
+  right: 11vw;
+}
+
+.soon-peeker[data-on="true"] {
+  translate: 0 38%;
+  transition: translate 1.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.soon-door {
+  position: fixed;
+  right: 0;
+  top: 38%;
+  z-index: 55;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  translate: 105% 0;
+  transition: translate 0.35s cubic-bezier(0.5, 0, 0.75, 0);
+  pointer-events: none;
+}
+
+.soon-door[data-on="true"] {
+  translate: 12% 0;
+  transition: translate 1.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.soon-door-line {
+  color: rgba(8, 8, 8, 0.7);
+  font-size: clamp(1.05rem, 1.6vw, 1.35rem);
+  rotate: -5deg;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.4s ease 0.9s;
+}
+
+.soon-door[data-on="true"] .soon-door-line {
+  opacity: 1;
+}
+
+/* ------------------------------------------- the page darkening (Dread) */
+.soon-dread {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  pointer-events: none;
+  background: radial-gradient(120% 95% at 50% 50%, rgba(8, 8, 8, 0) 55%, rgba(8, 8, 8, 0.85) 100%);
+  opacity: 0;
+}
+
+/* -------------------------------------------- text that won't hold still */
+.soon-glitch {
+  animation: soon-glitch 7.3s steps(1, end) infinite;
+}
+
+/* three twitches in a quarter of a second, once every seven — a glitch, not a flash */
+@keyframes soon-glitch {
+  0%, 93.9%, 100% { text-shadow: none; translate: 0 0; }
+  94% { text-shadow: -0.045em 0 rgba(216, 255, 40, 0.85), 0.04em 0 rgba(243, 240, 231, 0.55); translate: 0.02em 0; }
+  95.2% { text-shadow: 0.05em 0 rgba(216, 255, 40, 0.85), -0.03em 0 rgba(8, 8, 8, 0.45); translate: -0.03em 0; }
+  96.4% { text-shadow: none; translate: 0 0; }
+  97.2% { text-shadow: -0.025em 0 rgba(216, 255, 40, 0.7); }
+  97.8% { text-shadow: none; }
+}
+
+/* waking: its eyes come at you, then settle */
+.soon-room[data-lunge="true"] .soon-big-eyes > span {
+  animation: soon-lunge 0.9s cubic-bezier(0.2, 1.4, 0.3, 1);
+}
+
+@keyframes soon-lunge {
+  0% { scale: 1; }
+  18% { scale: 1.9; }
+  100% { scale: 1; }
+}
+
+/* the eyes that are there for a blink when the torch cuts out */
+.soon-glimpse {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 31;
+  width: clamp(5rem, 12vw, 9rem);
+  margin: calc(clamp(5rem, 12vw, 9rem) * -0.25) 0 0 calc(clamp(5rem, 12vw, 9rem) * -0.5);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.soon-glimpse svg {
+  display: block;
+  width: 100%;
+  fill: var(--color-lime);
+  filter: drop-shadow(0 0 8px rgba(216, 255, 40, 0.6));
+}
+
+.soon-glimpse[data-on="true"] {
+  opacity: 1;
 }
 
 /* ------------------------------------------------------- the sound switch */

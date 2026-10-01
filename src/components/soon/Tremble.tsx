@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { prefersReducedMotion, whenOpen } from "@/lib/motion";
@@ -15,12 +15,39 @@ export default function Tremble({
   children,
   className = "",
   as: Tag = "h2",
+  again,
 }: {
   children: string;
   className?: string;
   as?: "h1" | "h2" | "h3";
+  /** what it says instead once you've been in the dark and come back up */
+  again?: string;
 }) {
   const root = useRef<HTMLElement>(null);
+  const [text, setText] = useState(children);
+
+  // Come back up after the room and it's not quite what it said. It changes
+  // while it's off screen, so you never see it happen.
+  useEffect(() => {
+    const el = root.current;
+    if (!el || !again) return;
+    let away = false;
+    let been = false;
+    const io = new IntersectionObserver(([e]) => {
+      away = !e.isIntersecting;
+      if (been && away) setText(again);
+    });
+    io.observe(el);
+    const onBeen = () => {
+      been = true;
+      if (away) setText(again);
+    };
+    window.addEventListener("soon:been-in-the-dark", onBeen);
+    return () => {
+      io.disconnect();
+      window.removeEventListener("soon:been-in-the-dark", onBeen);
+    };
+  }, [again]);
 
   useEffect(() => {
     const el = root.current;
@@ -64,8 +91,8 @@ export default function Tremble({
   }, []);
 
   return (
-    <Tag ref={root as never} className={className} aria-label={children.replace(/\n/g, " ")}>
-      {children.split("\n").map((line, li) => (
+    <Tag ref={root as never} className={className} aria-label={text.replace(/\n/g, " ")}>
+      {text.split("\n").map((line, li) => (
         <span key={li} aria-hidden="true" className="block whitespace-nowrap">
           {[...line].map((ch, i) => (
             <span key={i} data-l className="soon-tremble inline-block" style={{ "--i": li * 9 + i } as React.CSSProperties}>

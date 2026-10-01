@@ -5,11 +5,12 @@ import RiseIn from "@/components/fx/RiseIn";
 import Awake from "./Awake";
 import Boing from "./Boing";
 import Classified from "./Classified";
+import Cut from "./Cut";
 import Critters from "./Critters";
 import InkEyes from "./InkEyes";
 import InkField from "./InkField";
 import Tremble from "./Tremble";
-import { SECRETS, SOON } from "@/lib/soon";
+import { CUTS, SECRETS, SOON } from "@/lib/soon";
 
 /**
  * The night's field. On a laptop it holds the right flank beside the words,
@@ -61,6 +62,7 @@ export default function Heard() {
       field="bone"
       className="pb-[clamp(4rem,11vh,7.5rem)] pt-[clamp(5.5rem,17vh,13rem)] md:pt-[clamp(5.5rem,24vh,13rem)]"
     >
+      <Cut lines={CUTS.open} />
       <Awake />
 
       {/* the cat is hauling itself over the boundary above — and it knows */}
@@ -75,7 +77,7 @@ export default function Heard() {
       <GhostIndex className="left-[46%] top-[5%] hidden text-[clamp(10rem,26vw,24rem)] lg:block">01</GhostIndex>
 
       <div data-secret={SECRETS.heading} className="relative z-[4] w-fit">
-      <Tremble className="brush lean relative z-[4] mt-[clamp(1.75rem,4.5vh,3rem)] -rotate-[1.4deg] select-none pb-[0.1em] pl-[var(--edge)] text-[clamp(3.6rem,11.5vw,10rem)] leading-[0.84]">
+      <Tremble again={t.again} className="soon-glitch brush lean relative z-[4] mt-[clamp(1.75rem,4.5vh,3rem)] -rotate-[1.4deg] select-none pb-[0.1em] pl-[var(--edge)] text-[clamp(3.6rem,11.5vw,10rem)] leading-[0.84]">
         {t.heading}
       </Tremble>
       </div>

@@ -11,6 +11,9 @@ import Eggs from "@/components/soon/Eggs";
 import JumpScareHost from "@/components/soon/JumpScare";
 import HoverNotes from "@/components/soon/HoverNotes";
 import SoundToggle from "@/components/soon/SoundToggle";
+import SoundStage from "@/components/soon/SoundStage";
+import Peeker from "@/components/soon/Peeker";
+import Dread from "@/components/soon/Dread";
 import { SOON } from "@/lib/soon";
 import { LEGAL } from "@/lib/site";
 import { siteLive } from "@/lib/live";
@@ -55,6 +58,9 @@ export default function SoonPage() {
       <JumpScareHost />
       <HoverNotes />
       <SoundToggle />
+      <SoundStage />
+      <Peeker />
+      <Dread />
       {/* for anyone reading the source */}
       <div hidden dangerouslySetInnerHTML={{ __html: "<!-- stop reading the source. (keep going.) -->" }} />
     </>

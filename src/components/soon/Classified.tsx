@@ -6,6 +6,7 @@ import { SECRETS, SOON, TROLL } from "@/lib/soon";
 import InkEyes from "./InkEyes";
 import { jumpscare } from "./JumpScare";
 import { answer, buzz, once, shiver } from "./troll";
+import { cue } from "./sound";
 
 /** three marker strokes, none quite straight, drawn in a 400x60 box */
 const STROKE = [
@@ -66,8 +67,11 @@ export default function Classified() {
     const n = taps.current;
     taps.current += 1;
     setLevel(taps.current);
+    cue("tick");
     if (n < t.taps.length) {
       setSaid((s) => ({ ...s, [k]: t.taps[n] }));
+      // the last warning: something behind the bars starts coming up
+      if (n === t.taps.length - 1) cue("riser");
       return;
     }
     // past the last warning

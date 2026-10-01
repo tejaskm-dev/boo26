@@ -14,7 +14,8 @@ import { getLenis } from "@/lib/lenis";
 import { prefersReducedMotion, useReducedMotion } from "@/lib/motion";
 import { SECRETS, SOON, TROLL } from "@/lib/soon";
 import { buzz, shiver, troll } from "./troll";
-import { cue } from "./sound";
+import { cue, heartRate } from "./sound";
+import { jumpscare } from "./JumpScare";
 
 /** the ink JUMP lands on */
 const SPLASH = {
@@ -122,6 +123,7 @@ export default function ThePoint() {
         onEnter: () => {
           setCounting(true);
           buzz(14);
+          heartRate(1);
           cue("thump");
           t.fakeout.forEach((_, i) => {
             if (i)
@@ -129,7 +131,9 @@ export default function ThePoint() {
                 window.setTimeout(() => {
                   setStep(i);
                   buzz(14);
+                  heartRate(1 + i * 0.45);
                   cue("thump");
+                  if (i === t.fakeout.length - 1) timers.push(window.setTimeout(() => cue("riser"), 300));
                 }, i * 950),
               );
           });
@@ -191,6 +195,7 @@ export default function ThePoint() {
           shiver(jump.current, 10);
           buzz(70);
           cue("hit");
+          cue("stab");
           troll("jump", TROLL.jump);
           // and everything that was hiding in the ink comes out of it
           const r = splash.current?.getBoundingClientRect();
@@ -212,6 +217,8 @@ export default function ThePoint() {
           if (jump.current!.dataset.look === "true") jump.current!.dataset.hopping = isActive ? "true" : "false";
         },
       });
+
+      let leaning = 0;
 
       // FREEZE: it holds, and so does everything alive on the page — except
       // the thing in the corner, which can only see you while you move
@@ -284,6 +291,14 @@ export default function ThePoint() {
         onToggle: ({ isActive }) => {
           lean.current!.dataset.close = isActive ? "true" : "false";
           lean.current!.dataset.look = isActive ? "true" : "false";
+          // the oldest trick there is: get them to lean in to read something
+          // small — and then. Once a visit, for anyone who stays a moment.
+          window.clearTimeout(leaning);
+          if (isActive)
+            leaning = window.setTimeout(() => {
+              if (lean.current?.dataset.close !== "true") return;
+              if (jumpscare("face")) timers.push(window.setTimeout(() => troll("safe", TROLL.safe), 1900));
+            }, 900);
         },
       });
 
@@ -389,6 +404,9 @@ export default function ThePoint() {
             <p className={`flex items-center gap-2 transition-opacity duration-700 ${relaxed || still ? "opacity-100" : "opacity-0"}`}>
               <span className="hand -rotate-[3deg] text-[clamp(1.3rem,2vw,1.8rem)] text-ink/60">{t.relax}</span>
               <Sprite name="zzz" scale={0.18} className="-mt-4 rotate-[8deg]" />
+            </p>
+            <p className={`label text-[0.62rem] tracking-[0.24em] text-ink/40 transition-opacity delay-700 duration-700 ${relaxed || still ? "opacity-100" : "opacity-0"}`}>
+              {t.promise}
             </p>
           </div>
         </div>

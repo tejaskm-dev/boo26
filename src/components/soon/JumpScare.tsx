@@ -7,11 +7,20 @@ import { TROLL } from "@/lib/soon";
 import { answer, buzz } from "./troll";
 import { cue } from "./sound";
 
-const listeners = new Set<() => void>();
+export type Scare = "face" | "eyes";
+const listeners = new Set<(kind: Scare) => void>();
+const done = new Set<Scare>();
 
-/** Sets it off. Whatever's mounted <JumpScareHost /> does the rest. */
-export function jumpscare() {
-  for (const fn of listeners) fn();
+/**
+ * Sets one off — each kind at most once a visit; ask for one that's been
+ * used and you get the other. Whatever's mounted <JumpScareHost /> does the rest.
+ */
+export function jumpscare(kind: Scare = "face") {
+  const pick = done.has(kind) ? (kind === "face" ? "eyes" : "face") : kind;
+  if (done.has(pick)) return false;
+  done.add(pick);
+  for (const fn of listeners) fn(pick);
+  return true;
 }
 
 /** The hero's narrowed eyes, in their 134x68 box. */
@@ -39,15 +48,17 @@ const GRIN =
  */
 export default function JumpScareHost() {
   const [on, setOn] = useState(0);
+  const [kind, setKind] = useState<Scare>("face");
 
   useEffect(() => {
-    const fire = () => {
+    const fire = (k: Scare) => {
       if (prefersReducedMotion()) {
         answer(TROLL.boo);
         return;
       }
       buzz(280);
       cue("scare");
+      setKind(k);
       setOn(Date.now());
     };
     listeners.add(fire);
@@ -64,7 +75,34 @@ export default function JumpScareHost() {
 
   if (!on || typeof document === "undefined") return null;
   return createPortal(
-    <div key={on} className="soon-scare" aria-hidden="true">
+    <div key={on} className="soon-scare" data-kind={kind} aria-hidden="true">
+      {kind === "eyes" ? (
+        // the other one: the dark, and its eyes, coming at you
+        <div className="soon-scare-face soon-scare-rush">
+          <svg viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice">
+            <rect x="-500" y="-500" width="2000" height="2000" fill="#030303" />
+            <g filter="url(#soon-scare-glow)" fill="var(--color-lime)" opacity="0.9">
+              <g transform="translate(232 400) scale(4)">
+                {EYES.map((d) => (
+                  <path key={d} d={d} />
+                ))}
+              </g>
+            </g>
+            <g className="soon-scare-eyes" fill="var(--color-lime)">
+              <g transform="translate(232 400) scale(4)">
+                {EYES.map((d) => (
+                  <path key={d} d={d} />
+                ))}
+              </g>
+            </g>
+            <defs>
+              <filter id="soon-scare-glow" x="-30%" y="-30%" width="160%" height="160%">
+                <feGaussianBlur stdDeviation="18" />
+              </filter>
+            </defs>
+          </svg>
+        </div>
+      ) : (
       <div className="soon-scare-face">
         <svg viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice">
           <defs>
@@ -92,6 +130,7 @@ export default function JumpScareHost() {
           <path d={GRIN} fill="var(--color-lime)" />
         </svg>
       </div>
+      )}
     </div>,
     document.body,
   );

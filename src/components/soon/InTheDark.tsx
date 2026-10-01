@@ -9,14 +9,14 @@ import GhostIndex from "@/components/ui/GhostIndex";
 import Words from "@/components/fx/Words";
 import Awake from "./Awake";
 import Cut from "./Cut";
-import { cue, mood } from "./sound";
+import { cue } from "./sound";
 import InkEyes from "./InkEyes";
 import Sleeper, { EYES, FACE, OPEN_EYES, ZZZ } from "./Sleeper";
 import { getLenis } from "@/lib/lenis";
 import { prefersReducedMotion } from "@/lib/motion";
 import { isNavActive } from "@/lib/navState";
 import { subscribePointer } from "@/lib/pointer";
-import { SECRETS, SOON, TROLL } from "@/lib/soon";
+import { CUTS, SECRETS, SOON, TROLL } from "@/lib/soon";
 import { answer, buzz, shiver, troll } from "./troll";
 
 /** the rest of the room's eyes, on the wallpaper, as % of the sleeper's square — they open when it does */
@@ -69,6 +69,21 @@ export default function InTheDark() {
   const strikeRef = useRef<() => void>(() => {});
   const out = useRef<HTMLDivElement>(null);
   const [woke, setWoke] = useState(false);
+  // "Don't wake it." — and if you scroll back up after you did, it says so
+  const [changed, setChanged] = useState(false);
+  const headline = useRef<HTMLDivElement>(null);
+  const ghost = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const el = headline.current;
+    if (!el || !woke || changed) return;
+    // swapped while it's off screen, so you never see it happen
+    const io = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting) setChanged(true);
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [woke, changed]);
 
   useEffect(() => {
     const el = room.current;
@@ -184,6 +199,9 @@ export default function InTheDark() {
       buzz(60);
       troll("awake", TROLL.awake);
       cue("wake");
+      later(() => cue("stab"), 380);
+      el.dataset.lunge = "true";
+      later(() => delete el.dataset.lunge, 900);
       // the torch goes, and there's just the eyes
       const was = el.dataset.torch;
       el.dataset.torch = "off";
@@ -292,6 +310,7 @@ export default function InTheDark() {
     let firstStrike = false;
     let lastScale = 1;
     let dived = false;
+    let through = false;
     const covers = [...el.querySelectorAll<HTMLElement>(".soon-cover")];
     const onScroll = () => {
       if (!active) return;
@@ -326,8 +345,12 @@ export default function InTheDark() {
       }
       if (dive > 0.05 && !dived) {
         dived = true;
-        cue("whoosh");
+        cue("riser");
       } else if (dive === 0) dived = false;
+      if (dive > 0.97 && !through) {
+        through = true;
+        cue("boom");
+      } else if (dive < 0.5) through = false;
     };
     const lenis = getLenis();
     if (lenis) lenis.on("scroll", onScroll);
@@ -335,12 +358,25 @@ export default function InTheDark() {
 
     // --- the torch has a mind of its own ---------------------------------------
     let flicker = 0;
+    let glimpses = 0;
     const scheduleFlicker = () => {
       window.clearTimeout(flicker);
       flicker = window.setTimeout(() => {
         if (active && !document.hidden && el.dataset.torch === "on") {
           el.dataset.flicker = "true";
           later(() => delete el.dataset.flicker, 700);
+          // in the long dark of the flicker: eyes, right where you were looking
+          if (glimpses < 2 && ghost.current) {
+            glimpses += 1;
+            const top = stageTop();
+            ghost.current.style.translate = `${Math.round(beamX)}px ${Math.round(beamY - top)}px`;
+            later(() => {
+              if (ghost.current) ghost.current.dataset.on = "true";
+            }, 220);
+            later(() => {
+              if (ghost.current) delete ghost.current.dataset.on;
+            }, 420);
+          }
         }
         scheduleFlicker();
       }, 11000 + Math.random() * 7000);
@@ -354,7 +390,7 @@ export default function InTheDark() {
       const now = performance.now();
       if (now - lastStrike < 3500) return;
       lastStrike = now;
-      cue("slam");
+      cue("thunder");
       shade.current?.animate(
         [{ opacity: 1 }, { opacity: 0.1, offset: 0.08 }, { opacity: 0.85, offset: 0.24 }, { opacity: 0.25, offset: 0.36 }, { opacity: 1 }],
         { duration: 860, easing: "ease-out" },
@@ -370,10 +406,14 @@ export default function InTheDark() {
     };
 
     let first = true;
+    let visited = false;
     const io = new IntersectionObserver(([e]) => {
       active = e.isIntersecting;
       el.dataset.active = active ? "true" : "false";
-      mood(active ? 1 : 0);
+      if (active && !visited) {
+        visited = true;
+        window.dispatchEvent(new Event("soon:been-in-the-dark"));
+      }
       if (!active) {
         window.clearTimeout(flicker);
         window.clearTimeout(thunder);
@@ -428,19 +468,22 @@ export default function InTheDark() {
       forms={[{ shape: "shelf", tone: "bone", at: "inset-x-0 top-0 w-full h-[9vh] md:h-[13vh]" }]}
       className="pt-[clamp(5rem,14vh,11rem)] md:pt-[clamp(5rem,20vh,11rem)]"
     >
-      <Cut title={t.kicker} />
+      <Cut lines={CUTS.dark} />
       <Awake />
 
       <div className="px-[var(--edge)]">
         <SectionLabel index="02" className="text-bone">
           {t.label}
         </SectionLabel>
-        <Words
-          as="h2"
-          className="brush lean mt-[clamp(1.75rem,4.5vh,3rem)] rotate-[1.2deg] select-none text-[clamp(3.8rem,11vw,9.5rem)] leading-[0.86] text-bone"
-        >
-          {t.heading}
-        </Words>
+        <div ref={headline}>
+          <Words
+            key={changed ? "woke" : "asleep"}
+            as="h2"
+            className="soon-glitch brush lean mt-[clamp(1.75rem,4.5vh,3rem)] rotate-[1.2deg] select-none text-[clamp(3.8rem,11vw,9.5rem)] leading-[0.86] text-bone"
+          >
+            {changed ? t.woke : t.heading}
+          </Words>
+        </div>
       </div>
 
       <GhostIndex className="right-[6%] top-[4%] hidden text-[clamp(9rem,21vw,19rem)] text-bone lg:block">02</GhostIndex>
@@ -537,6 +580,15 @@ export default function InTheDark() {
                 <span className="soon-rec soon-loop absolute left-[67%] top-[11%] block h-[8%] w-[7%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-lime shadow-[0_0_12px_var(--color-lime)]" />
               </span>
             </span>
+          </span>
+
+          {/* what's there for a blink when the torch cuts out */}
+          <span ref={ghost} className="soon-glimpse" aria-hidden="true">
+            <svg viewBox="0 0 134 68">
+              {EYES.map((d) => (
+                <path key={d} d={d} />
+              ))}
+            </svg>
           </span>
 
           {/* the other side of its eye: the light the next act happens in */}
