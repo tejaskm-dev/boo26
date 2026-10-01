@@ -9,7 +9,7 @@ import Critters from "./Critters";
 import InkEyes from "./InkEyes";
 import InkField from "./InkField";
 import Tremble from "./Tremble";
-import { SOON } from "@/lib/soon";
+import { SECRETS, SOON } from "@/lib/soon";
 
 /**
  * The night's field. On a laptop it holds the right flank beside the words,
@@ -74,12 +74,14 @@ export default function Heard() {
 
       <GhostIndex className="left-[46%] top-[5%] hidden text-[clamp(10rem,26vw,24rem)] lg:block">01</GhostIndex>
 
+      <div data-secret={SECRETS.heading} className="relative z-[4] w-fit">
       <Tremble className="brush lean relative z-[4] mt-[clamp(1.75rem,4.5vh,3rem)] -rotate-[1.4deg] select-none pb-[0.1em] pl-[var(--edge)] text-[clamp(3.6rem,11.5vw,10rem)] leading-[0.84]">
         {t.heading}
       </Tremble>
+      </div>
 
       <div className="mt-[clamp(1.75rem,5vh,3.5rem)] grid items-start px-[var(--edge)] lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-x-[clamp(2.5rem,5vw,5rem)]">
-        <p data-anim="rise" className="display relative z-[4] max-w-[17ch] text-[clamp(1.35rem,2.6vw,2.15rem)] leading-[1.12] lg:col-start-1 lg:row-start-1">
+        <p data-anim="rise" data-secret={SECRETS.body} className="display relative z-[4] max-w-[17ch] text-[clamp(1.35rem,2.6vw,2.15rem)] leading-[1.12] lg:col-start-1 lg:row-start-1">
           {t.body}
         </p>
 
@@ -92,7 +94,9 @@ export default function Heard() {
           <InkField ns="heard-flank" view={FLANK.view} shape={FLANK.d} className="inset-0 hidden lg:block" />
           <InkField ns="heard-band" view={BAND.view} shape={BAND.d} className="inset-0 lg:hidden" />
 
-          <Sprite name="moon" scale={0.5} drift={22} idle={7} className="absolute right-[7%] top-[10%] lg:right-[11%] lg:top-[7%]" />
+          <span data-secret={SECRETS.moon} className="absolute right-[7%] top-[10%] block lg:right-[11%] lg:top-[7%]">
+            <Sprite name="moon" scale={0.5} drift={22} idle={7} />
+          </span>
 
           {EYES_AT.map((e, i) => (
             <InkEyes key={i} watch className={e.at} tilt={e.tilt} blink={e.blink} delay={e.delay} />
@@ -102,6 +106,7 @@ export default function Heard() {
             <p
               key={w}
               data-whisper
+              data-secret={SECRETS.whispers[i]}
               className={`soon-whisper soon-loop hand absolute max-w-[15ch] text-[clamp(1.05rem,1.6vw,1.4rem)] leading-[1.15] text-bone ${WHISPER_AT[i]}`}
               style={{ animationDelay: `${-i * 1.7}s`, rotate: `${[-4, 3, -2, 5, -3, 2][i]}deg` }}
             >
@@ -110,7 +115,7 @@ export default function Heard() {
           ))}
 
           {/* a cat in a pumpkin, sat on the field's lip */}
-          <Boing className="absolute bottom-[-4%] left-[5%] z-[2] lg:bottom-[1%] lg:left-[2%]">
+          <Boing secret={SECRETS.pumpkin} className="absolute bottom-[-4%] left-[5%] z-[2] lg:bottom-[1%] lg:left-[2%]">
             <Sprite name="cat-pumpkin" scale={0.78} drift={12} idle={4} />
           </Boing>
         </div>

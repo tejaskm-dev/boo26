@@ -9,6 +9,8 @@ import ThePoint from "@/components/soon/ThePoint";
 import NotYet from "@/components/soon/NotYet";
 import Eggs from "@/components/soon/Eggs";
 import JumpScareHost from "@/components/soon/JumpScare";
+import HoverNotes from "@/components/soon/HoverNotes";
+import SoundToggle from "@/components/soon/SoundToggle";
 import { SOON } from "@/lib/soon";
 import { LEGAL } from "@/lib/site";
 import { siteLive } from "@/lib/live";
@@ -51,6 +53,8 @@ export default function SoonPage() {
       <Footer content={{ ...SOON.footer, legal: LEGAL_SOON }} />
       <Eggs />
       <JumpScareHost />
+      <HoverNotes />
+      <SoundToggle />
       {/* for anyone reading the source */}
       <div hidden dangerouslySetInnerHTML={{ __html: "<!-- stop reading the source. (keep going.) -->" }} />
     </>

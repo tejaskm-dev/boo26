@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { prefersReducedMotion } from "@/lib/motion";
 import { TROLL } from "@/lib/soon";
 import { answer, buzz } from "./troll";
+import { cue } from "./sound";
 
 const listeners = new Set<() => void>();
 
@@ -46,6 +47,7 @@ export default function JumpScareHost() {
         return;
       }
       buzz(280);
+      cue("scare");
       setOn(Date.now());
     };
     listeners.add(fire);

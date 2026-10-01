@@ -12,8 +12,9 @@ import InkField from "./InkField";
 import { HERO_FIELD } from "@/lib/shapes";
 import { getLenis } from "@/lib/lenis";
 import { prefersReducedMotion, useReducedMotion } from "@/lib/motion";
-import { SOON, TROLL } from "@/lib/soon";
+import { SECRETS, SOON, TROLL } from "@/lib/soon";
 import { buzz, shiver, troll } from "./troll";
+import { cue } from "./sound";
 
 /** the ink JUMP lands on */
 const SPLASH = {
@@ -86,6 +87,7 @@ export default function ThePoint() {
   const why = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState(0);
   const [relaxed, setRelaxed] = useState(false);
+  const [counting, setCounting] = useState(false);
   // the still version tells the same story, all at once
   const still = useReducedMotion();
 
@@ -118,13 +120,16 @@ export default function ThePoint() {
         start: "top top",
         once: true,
         onEnter: () => {
+          setCounting(true);
           buzz(14);
+          cue("thump");
           t.fakeout.forEach((_, i) => {
             if (i)
               timers.push(
                 window.setTimeout(() => {
                   setStep(i);
                   buzz(14);
+                  cue("thump");
                 }, i * 950),
               );
           });
@@ -185,6 +190,7 @@ export default function ThePoint() {
             }, [], 0.55);
           shiver(jump.current, 10);
           buzz(70);
+          cue("hit");
           troll("jump", TROLL.jump);
           // and everything that was hiding in the ink comes out of it
           const r = splash.current?.getBoundingClientRect();
@@ -299,6 +305,7 @@ export default function ThePoint() {
         once: true,
         onEnter: () => {
           what.current!.dataset.slammed = "true";
+          cue("slam");
           timers.push(window.setTimeout(() => shiver(what.current, 7), 150));
         },
       });
@@ -343,8 +350,7 @@ export default function ThePoint() {
     <Section
       id="point"
       field="bone"
-      forms={[{ shape: "notch", tone: "ink", at: "inset-x-0 top-0 w-full h-[11vh] md:h-[18vh]" }]}
-      className="pb-[clamp(4rem,11vh,8rem)] pt-[clamp(5rem,14vh,11rem)] md:pt-[clamp(5rem,20vh,11rem)]"
+      className="pb-[clamp(4rem,11vh,8rem)] pt-[clamp(3rem,8vh,6rem)]"
     >
       <Awake />
       <Critters bats={0} wisps={0} ghosts={0} className="z-[6]" />
@@ -357,12 +363,12 @@ export default function ThePoint() {
       <div ref={fake} className="relative h-[150svh]">
         <div
           className="soon-countdown sticky top-0 grid h-[100svh] place-items-center overflow-hidden px-[var(--edge)] text-center"
-          data-step={still ? t.fakeout.length - 1 : step}
+          data-step={still ? t.fakeout.length - 1 : counting ? step : -1}
           data-relaxed={relaxed || still ? "true" : "false"}
         >
           <span aria-hidden="true" className="soon-vignette" />
           {COUNT_EYES.map((e, i) => (
-            <span key={i} data-look={!still && !relaxed && step >= e.from ? "true" : "false"} className="contents">
+            <span key={i} data-look={!still && counting && !relaxed && step >= e.from ? "true" : "false"} className="contents">
               <InkEyes className={e.at} tilt={e.tilt} blink={4 + (i % 3)} delay={i * 0.08} />
             </span>
           ))}
@@ -395,7 +401,7 @@ export default function ThePoint() {
           <InkEyes className="left-[13%] top-[17%] w-[11%]" tilt={-12} blink={5.4} />
           <InkEyes className="left-[76%] top-[73%] w-[7.5%]" tilt={9} blink={7.1} delay={0.3} />
         </div>
-        <h3 ref={jumpWord} className={`${word} relative -rotate-[2.5deg] text-[clamp(5rem,22vw,17rem)] text-bone`} aria-label={t.words.jump}>
+        <h3 ref={jumpWord} data-secret={SECRETS.jump} className={`${word} relative -rotate-[2.5deg] text-[clamp(5rem,22vw,17rem)] text-bone`} aria-label={t.words.jump}>
           {[...t.words.jump].map((ch, i) => (
             <span key={i} aria-hidden="true" className="soon-hop soon-loop" style={{ "--i": i } as React.CSSProperties}>
               {ch}
@@ -416,7 +422,7 @@ export default function ThePoint() {
       <div ref={freeze} className="relative mt-[8svh] h-[200svh] overflow-clip">
         <div className="sticky top-0 grid h-[100svh] place-items-center px-[var(--edge)]">
           <div className="relative">
-            <h3 className={`${word} rotate-[1.5deg] text-[clamp(4.6rem,20vw,16rem)]`}>{t.words.freeze}</h3>
+            <h3 data-secret={SECRETS.freeze} className={`${word} rotate-[1.5deg] text-[clamp(4.6rem,20vw,16rem)]`}>{t.words.freeze}</h3>
             {/* the bats from JUMP, stopped mid-flap */}
             <Sprite name="bat-up" scale={0.36} className="absolute -left-[8%] -top-[40%] rotate-[-18deg]" />
             <Sprite name="bat-down" scale={0.28} className="absolute left-[30%] -top-[70%] rotate-[12deg]" />
@@ -444,7 +450,7 @@ export default function ThePoint() {
           shape={GIGGLE.d}
           className="left-1/2 top-1/2 aspect-[10/7] w-[min(94vw,60rem)] -translate-x-1/2 -translate-y-1/2"
         />
-        <h3 className={`${word} relative -rotate-[1.5deg] text-[clamp(4.6rem,20vw,16rem)]`} aria-label={t.words.laugh}>
+        <h3 data-secret={SECRETS.laugh} className={`${word} relative -rotate-[1.5deg] text-[clamp(4.6rem,20vw,16rem)]`} aria-label={t.words.laugh}>
           {[...t.words.laugh].map((ch, i) => (
             <span key={i} aria-hidden="true" className="soon-letter soon-loop" style={{ "--i": i } as React.CSSProperties}>
               {ch}
@@ -478,7 +484,7 @@ export default function ThePoint() {
           <InkField ns="lean-r" view={CLOSE.view} shape={CLOSE.d} className="inset-0 -scale-x-100" />
           <InkEyes className="left-[56%] top-[36%] w-[20%]" tilt={6} blink={6.2} delay={0.3} />
         </div>
-        <div className="absolute left-1/2 top-[41%] -translate-x-1/2 -translate-y-1/2">
+        <div data-secret={SECRETS.lean} className="absolute left-1/2 top-[41%] -translate-x-1/2 -translate-y-1/2 p-6">
           <p className="label text-[0.6rem] tracking-[0.34em] text-ink/75">{t.words.lean}</p>
           <p className="soon-lean-up label mt-2 text-[0.44rem] tracking-[0.3em] text-ink/45">{t.leanUp}</p>
         </div>
@@ -486,7 +492,7 @@ export default function ThePoint() {
 
       {/* WHAT THE— */}
       <div ref={what} className="relative grid min-h-[78svh] place-items-center px-[var(--edge)]">
-        <h3 className={`${word} flex flex-wrap items-center justify-center gap-x-[0.28em] -rotate-[1deg] text-[clamp(3.6rem,12vw,10rem)]`} aria-label={t.words.what}>
+        <h3 data-secret={SECRETS.what} className={`${word} flex flex-wrap items-center justify-center gap-x-[0.28em] -rotate-[1deg] text-[clamp(3.6rem,12vw,10rem)]`} aria-label={t.words.what}>
           {/* letter by letter, but a word never breaks across lines — and the
               bar that cuts it off stays with the last one */}
           {t.words.what.split(" ").map((w, wi, all) => (
@@ -524,7 +530,7 @@ export default function ThePoint() {
           <p aria-hidden="true" className="soon-echo brush absolute inset-0 -rotate-[1.2deg] whitespace-pre-line text-[clamp(3.2rem,11vw,9.5rem)] leading-[0.86]">
             {t.reveal}
           </p>
-          <h2 className="brush relative -rotate-[1.2deg] whitespace-pre-line text-[clamp(3.2rem,11vw,9.5rem)] leading-[0.86]">{t.reveal}</h2>
+          <h2 data-secret={SECRETS.why} className="brush relative -rotate-[1.2deg] whitespace-pre-line text-[clamp(3.2rem,11vw,9.5rem)] leading-[0.86]">{t.reveal}</h2>
           <span aria-hidden="true" className="soon-whybar absolute inset-[-6%_-4%] block rounded-[3px_9px_4px_8px] bg-ink" />
         </div>
         <Sprite name="squiggle-lime" scale={0.36} className="mt-4 rotate-[10deg]" />

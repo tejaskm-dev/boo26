@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import Sprite from "@/components/ui/Sprite";
-import { SOON, TROLL } from "@/lib/soon";
+import { SECRETS, SOON, TROLL } from "@/lib/soon";
 import InkEyes from "./InkEyes";
 import { jumpscare } from "./JumpScare";
 import { answer, buzz, once, shiver } from "./troll";
@@ -139,7 +139,7 @@ export default function Classified() {
         <div className="grid grid-cols-[clamp(3.6rem,8vw,5rem)_minmax(0,1fr)] items-center gap-3 pt-[clamp(0.9rem,2.4vh,1.4rem)]">
           <dt className="label text-[clamp(0.62rem,0.9vw,0.72rem)] text-ink/45">Where</dt>
           <dd className="flex items-center gap-2">
-            <span className="soon-highlight display text-[clamp(1.25rem,2.4vw,1.85rem)] leading-none">
+            <span data-secret={SECRETS.where} className="soon-highlight display text-[clamp(1.25rem,2.4vw,1.85rem)] leading-none">
               <svg viewBox="0 0 400 60" preserveAspectRatio="none" aria-hidden="true">
                 <path d={STROKE[1]} />
               </svg>
@@ -156,6 +156,7 @@ export default function Classified() {
         target="_blank"
         rel="noopener noreferrer"
         onClick={() => window.setTimeout(() => answer(TROLL.fell), 1200)}
+        data-secret={SECRETS.leak}
         className="soon-leak group relative mt-[clamp(1.75rem,5vh,3rem)] inline-flex items-end gap-1 outline-none"
         aria-label={`${t.leak.label} (opens a new tab)`}
       >

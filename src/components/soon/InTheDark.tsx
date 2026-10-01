@@ -8,13 +8,15 @@ import Sprite from "@/components/ui/Sprite";
 import GhostIndex from "@/components/ui/GhostIndex";
 import Words from "@/components/fx/Words";
 import Awake from "./Awake";
+import Cut from "./Cut";
+import { cue, mood } from "./sound";
 import InkEyes from "./InkEyes";
 import Sleeper, { EYES, FACE, OPEN_EYES, ZZZ } from "./Sleeper";
 import { getLenis } from "@/lib/lenis";
 import { prefersReducedMotion } from "@/lib/motion";
 import { isNavActive } from "@/lib/navState";
 import { subscribePointer } from "@/lib/pointer";
-import { SOON, TROLL } from "@/lib/soon";
+import { SECRETS, SOON, TROLL } from "@/lib/soon";
 import { answer, buzz, shiver, troll } from "./troll";
 
 /** the rest of the room's eyes, on the wallpaper, as % of the sleeper's square — they open when it does */
@@ -65,6 +67,7 @@ export default function InTheDark() {
   const cam = useRef<HTMLSpanElement>(null);
   const handle = useRef<HTMLButtonElement>(null);
   const strikeRef = useRef<() => void>(() => {});
+  const out = useRef<HTMLDivElement>(null);
   const [woke, setWoke] = useState(false);
 
   useEffect(() => {
@@ -180,6 +183,7 @@ export default function InTheDark() {
       shiver(el, 9);
       buzz(60);
       troll("awake", TROLL.awake);
+      cue("wake");
       // the torch goes, and there's just the eyes
       const was = el.dataset.torch;
       el.dataset.torch = "off";
@@ -285,8 +289,10 @@ export default function InTheDark() {
     };
 
     // --- as you go through the room ------------------------------------------
-    let flashed = false;
     let firstStrike = false;
+    let lastScale = 1;
+    let dived = false;
+    const covers = [...el.querySelectorAll<HTMLElement>(".soon-cover")];
     const onScroll = () => {
       if (!active) return;
       const p = (scrollY() - runTop) / Math.max(1, runH - stageH);
@@ -304,12 +310,24 @@ export default function InTheDark() {
         firstStrike = true;
         later(() => strikeRef.current(), 1400);
       }
-      if (!awake && p > 0.8) wake();
-      if (!flashed && p > 0.93) {
-        flashed = true;
-        el.dataset.flash = "true";
-        later(() => delete el.dataset.flash, 360);
+      if (!awake && p > 0.62) wake();
+
+      // The camera: a slow push in for as long as you're in here — and once
+      // it's awake, the last stretch dives into its eye and out the other side.
+      const push = 1 + Math.min(1, Math.max(0, p)) * 0.08;
+      const dive = awake ? Math.max(0, Math.min(1, (p - 0.8) / 0.2)) : 0;
+      const scale = push * (1 + dive * dive * dive * 28);
+      if (Math.abs(scale - lastScale) > 0.001) {
+        lastScale = scale;
+        gsap.set(covers, { scale });
+        el.dataset.dive = dive > 0.4 ? "true" : "false";
+        // and out the other side, into the light
+        if (out.current) out.current.style.opacity = String(Math.max(0, Math.min(1, (dive - 0.72) / 0.24)));
       }
+      if (dive > 0.05 && !dived) {
+        dived = true;
+        cue("whoosh");
+      } else if (dive === 0) dived = false;
     };
     const lenis = getLenis();
     if (lenis) lenis.on("scroll", onScroll);
@@ -336,6 +354,7 @@ export default function InTheDark() {
       const now = performance.now();
       if (now - lastStrike < 3500) return;
       lastStrike = now;
+      cue("slam");
       shade.current?.animate(
         [{ opacity: 1 }, { opacity: 0.1, offset: 0.08 }, { opacity: 0.85, offset: 0.24 }, { opacity: 0.25, offset: 0.36 }, { opacity: 1 }],
         { duration: 860, easing: "ease-out" },
@@ -354,6 +373,7 @@ export default function InTheDark() {
     const io = new IntersectionObserver(([e]) => {
       active = e.isIntersecting;
       el.dataset.active = active ? "true" : "false";
+      mood(active ? 1 : 0);
       if (!active) {
         window.clearTimeout(flicker);
         window.clearTimeout(thunder);
@@ -408,15 +428,13 @@ export default function InTheDark() {
       forms={[{ shape: "shelf", tone: "bone", at: "inset-x-0 top-0 w-full h-[9vh] md:h-[13vh]" }]}
       className="pt-[clamp(5rem,14vh,11rem)] md:pt-[clamp(5rem,20vh,11rem)]"
     >
+      <Cut title={t.kicker} />
       <Awake />
 
       <div className="px-[var(--edge)]">
-        <div className="flex items-start justify-between gap-6">
-          <SectionLabel index="02" className="text-bone">
-            {t.label}
-          </SectionLabel>
-          <p className="label label-loose max-w-[12ch] whitespace-pre-line text-right leading-[1.9] text-bone/45">{t.kicker}</p>
-        </div>
+        <SectionLabel index="02" className="text-bone">
+          {t.label}
+        </SectionLabel>
         <Words
           as="h2"
           className="brush lean mt-[clamp(1.75rem,4.5vh,3rem)] rotate-[1.2deg] select-none text-[clamp(3.8rem,11vw,9.5rem)] leading-[0.86] text-bone"
@@ -496,7 +514,7 @@ export default function InTheDark() {
           </p>
 
           {/* the window, and the moon through it: moonlight doesn't need a torch — tap it for lightning */}
-          <div className="absolute left-[4%] top-[13%] z-[30] w-[calc(430px*0.34*var(--sprite-scale))] md:left-[3%] md:top-[20%]">
+          <div className="soon-glass absolute left-[4%] top-[13%] z-[30] w-[calc(430px*0.34*var(--sprite-scale))] md:left-[3%] md:top-[20%]">
             <div className="absolute inset-[14%_17%_24%_13%] overflow-hidden rounded-sm">
               <Sprite name="moon" scale={0.15} className="absolute right-[6%] top-[4%] opacity-90" />
               <span className="soon-bat soon-loop left-0 top-[28%] block w-[34%]" aria-hidden="true">
@@ -505,13 +523,13 @@ export default function InTheDark() {
                 <span><Sprite name="bat-down" scale={0.18} className="w-full" /></span>
               </span>
             </div>
-            <button type="button" tabIndex={-1} aria-label="The window" onClick={() => strikeRef.current()} className="relative block cursor-pointer">
+            <button type="button" tabIndex={-1} aria-label="The window" data-secret={SECRETS.window} onClick={() => strikeRef.current()} className="relative block cursor-pointer">
               <Sprite name="window" scale={0.34} className="relative opacity-90" />
             </button>
           </div>
 
           {/* The camera in the corner, above the dark: it turns to follow the light. */}
-          <span className={`${prop} pointer-events-none right-[4%] top-[12%] z-[30] opacity-90 md:right-[3%] md:top-[15%]`}>
+          <span data-secret={SECRETS.camera} className={`${prop} right-[4%] top-[12%] z-[30] opacity-90 md:right-[3%] md:top-[15%]`}>
             <span className="relative block pl-[calc(130px*0.6*var(--sprite-scale)*0.62)] pt-[calc(113px*0.6*var(--sprite-scale)*0.55)]">
               <Sprite name="cctv-mount" scale={0.6} />
               <span ref={cam} className="absolute left-0 top-0 block origin-[82%_88%]">
@@ -520,6 +538,9 @@ export default function InTheDark() {
               </span>
             </span>
           </span>
+
+          {/* the other side of its eye: the light the next act happens in */}
+          <div ref={out} className="soon-room-out" aria-hidden="true" />
 
           {/* the torch you can hold — phones and touch laptops */}
           <div className="soon-handle-rail pointer-events-none absolute inset-x-0 bottom-[3%] z-40 flex-col items-center">

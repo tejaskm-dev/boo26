@@ -12,11 +12,14 @@ export default function Boing({
   children,
   className = "",
   hop = 30,
+  secret,
 }: {
   children: React.ReactNode;
   className?: string;
   /** how high it goes, as a percentage of its own height */
   hop?: number;
+  /** a line that shows on hover or a long press (HoverNotes) */
+  secret?: string;
 }) {
   const poke = (el: HTMLElement) => {
     buzz(14);
@@ -37,6 +40,7 @@ export default function Boing({
       type="button"
       tabIndex={-1}
       aria-hidden="true"
+      data-secret={secret}
       onClick={(e) => {
         // its own thing: whatever it's sitting on doesn't hear about it
         e.stopPropagation();

@@ -117,6 +117,8 @@ export const SOON = {
   /** 04 — what's next */
   notYet: {
     label: "Not yet",
+    /** the line before the big one */
+    kicker: "When it drops,",
     heading: "You’ll\nknow.",
     body: "Registration isn’t open, and we’re not saying when. This page will change. Keep an eye on it.",
     share: "Tell a friend",
@@ -167,6 +169,31 @@ export const SOON = {
     desk: "nothing to see\nhere. yet.",
     sign: "go touch grass.",
   },
+} as const;
+
+/**
+ * The lines hidden on things — hover with a mouse and a note appears by it,
+ * or long-press on a phone. See HoverNotes.tsx.
+ */
+export const SECRETS = {
+  heading: "we heard you heard.",
+  body: "that’s genuinely all. we checked.",
+  moon: "it’s always this full here.",
+  whispers: ["we really won’t.", "pinky promise.", "weirder than that.", "too late.", "it’s not us.", "ask them nicely."],
+  pumpkin: "there’s a cat in it. obviously.",
+  where: "that part’s real.",
+  leak: "don’t.",
+  window: "tap it. go on.",
+  camera: "smile.",
+  sleeper: "light sleeper.",
+  jump: "you flinched.",
+  freeze: "don’t. move.",
+  laugh: "it’s not that funny.",
+  lean: "closer.",
+  what: "we heard that.",
+  why: "that’s the whole brief.",
+  boo: "almost.",
+  share: "they’ll thank you. maybe.",
 } as const;
 
 /**
