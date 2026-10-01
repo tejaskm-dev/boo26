@@ -57,7 +57,9 @@ export default function JumpScareHost() {
         return;
       }
       buzz(280);
-      cue("scare");
+      cue("scare", true);
+      // the face is a cat's, and it's furious
+      if (k === "face") cue("meow", true);
       setKind(k);
       setOn(Date.now());
     };

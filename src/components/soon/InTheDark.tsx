@@ -198,8 +198,10 @@ export default function InTheDark() {
       shiver(el, 9);
       buzz(60);
       troll("awake", TROLL.awake);
-      cue("wake");
-      later(() => cue("stab"), 380);
+      // it doesn't like being woken
+      cue("hiss", true);
+      later(() => cue("meow", true), 360);
+      later(() => cue("growl", true), 1700);
       el.dataset.lunge = "true";
       later(() => delete el.dataset.lunge, 900);
       // the torch goes, and there's just the eyes
@@ -345,11 +347,11 @@ export default function InTheDark() {
       }
       if (dive > 0.05 && !dived) {
         dived = true;
-        cue("riser");
+        cue("inhale");
       } else if (dive === 0) dived = false;
       if (dive > 0.97 && !through) {
         through = true;
-        cue("boom");
+        cue("thud");
       } else if (dive < 0.5) through = false;
     };
     const lenis = getLenis();

@@ -100,7 +100,7 @@ export default function NotYet() {
             gsap.delayedCall(0.42, () => {
               shiver(st, 12);
               buzz(80);
-              cue("braam");
+              cue("slam", true);
               st.dataset.slammed = "true";
             });
           }

@@ -71,7 +71,7 @@ export default function Classified() {
     if (n < t.taps.length) {
       setSaid((s) => ({ ...s, [k]: t.taps[n] }));
       // the last warning: something behind the bars starts coming up
-      if (n === t.taps.length - 1) cue("riser");
+      if (n === t.taps.length - 1) cue("inhale", true);
       return;
     }
     // past the last warning

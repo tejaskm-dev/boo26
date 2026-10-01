@@ -88,8 +88,16 @@ export default function Eggs() {
     // scroll like you're late for something
     const lenis = getLenis();
     if (lenis) {
+      // properly flinging it, for a while — not one quick flick
+      let since = 0;
       const onFast = ({ velocity }: { velocity: number }) => {
-        if (Math.abs(velocity) > 115) troll("fast", TROLL.fast);
+        if (Math.abs(velocity) < 140) {
+          since = 0;
+          return;
+        }
+        const now = performance.now();
+        if (!since) since = now;
+        else if (now - since > 900) troll("fast", TROLL.fast);
       };
       lenis.on("scroll", onFast);
       cleanups.push(() => lenis.off("scroll", onFast));

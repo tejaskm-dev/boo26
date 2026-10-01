@@ -14,7 +14,7 @@ import { getLenis } from "@/lib/lenis";
 import { prefersReducedMotion, useReducedMotion } from "@/lib/motion";
 import { SECRETS, SOON, TROLL } from "@/lib/soon";
 import { buzz, shiver, troll } from "./troll";
-import { cue, heartRate } from "./sound";
+import { cue, heart } from "./sound";
 import { jumpscare } from "./JumpScare";
 
 /** the ink JUMP lands on */
@@ -123,22 +123,26 @@ export default function ThePoint() {
         onEnter: () => {
           setCounting(true);
           buzz(14);
-          heartRate(1);
-          cue("thump");
+          // a heart under the count, quicker each number — then nothing at all
+          heart(1.1);
           t.fakeout.forEach((_, i) => {
             if (i)
               timers.push(
                 window.setTimeout(() => {
                   setStep(i);
                   buzz(14);
-                  heartRate(1 + i * 0.45);
-                  cue("thump");
-                  if (i === t.fakeout.length - 1) timers.push(window.setTimeout(() => cue("riser"), 300));
+                  heart(1.1 + i * 0.55);
+                  if (i === t.fakeout.length - 1) timers.push(window.setTimeout(() => cue("inhale", true), 300));
                 }, i * 950),
               );
           });
           const calm = t.fakeout.length * 950 + 700;
-          timers.push(window.setTimeout(() => setRelaxed(true), calm));
+          timers.push(
+            window.setTimeout(() => {
+              setRelaxed(true);
+              heart(0);
+            }, calm),
+          );
           timers.push(
             window.setTimeout(() => {
               // only if you're still here, watching it
@@ -149,7 +153,17 @@ export default function ThePoint() {
                 offset: -window.innerHeight * 0.06,
                 duration: 1.9,
                 easing: (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2),
+                onComplete: () => letGo(),
               });
+              // the moment you scroll yourself, it lets go of you
+              const letGo = () => {
+                for (const type of ["wheel", "touchstart", "keydown", "pointerdown"]) window.removeEventListener(type, interrupt);
+              };
+              const interrupt = () => {
+                letGo();
+                lenis.scrollTo(lenis.scroll, { immediate: true, force: true });
+              };
+              for (const type of ["wheel", "touchstart", "keydown", "pointerdown"]) window.addEventListener(type, interrupt, { passive: true, once: true });
             }, calm + 1500),
           );
         },
@@ -194,8 +208,7 @@ export default function ThePoint() {
             }, [], 0.55);
           shiver(jump.current, 10);
           buzz(70);
-          cue("hit");
-          cue("stab");
+          cue("hit", true);
           troll("jump", TROLL.jump);
           // and everything that was hiding in the ink comes out of it
           const r = splash.current?.getBoundingClientRect();
@@ -320,7 +333,7 @@ export default function ThePoint() {
         once: true,
         onEnter: () => {
           what.current!.dataset.slammed = "true";
-          cue("slam");
+          cue("beep", true);
           timers.push(window.setTimeout(() => shiver(what.current, 7), 150));
         },
       });

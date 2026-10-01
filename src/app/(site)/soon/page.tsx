@@ -14,6 +14,7 @@ import SoundToggle from "@/components/soon/SoundToggle";
 import SoundStage from "@/components/soon/SoundStage";
 import Peeker from "@/components/soon/Peeker";
 import Dread from "@/components/soon/Dread";
+import ScrollHealth from "@/components/soon/ScrollHealth";
 import { SOON } from "@/lib/soon";
 import { LEGAL } from "@/lib/site";
 import { siteLive } from "@/lib/live";
@@ -61,6 +62,7 @@ export default function SoonPage() {
       <SoundStage />
       <Peeker />
       <Dread />
+      <ScrollHealth />
       {/* for anyone reading the source */}
       <div hidden dangerouslySetInnerHTML={{ __html: "<!-- stop reading the source. (keep going.) -->" }} />
     </>

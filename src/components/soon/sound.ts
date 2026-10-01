@@ -3,50 +3,67 @@
 /**
  * The teaser's score, made in the browser — no audio files to download.
  *
- * Off until the visitor turns it on (browsers won't play anything before a
- * tap anyway, and a page that starts making noise by itself gets closed).
- * Nothing is remembered between visits: it starts off every time.
+ * Off until the visitor turns it on, and never remembered between visits.
  *
- * Everything is in one key — D minor, leaning on the C# and the G# for
- * unease — and everything goes through the same room (one reverb), so the
- * cues sound like parts of one score rather than noises. Underneath it all
- * a low drone that never quite settles; on top of that, per scene
- * (`scene()`): a detuned music box in the cream rooms, whispers in the dark
- * one, a heart that speeds up on the countdown. The cues are the hits: the
- * trailer "braam" on a cut, the screech on a scare, the stabs, the growl,
- * thunder.
+ * It's built to move with the page rather than go off at it. Underneath
+ * everything, all the time: a low drone, a choir that's mostly breath, wind
+ * that rises as you scroll and settles when you stop (`flow`). Each part of
+ * the page (`scene`) leans on those differently — slowly, over a couple of
+ * seconds, never a cut — and lets one or two things happen in it now and
+ * then: a music box half out of tune in the cream rooms, whispers and a
+ * floorboard in the dark one, a bell a long way off.
  *
- * A compressor sits on the output, so the loud ones are loud without ever
- * clipping. Everything stops when the tab isn't being looked at.
+ * The cues on top are few, and they wait their turn: each has its own
+ * cooldown, the big ones never pile onto each other, and the atmospheric
+ * ones simply don't happen while you're scrolling fast. Quiet and wrong
+ * rather than loud; the scares are the only things meant to make you jump,
+ * and even they sit under a compressor.
+ *
+ * Everything is in D minor, leaning on its C# and G#, and goes through one
+ * reverb, so it sounds like one room. All of it stops while the tab is
+ * hidden.
  */
 
 export type Cue =
   | "tick"
-  | "thump"
+  | "beat"
+  | "inhale"
+  | "toll"
+  | "thud"
   | "hit"
   | "slam"
-  | "braam"
-  | "riser"
-  | "boom"
   | "scare"
-  | "stab"
-  | "wake"
+  | "meow"
+  | "hiss"
+  | "growl"
   | "whisper"
   | "creak"
   | "thunder"
-  | "musicbox";
+  | "musicbox"
+  | "beep";
 
 export type Scene = "none" | "heard" | "room" | "point" | "finale";
 
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 let verb: ConvolverNode | null = null;
-let drone: { filter: BiquadFilterNode; gain: GainNode } | null = null;
+let bed: Bed | null = null;
 let noise: AudioBuffer | null = null;
 let on = false;
 let current: Scene = "none";
-let loop = 0;
+let ambient = 0;
+let rushingUntil = 0;
+let heartTimer = 0;
+let heartRateNow = 0;
 const listeners = new Set<(on: boolean) => void>();
+
+type Bed = {
+  droneFilter: BiquadFilterNode;
+  droneGain: GainNode;
+  choirGain: GainNode;
+  windGain: GainNode;
+  windFilter: BiquadFilterNode;
+};
 
 export const soundOn = () => on;
 
@@ -71,28 +88,20 @@ function noiseBuffer(c: AudioContext) {
   return b;
 }
 
-/** a room: three seconds of decaying noise, in stereo */
-function impulse(c: AudioContext, seconds = 3.2, decay = 2.6) {
+/** the room everything happens in: four seconds of dark, decaying air */
+function impulse(c: AudioContext, seconds = 4, decay = 2.4) {
   const len = Math.floor(c.sampleRate * seconds);
   const b = c.createBuffer(2, len, c.sampleRate);
   for (let ch = 0; ch < 2; ch++) {
     const d = b.getChannelData(ch);
-    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
+    let lp = 0;
+    for (let i = 0; i < len; i++) {
+      // a little low-passed, so the tail is dark rather than hissy
+      lp = lp * 0.6 + (Math.random() * 2 - 1) * 0.4;
+      d[i] = lp * Math.pow(1 - i / len, decay);
+    }
   }
   return b;
-}
-
-/** soft clipping, for grit */
-function drive(c: AudioContext, amount: number) {
-  const ws = c.createWaveShaper();
-  const n = 1024;
-  const curve = new Float32Array(n);
-  for (let i = 0; i < n; i++) {
-    const x = (i / (n - 1)) * 2 - 1;
-    curve[i] = Math.tanh(x * amount);
-  }
-  ws.curve = curve;
-  return ws;
 }
 
 /** where a sound goes: some dry, some into the room */
@@ -108,7 +117,6 @@ function bus(c: AudioContext, level: number, wet: number) {
   return g;
 }
 
-/** an envelope on a gain: up fast, then away */
 function env(g: GainNode, t: number, peak: number, attack: number, release: number) {
   g.gain.setValueAtTime(0.0001, t);
   g.gain.exponentialRampToValueAtTime(peak, t + attack);
@@ -129,75 +137,83 @@ function noiseSrc(c: AudioContext) {
   return s;
 }
 
-// --- the bed -------------------------------------------------------------------
+function band(c: AudioContext, hz: number, q: number) {
+  const f = c.createBiquadFilter();
+  f.type = "bandpass";
+  f.frequency.value = hz;
+  f.Q.value = q;
+  return f;
+}
 
-/** a low D that never settles, a fifth over it, and something whistling far off */
-function startDrone(c: AudioContext) {
-  const filter = c.createBiquadFilter();
-  filter.type = "lowpass";
-  filter.frequency.value = 360;
-  filter.Q.value = 0.9;
-  const gain = c.createGain();
-  gain.gain.value = 0.5;
-  filter.connect(gain);
-  gain.connect(master!);
-  if (verb) {
-    const s = c.createGain();
-    s.gain.value = 0.35;
-    gain.connect(s).connect(verb);
-  }
+// --- the bed: always there, always moving ------------------------------------
+
+function startBed(c: AudioContext): Bed {
+  // the drone: a low D that never settles, a fifth over it
+  const droneFilter = c.createBiquadFilter();
+  droneFilter.type = "lowpass";
+  droneFilter.frequency.value = 300;
+  droneFilter.Q.value = 0.8;
+  const droneGain = c.createGain();
+  droneGain.gain.value = 0.0001;
+  droneFilter.connect(droneGain).connect(bus(c, 1, 0.35));
   for (const [hz, type, level] of [
-    [36.71, "sawtooth", 0.16],
-    [cents(36.71, 7), "sawtooth", 0.1],
-    [55, "triangle", 0.14],
-    [73.42, "sine", 0.07],
+    [36.71, "sawtooth", 0.12],
+    [cents(36.71, 6), "sawtooth", 0.08],
+    [55, "triangle", 0.12],
+    [73.42, "sine", 0.05],
   ] as const) {
     const o = osc(c, type, hz);
     const g = c.createGain();
     g.gain.value = level;
-    o.connect(g).connect(filter);
+    o.connect(g).connect(droneFilter);
     o.start();
   }
-  // the filter breathes, slowly, unevenly
-  for (const [rate, depth] of [
-    [0.05, 90],
-    [0.013, 60],
-  ] as const) {
-    const l = osc(c, "sine", rate);
-    const d = c.createGain();
-    d.gain.value = depth;
-    l.connect(d).connect(filter.frequency);
-    l.start();
+  const lfo = osc(c, "sine", 0.045);
+  const lfoDepth = c.createGain();
+  lfoDepth.gain.value = 70;
+  lfo.connect(lfoDepth).connect(droneFilter.frequency);
+  lfo.start();
+
+  // the choir: a minor chord sung on an "oo", mostly breath, swelling on its own
+  const choirGain = c.createGain();
+  choirGain.gain.value = 0.0001;
+  const vowelA = band(c, 420, 4);
+  const vowelB = band(c, 820, 6);
+  vowelA.connect(choirGain);
+  vowelB.connect(choirGain);
+  for (const hz of [146.83, 174.61, 220, 329.63]) {
+    for (const dc of [-7, 0, 6]) {
+      const o = osc(c, "sawtooth", cents(hz, dc));
+      const g = c.createGain();
+      g.gain.value = 0.02;
+      o.connect(g);
+      g.connect(vowelA);
+      g.connect(vowelB);
+      o.start();
+    }
   }
-  // a far whistle, a tritone up, swelling in and out
-  const w = osc(c, "sine", 1661.2);
-  const vib = osc(c, "sine", 4.6);
-  const vibDepth = c.createGain();
-  vibDepth.gain.value = 9;
-  vib.connect(vibDepth).connect(w.frequency);
-  const wg = c.createGain();
-  wg.gain.value = 0;
-  const swell = osc(c, "sine", 0.031);
-  const swellDepth = c.createGain();
-  swellDepth.gain.value = 0.006;
-  swell.connect(swellDepth).connect(wg.gain);
-  w.connect(wg);
-  if (verb) wg.connect(verb);
-  w.start();
-  vib.start();
-  swell.start();
-  // air in the room
+  const breath = osc(c, "sine", 0.06);
+  const breathDepth = c.createGain();
+  breathDepth.gain.value = 0.35;
+  const breathGain = c.createGain();
+  breathGain.gain.value = 0.65;
+  breath.connect(breathDepth).connect(breathGain.gain);
+  choirGain.connect(breathGain).connect(bus(c, 0.5, 0.9));
+  breath.start();
+
+  // the wind: what the scroll moves
   const air = noiseSrc(c);
-  const band = c.createBiquadFilter();
-  band.type = "bandpass";
-  band.frequency.value = 700;
-  band.Q.value = 0.4;
-  const ag = c.createGain();
-  ag.gain.value = 0.012;
-  air.connect(band).connect(ag);
-  if (verb) ag.connect(verb);
+  const windFilter = band(c, 500, 0.9);
+  const windGain = c.createGain();
+  windGain.gain.value = 0.0001;
+  const pan = c.createStereoPanner();
+  const sway = osc(c, "sine", 0.09);
+  sway.connect(pan.pan);
+  air.connect(windFilter).connect(windGain).connect(pan).connect(bus(c, 1, 0.5));
   air.start();
-  return { filter, gain };
+  sway.start();
+
+  return { droneFilter, droneGain, choirGain, windGain, windFilter };
 }
 
 // --- turning it on ----------------------------------------------------------------
@@ -211,11 +227,11 @@ export async function setSound(next: boolean) {
     await ctx.resume();
     if (!master) {
       const comp = ctx.createDynamicsCompressor();
-      comp.threshold.value = -16;
-      comp.knee.value = 8;
-      comp.ratio.value = 8;
+      comp.threshold.value = -20;
+      comp.knee.value = 10;
+      comp.ratio.value = 10;
       comp.attack.value = 0.003;
-      comp.release.value = 0.25;
+      comp.release.value = 0.3;
       comp.connect(ctx.destination);
       master = ctx.createGain();
       master.gain.value = 0;
@@ -223,361 +239,407 @@ export async function setSound(next: boolean) {
       verb = ctx.createConvolver();
       verb.buffer = impulse(ctx);
       const ret = ctx.createGain();
-      ret.gain.value = 0.6;
+      ret.gain.value = 0.7;
       verb.connect(ret).connect(master);
-      drone = startDrone(ctx);
+      bed = startBed(ctx);
       document.addEventListener("visibilitychange", () => {
         if (!ctx) return;
         if (document.hidden) void ctx.suspend();
         else if (on) void ctx.resume();
       });
     }
-    master.gain.setTargetAtTime(0.85, ctx.currentTime, 0.6);
+    master.gain.setTargetAtTime(0.8, ctx.currentTime, 1.2);
     on = true;
-    applyScene(current, true);
+    applyScene(true);
   } else if (ctx && master) {
-    master.gain.setTargetAtTime(0, ctx.currentTime, 0.15);
+    master.gain.setTargetAtTime(0, ctx.currentTime, 0.2);
     on = false;
-    window.clearTimeout(loop);
+    window.clearTimeout(ambient);
+    heart(0);
     window.setTimeout(() => {
       if (!on) void ctx?.suspend();
-    }, 600);
+    }, 800);
   }
   for (const fn of listeners) fn(on);
 }
 
-/** which part of the page you're in: the bed and what plays over it follow */
+/** which part of the page you're in; the bed leans into it over a couple of seconds */
 export function scene(next: Scene) {
   if (next === current) return;
   current = next;
-  applyScene(next, false);
+  applyScene(false);
 }
 
-function applyScene(s: Scene, fresh: boolean) {
-  if (!on || !ctx || !drone) return;
+const MIX: Record<Scene, { drone: number; cut: number; choir: number }> = {
+  none: { drone: 0.35, cut: 340, choir: 0.15 },
+  heard: { drone: 0.4, cut: 380, choir: 0.35 },
+  room: { drone: 0.75, cut: 170, choir: 0.12 },
+  point: { drone: 0.5, cut: 260, choir: 0.2 },
+  finale: { drone: 0.55, cut: 320, choir: 0.6 },
+};
+
+function applyScene(fresh: boolean) {
+  if (!on || !ctx || !bed) return;
   const t = ctx.currentTime;
-  const dark = s === "room" ? 1 : s === "point" ? 0.55 : s === "finale" ? 0.35 : 0.15;
-  drone.filter.frequency.setTargetAtTime(440 - dark * 300, t, 0.9);
-  drone.gain.gain.setTargetAtTime(0.42 + dark * 0.3, t, 0.9);
-  window.clearTimeout(loop);
-  const every = (min: number, max: number, play: () => void) => {
-    const go = () => {
-      if (!on || current !== s) return;
-      if (!document.hidden) play();
-      loop = window.setTimeout(go, rnd(min, max));
-    };
-    loop = window.setTimeout(go, fresh ? 1200 : rnd(min * 0.3, min * 0.6));
+  const m = MIX[current];
+  bed.droneGain.gain.setTargetAtTime(m.drone, t, 1.6);
+  bed.droneFilter.frequency.setTargetAtTime(m.cut, t, 1.8);
+  bed.choirGain.gain.setTargetAtTime(m.choir, t, 2.2);
+  // what happens in this part of the page, now and then — only once you've
+  // been in it a while, and never while you're rushing through
+  window.clearTimeout(ambient);
+  const s = current;
+  const plan: Partial<Record<Scene, [number, number, Cue[]]>> = {
+    heard: [14000, 22000, ["musicbox", "musicbox", "toll"]],
+    room: [8000, 14000, ["whisper", "whisper", "creak"]],
+    point: [16000, 26000, ["toll"]],
+    finale: [12000, 20000, ["musicbox", "toll"]],
   };
-  if (s === "heard" || s === "finale") every(9000, 14000, () => cue("musicbox"));
-  else if (s === "room") every(7000, 13000, () => cue(Math.random() < 0.75 ? "whisper" : "creak"));
+  const p = plan[s];
+  if (!p) return;
+  const go = () => {
+    if (!on || current !== s) return;
+    if (!document.hidden) cue(p[2][Math.floor(Math.random() * p[2].length)]);
+    ambient = window.setTimeout(go, rnd(p[0], p[1]));
+  };
+  ambient = window.setTimeout(go, fresh ? 2500 : rnd(p[0] * 0.35, p[0] * 0.6));
 }
 
-/** 0 is the cream rooms, 1 the dark one — kept for callers that set it directly */
-export function mood(level: number) {
-  scene(level > 0.5 ? "room" : current === "room" ? "none" : current);
+/**
+ * The page's motion, fed in from the scroll: the wind follows it, and while
+ * you're moving fast the atmospheric cues hold off.
+ */
+export function flow(velocity: number) {
+  if (!on || !ctx || !bed) return;
+  const v = Math.min(1, Math.abs(velocity) / 45);
+  const t = ctx.currentTime;
+  bed.windGain.gain.setTargetAtTime(0.004 + v * 0.05, t, v > 0.05 ? 0.12 : 0.6);
+  bed.windFilter.frequency.setTargetAtTime(420 + v * 1100, t, 0.25);
+  if (v > 0.45) rushingUntil = performance.now() + 700;
 }
 
-// --- the cues ---------------------------------------------------------------------
-
-/** the heart, fast or slow */
-let beat = 1;
-export function heartRate(rate: number) {
-  beat = rate;
+/** a heart, at so many beats a second; 0 stops it */
+export function heart(rate: number) {
+  heartRateNow = rate;
+  window.clearTimeout(heartTimer);
+  if (!rate || !on) return;
+  const tick = () => {
+    if (!heartRateNow || !on) return;
+    cue("beat", true);
+    heartTimer = window.setTimeout(tick, 1000 / heartRateNow);
+  };
+  tick();
 }
 
-export function cue(name: Cue) {
+// --- the cues -----------------------------------------------------------------------
+
+/** how long each must wait before it can happen again, in seconds */
+const COOLDOWN: Partial<Record<Cue, number>> = {
+  tick: 0.06,
+  inhale: 1.6,
+  toll: 3,
+  thud: 0.8,
+  hit: 1,
+  slam: 2,
+  scare: 4,
+  meow: 2.5,
+  hiss: 1.5,
+  growl: 3,
+  whisper: 2.5,
+  creak: 3,
+  thunder: 5,
+  musicbox: 12,
+  beep: 1,
+};
+/** the ones that are only atmosphere: they don't happen while you're rushing through */
+const AIR = new Set<Cue>(["inhale", "toll", "whisper", "creak", "musicbox"]);
+/** the ones that would drown each other: one at a time */
+const BIG = new Set<Cue>(["toll", "hit", "slam", "scare", "meow", "growl", "thunder"]);
+const last: Partial<Record<Cue, number>> = {};
+let lastBig = -10;
+
+/**
+ * Plays one, if it's its turn. `force` is for the moments the page is built
+ * around (a scare, waking it) — they always happen.
+ */
+export function cue(name: Cue, force = false) {
   if (!on || !ctx || !master || ctx.state !== "running") return;
-  const c = ctx;
-  const t = c.currentTime + 0.01;
+  const now = ctx.currentTime;
+  if (!force) {
+    if (now - (last[name] ?? -100) < (COOLDOWN[name] ?? 0)) return;
+    if (AIR.has(name) && performance.now() < rushingUntil) return;
+    if (BIG.has(name) && now - lastBig < 1.4) return;
+  }
+  last[name] = now;
+  if (BIG.has(name)) lastBig = now;
+  play(ctx, name, now + 0.01);
+}
+
+function play(c: AudioContext, name: Cue, t: number) {
   switch (name) {
     case "tick": {
-      // a dry knock on wood
+      // a soft knock on old wood
       const s = noiseSrc(c);
-      const f = c.createBiquadFilter();
-      f.type = "bandpass";
-      f.frequency.value = 1800;
-      f.Q.value = 6;
+      const f = band(c, 1500, 5);
       const g = c.createGain();
-      env(g, t, 0.05, 0.002, 0.05);
-      s.connect(f).connect(g).connect(bus(c, 1, 0.3));
+      env(g, t, 0.03, 0.002, 0.06);
+      s.connect(f).connect(g).connect(bus(c, 1, 0.4));
       s.start(t);
       s.stop(t + 0.1);
       break;
     }
-    case "thump": {
-      // lub-dub, close and muffled, quicker as `heartRate` climbs
-      const gap = 0.24 / beat;
+    case "beat": {
+      // a heart, close and muffled: lub-dub
       for (const [at, peak] of [
-        [0, 0.9],
-        [gap, 0.6],
+        [0, 0.38],
+        [0.2, 0.26],
       ] as const) {
-        const o = osc(c, "sine", 62);
-        o.frequency.setValueAtTime(62, t + at);
-        o.frequency.exponentialRampToValueAtTime(38, t + at + 0.16);
+        const o = osc(c, "sine", 58);
+        o.frequency.setValueAtTime(58, t + at);
+        o.frequency.exponentialRampToValueAtTime(34, t + at + 0.16);
         const g = c.createGain();
-        env(g, t + at, peak, 0.008, 0.2);
-        o.connect(g).connect(bus(c, 1, 0.15));
+        env(g, t + at, peak, 0.01, 0.22);
+        o.connect(g).connect(bus(c, 1, 0.12));
         o.start(t + at);
         o.stop(t + at + 0.3);
-        const s = noiseSrc(c);
-        const f = c.createBiquadFilter();
-        f.type = "lowpass";
-        f.frequency.value = 160;
-        const ng = c.createGain();
-        env(ng, t + at, peak * 0.5, 0.005, 0.12);
-        s.connect(f).connect(ng).connect(bus(c, 1, 0.1));
-        s.start(t + at);
-        s.stop(t + at + 0.2);
       }
       break;
     }
-    case "braam":
-    case "slam":
-    case "hit": {
-      // the trailer horn: a low, detuned, distorted chord that opens and closes
-      const long = name === "braam" ? 2.6 : name === "slam" ? 1.8 : 1.1;
-      const f = c.createBiquadFilter();
-      f.type = "lowpass";
-      f.frequency.setValueAtTime(180, t);
-      f.frequency.exponentialRampToValueAtTime(name === "hit" ? 2600 : 1700, t + 0.12);
-      f.frequency.exponentialRampToValueAtTime(220, t + long);
-      const g = c.createGain();
-      env(g, t, name === "hit" ? 0.5 : 0.42, 0.04, long);
-      const d = drive(c, 2.4);
-      f.connect(d).connect(g).connect(bus(c, 1, 0.45));
-      const chord = name === "hit" ? [73.42, 110, 146.83, 155.56] : [36.71, 55, 73.42, 87.31];
-      for (const hz of chord) {
-        for (const dc of [-9, 0, 8]) {
-          const o = osc(c, "sawtooth", cents(hz, dc));
-          o.connect(f);
-          o.start(t);
-          o.stop(t + long + 0.2);
-        }
-      }
-      // and the floor drops
-      const sub = osc(c, "sine", 55);
-      sub.frequency.setValueAtTime(name === "hit" ? 80 : 55, t);
-      sub.frequency.exponentialRampToValueAtTime(30, t + long * 0.7);
-      const sg = c.createGain();
-      env(sg, t, 0.9, 0.01, long * 0.8);
-      sub.connect(sg).connect(bus(c, 1, 0.2));
-      sub.start(t);
-      sub.stop(t + long);
-      if (name === "hit") {
-        const s = noiseSrc(c);
-        const nf = c.createBiquadFilter();
-        nf.type = "highpass";
-        nf.frequency.value = 2000;
-        const ng = c.createGain();
-        env(ng, t, 0.3, 0.003, 0.25);
-        s.connect(nf).connect(ng).connect(bus(c, 1, 0.4));
-        s.start(t);
-        s.stop(t + 0.35);
-      }
-      break;
-    }
-    case "riser": {
-      // something coming: a swell that pulls in, then nothing
+    case "inhale": {
+      // something taking a breath, close by
       const s = noiseSrc(c);
-      const f = c.createBiquadFilter();
-      f.type = "bandpass";
-      f.Q.value = 2.5;
-      f.frequency.setValueAtTime(300, t);
-      f.frequency.exponentialRampToValueAtTime(4200, t + 1.2);
+      const f = band(c, 1100, 0.9);
+      f.frequency.setValueAtTime(700, t);
+      f.frequency.exponentialRampToValueAtTime(1600, t + 1.1);
       const g = c.createGain();
       g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.32, t + 1.15);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 1.22);
+      g.gain.exponentialRampToValueAtTime(0.06, t + 0.9);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 1.25);
       s.connect(f).connect(g).connect(bus(c, 1, 0.5));
       s.start(t);
       s.stop(t + 1.3);
-      const o = osc(c, "sawtooth", 140);
-      o.frequency.exponentialRampToValueAtTime(cents(140, 2400), t + 1.2);
-      const og = c.createGain();
-      og.gain.setValueAtTime(0.0001, t);
-      og.gain.exponentialRampToValueAtTime(0.05, t + 1.15);
-      og.gain.exponentialRampToValueAtTime(0.0001, t + 1.22);
-      o.connect(og).connect(bus(c, 1, 0.5));
-      o.start(t);
-      o.stop(t + 1.3);
       break;
     }
-    case "boom": {
-      const sub = osc(c, "sine", 58);
-      sub.frequency.exponentialRampToValueAtTime(26, t + 1.3);
+    case "toll": {
+      // a bell, a long way off — the partials of a real one, slightly wrong
+      const root = 146.83;
+      for (const [ratio, level, decay] of [
+        [0.5, 0.05, 6],
+        [1, 0.06, 5],
+        [1.19, 0.035, 4],
+        [1.5, 0.03, 3.5],
+        [2, 0.025, 3],
+        [2.52, 0.018, 2.4],
+        [2.66, 0.014, 2.2],
+        [3.01, 0.012, 1.8],
+        [4.17, 0.008, 1.2],
+      ] as const) {
+        const o = osc(c, "sine", cents(root * ratio, rnd(-6, 6)));
+        const g = c.createGain();
+        env(g, t, level, 0.006, decay);
+        o.connect(g).connect(bus(c, 1, 0.9));
+        o.start(t);
+        o.stop(t + decay + 0.1);
+      }
+      break;
+    }
+    case "thud":
+    case "hit":
+    case "slam": {
+      // something heavy, close: a thud you feel more than hear
+      const big = name !== "thud";
+      const o = osc(c, "sine", big ? 72 : 60);
+      o.frequency.exponentialRampToValueAtTime(30, t + (big ? 0.7 : 0.4));
       const g = c.createGain();
-      env(g, t, 1, 0.005, 1.4);
-      sub.connect(g).connect(bus(c, 1, 0.4));
-      sub.start(t);
-      sub.stop(t + 1.5);
+      env(g, t, big ? 0.6 : 0.4, 0.006, big ? 0.9 : 0.5);
+      o.connect(g).connect(bus(c, 1, 0.3));
+      o.start(t);
+      o.stop(t + 1);
       const s = noiseSrc(c);
       const f = c.createBiquadFilter();
       f.type = "lowpass";
-      f.frequency.setValueAtTime(600, t);
-      f.frequency.exponentialRampToValueAtTime(60, t + 0.9);
+      f.frequency.setValueAtTime(900, t);
+      f.frequency.exponentialRampToValueAtTime(80, t + 0.4);
       const ng = c.createGain();
-      env(ng, t, 0.45, 0.004, 0.9);
-      s.connect(f).connect(ng).connect(bus(c, 1, 0.6));
+      env(ng, t, big ? 0.2 : 0.12, 0.003, 0.4);
+      s.connect(f).connect(ng).connect(bus(c, 1, 0.5));
       s.start(t);
-      s.stop(t + 1);
+      s.stop(t + 0.5);
+      if (name === "hit") {
+        // and a thin shriek over it, bending up
+        const w = osc(c, "sine", 1240);
+        w.frequency.exponentialRampToValueAtTime(1660, t + 0.4);
+        const vib = osc(c, "sine", 9);
+        const vd = c.createGain();
+        vd.gain.value = 30;
+        vib.connect(vd).connect(w.frequency);
+        const wg = c.createGain();
+        env(wg, t + 0.02, 0.06, 0.03, 0.5);
+        w.connect(wg).connect(bus(c, 1, 0.7));
+        w.start(t);
+        vib.start(t);
+        w.stop(t + 0.6);
+        vib.stop(t + 0.6);
+      }
+      if (name === "slam") play(c, "toll", t + 0.05);
       break;
     }
     case "scare": {
-      // the one that's meant to make you jump: a cluster of screeching
-      // strings a semitone apart, a scream of noise over it, and the floor
-      // dropping out under both — loud, but held under the compressor
-      const f = c.createBiquadFilter();
-      f.type = "bandpass";
-      f.frequency.value = 1700;
-      f.Q.value = 0.8;
-      const g = c.createGain();
-      env(g, t, 0.55, 0.008, 1.3);
-      const d = drive(c, 3.5);
-      f.connect(d).connect(g).connect(bus(c, 1, 0.55));
-      const shake = osc(c, "sine", 7.5);
-      const shakeDepth = c.createGain();
-      shakeDepth.gain.value = 38;
-      shake.connect(shakeDepth);
-      for (const hz of [1244.5, 1318.5, 1396.9, 1480, 1568, 1661.2]) {
-        const o = osc(c, "sawtooth", hz);
-        shakeDepth.connect(o.frequency);
-        o.frequency.setValueAtTime(hz, t);
-        o.frequency.exponentialRampToValueAtTime(hz * 0.82, t + 1.3);
-        o.connect(f);
-        o.start(t);
-        o.stop(t + 1.4);
-      }
-      shake.start(t);
-      shake.stop(t + 1.4);
-      const s = noiseSrc(c);
-      const nf = c.createBiquadFilter();
-      nf.type = "bandpass";
-      nf.Q.value = 3;
-      nf.frequency.setValueAtTime(2200, t);
-      nf.frequency.exponentialRampToValueAtTime(3600, t + 0.8);
-      const ng = c.createGain();
-      env(ng, t, 0.4, 0.004, 0.9);
-      s.connect(nf).connect(ng).connect(bus(c, 1, 0.5));
-      s.start(t);
-      s.stop(t + 1);
-      const sub = osc(c, "sine", 70);
-      sub.frequency.exponentialRampToValueAtTime(28, t + 0.7);
-      const sg = c.createGain();
-      env(sg, t, 1, 0.004, 0.9);
-      sub.connect(sg).connect(bus(c, 1, 0.3));
-      sub.start(t);
-      sub.stop(t + 1);
-      break;
-    }
-    case "stab": {
-      // three sharp stabs, high, a semitone grinding against itself
-      for (let i = 0; i < 3; i++) {
-        const at = t + i * 0.14;
-        const f = c.createBiquadFilter();
-        f.type = "highpass";
-        f.frequency.value = 900;
-        const g = c.createGain();
-        env(g, at, 0.32, 0.004, 0.12);
-        f.connect(g).connect(bus(c, 1, 0.45));
-        for (const hz of [1760, 1864.7, cents(1760, 14)]) {
-          const o = osc(c, "sawtooth", hz);
-          o.connect(f);
-          o.start(at);
-          o.stop(at + 0.16);
-        }
-      }
-      break;
-    }
-    case "wake": {
-      // a growl from something much bigger than you
-      const f = c.createBiquadFilter();
-      f.type = "bandpass";
-      f.frequency.value = 320;
-      f.Q.value = 2;
-      const wob = osc(c, "sine", 9);
-      const wobDepth = c.createGain();
-      wobDepth.gain.value = 90;
-      wob.connect(wobDepth).connect(f.frequency);
+      // the one meant to make you jump: high voices a semitone apart,
+      // shaking, swelling in all at once — and the floor going under them
+      const f = band(c, 1500, 0.7);
       const g = c.createGain();
       g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.5, t + 0.45);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 2.1);
-      const d = drive(c, 2);
-      f.connect(d).connect(g).connect(bus(c, 1, 0.4));
-      for (const [hz, type] of [
-        [58, "sawtooth"],
-        [61.5, "sawtooth"],
-        [116, "square"],
-      ] as const) {
-        const o = osc(c, type, hz);
-        const trem = osc(c, "sine", 15);
-        const tremDepth = c.createGain();
-        tremDepth.gain.value = 6;
-        trem.connect(tremDepth).connect(o.frequency);
+      g.gain.exponentialRampToValueAtTime(0.16, t + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 1.5);
+      f.connect(g).connect(bus(c, 1, 0.8));
+      const shake = osc(c, "sine", 6.5);
+      const sd = c.createGain();
+      sd.gain.value = 26;
+      shake.connect(sd);
+      for (const hz of [1046.5, 1108.7, 1174.7, 1244.5]) {
+        const o = osc(c, "sawtooth", hz);
+        sd.connect(o.frequency);
+        o.frequency.setValueAtTime(hz, t);
+        o.frequency.exponentialRampToValueAtTime(hz * 0.88, t + 1.4);
         o.connect(f);
         o.start(t);
-        trem.start(t);
-        o.stop(t + 2.2);
-        trem.stop(t + 2.2);
+        o.stop(t + 1.6);
       }
+      shake.start(t);
+      shake.stop(t + 1.6);
+      play(c, "thud", t);
+      break;
+    }
+    case "meow":
+    case "growl": {
+      // a cat, and not a happy one: a yowl bent through the shape of a mouth
+      // opening and closing, rough with a growl underneath
+      const angry = name === "meow";
+      const long = angry ? 1.25 : 1.9;
+      const src = osc(c, "sawtooth", angry ? 380 : 90);
+      if (angry) {
+        src.frequency.setValueAtTime(360, t);
+        src.frequency.linearRampToValueAtTime(640, t + 0.38);
+        src.frequency.linearRampToValueAtTime(560, t + 0.8);
+        src.frequency.linearRampToValueAtTime(330, t + long);
+      } else {
+        src.frequency.setValueAtTime(88, t);
+        src.frequency.linearRampToValueAtTime(70, t + long);
+      }
+      const vib = osc(c, "sine", angry ? 6 : 4);
+      const vd = c.createGain();
+      vd.gain.value = angry ? 14 : 4;
+      vib.connect(vd).connect(src.frequency);
+      // the growl: the whole voice fluttering
+      const rough = osc(c, "sine", angry ? 32 : 24);
+      const rd = c.createGain();
+      rd.gain.value = 0.45;
+      const voice = c.createGain();
+      voice.gain.value = 0.55;
+      rough.connect(rd).connect(voice.gain);
+      // the mouth: two formants that open toward "aa" and close toward "oo"
+      const f1 = band(c, angry ? 650 : 300, 5);
+      const f2 = band(c, angry ? 1500 : 700, 7);
+      if (angry) {
+        f1.frequency.setValueAtTime(520, t);
+        f1.frequency.linearRampToValueAtTime(980, t + 0.4);
+        f1.frequency.linearRampToValueAtTime(480, t + long);
+        f2.frequency.setValueAtTime(1800, t);
+        f2.frequency.linearRampToValueAtTime(1350, t + 0.5);
+        f2.frequency.linearRampToValueAtTime(850, t + long);
+      }
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(angry ? 0.24 : 0.2, t + 0.09);
+      g.gain.setTargetAtTime(angry ? 0.18 : 0.16, t + 0.3, 0.2);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + long);
+      src.connect(voice);
+      voice.connect(f1).connect(g);
+      voice.connect(f2).connect(g);
+      // breath through the same mouth
+      const air = noiseSrc(c);
+      const ag = c.createGain();
+      ag.gain.value = angry ? 0.1 : 0.06;
+      air.connect(ag);
+      ag.connect(f1);
+      ag.connect(f2);
+      g.connect(bus(c, 1, 0.55));
+      for (const n of [src, vib, rough]) {
+        n.start(t);
+        n.stop(t + long + 0.1);
+      }
+      air.start(t);
+      air.stop(t + long + 0.1);
+      break;
+    }
+    case "hiss": {
+      // the warning before it
+      const s = noiseSrc(c);
+      const hp = c.createBiquadFilter();
+      hp.type = "highpass";
+      hp.frequency.value = 2600;
+      const f = band(c, 5200, 1.2);
+      const flutter = osc(c, "sine", 21);
+      const fd = c.createGain();
+      fd.gain.value = 0.05;
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.14, t + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.85);
+      flutter.connect(fd).connect(g.gain);
+      s.connect(hp).connect(f).connect(g).connect(bus(c, 1, 0.4));
+      s.start(t);
+      flutter.start(t);
+      s.stop(t + 0.9);
+      flutter.stop(t + 0.9);
       break;
     }
     case "whisper": {
       // a few breaths of something saying something, off to one side
       const pan = c.createStereoPanner();
-      pan.pan.value = rnd(-0.85, 0.85);
-      pan.connect(bus(c, 1, 0.6));
+      pan.pan.value = rnd(-0.9, 0.9);
+      pan.connect(bus(c, 1, 0.7));
       let at = t;
       const n = 3 + Math.floor(Math.random() * 3);
       for (let i = 0; i < n; i++) {
-        const dur = rnd(0.14, 0.34);
+        const dur = rnd(0.14, 0.32);
         const s = noiseSrc(c);
-        const f = c.createBiquadFilter();
-        f.type = "bandpass";
-        f.frequency.value = rnd(2400, 4200);
-        f.Q.value = rnd(2, 4.5);
-        const am = osc(c, "sine", rnd(8, 13));
-        const amDepth = c.createGain();
-        amDepth.gain.value = 0.03;
+        const f = band(c, rnd(2400, 4000), rnd(2, 4));
         const g = c.createGain();
-        env(g, at, 0.06, dur * 0.3, dur * 0.7);
-        am.connect(amDepth).connect(g.gain);
+        env(g, at, 0.03, dur * 0.3, dur * 0.7);
         s.connect(f).connect(g).connect(pan);
         s.start(at);
-        am.start(at);
         s.stop(at + dur + 0.05);
-        am.stop(at + dur + 0.05);
-        at += dur + rnd(0.04, 0.12);
+        at += dur + rnd(0.05, 0.14);
       }
       break;
     }
     case "creak": {
-      // a door, or a floorboard, somewhere you can't see
+      // a floorboard, somewhere you can't see
       const o = osc(c, "sawtooth", 95);
       let at = t;
-      for (let i = 0; i < 40; i++) {
-        o.frequency.setValueAtTime(rnd(70, 150), at);
-        at += rnd(0.012, 0.03);
+      for (let i = 0; i < 36; i++) {
+        o.frequency.setValueAtTime(rnd(70, 140), at);
+        at += rnd(0.014, 0.034);
       }
-      const f = c.createBiquadFilter();
-      f.type = "bandpass";
-      f.frequency.value = 900;
-      f.Q.value = 7;
+      const f = band(c, 850, 7);
       const g = c.createGain();
       g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.16, t + 0.2);
+      g.gain.exponentialRampToValueAtTime(0.07, t + 0.2);
       g.gain.exponentialRampToValueAtTime(0.0001, at);
       const pan = c.createStereoPanner();
-      pan.pan.value = rnd(-0.7, 0.7);
-      o.connect(f).connect(g).connect(pan).connect(bus(c, 1, 0.6));
+      pan.pan.value = rnd(-0.8, 0.8);
+      o.connect(f).connect(g).connect(pan).connect(bus(c, 1, 0.7));
       o.start(t);
       o.stop(at + 0.05);
       break;
     }
     case "thunder": {
+      // far off, more felt than heard
       for (const [cut, peak, long] of [
-        [900, 0.55, 1.6],
-        [160, 0.7, 3.6],
+        [700, 0.18, 1.8],
+        [140, 0.3, 4],
       ] as const) {
         const s = noiseSrc(c);
         const f = c.createBiquadFilter();
@@ -585,35 +647,47 @@ export function cue(name: Cue) {
         f.frequency.value = cut;
         const g = c.createGain();
         g.gain.setValueAtTime(0.0001, t);
-        g.gain.exponentialRampToValueAtTime(peak, t + 0.02);
-        g.gain.setTargetAtTime(peak * 0.4, t + 0.15, 0.2);
+        g.gain.exponentialRampToValueAtTime(peak, t + 0.05);
+        g.gain.setTargetAtTime(peak * 0.4, t + 0.2, 0.3);
         g.gain.exponentialRampToValueAtTime(0.0001, t + long);
-        s.connect(f).connect(g).connect(bus(c, 1, 0.6));
+        s.connect(f).connect(g).connect(bus(c, 1, 0.7));
         s.start(t);
         s.stop(t + long + 0.1);
       }
       break;
     }
+    case "beep": {
+      // the censor
+      const o = osc(c, "sine", 1000);
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.07, t + 0.01);
+      g.gain.setValueAtTime(0.07, t + 0.42);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.46);
+      o.connect(g).connect(bus(c, 1, 0.15));
+      o.start(t);
+      o.stop(t + 0.5);
+      break;
+    }
     case "musicbox": {
-      // the same few notes each time, a little out of tune, like it's been
-      // wound up too many times; now and then it slips down a semitone
+      // the same few notes each time, out of tune like it's been wound too
+      // often; now and then it slips down a semitone
       const slip = Math.random() < 0.3 ? -100 : 0;
       const notes = [880, 698.46, 587.33, 659.26, 698.46, 659.26, 554.37, 440];
-      const step = 0.42;
       notes.forEach((hz, i) => {
-        const at = t + i * step + (i === notes.length - 1 ? 0.25 : 0);
-        const base = cents(hz, slip + rnd(-14, 14));
+        const at = t + i * 0.46 + (i === notes.length - 1 ? 0.3 : 0);
+        const base = cents(hz, slip + rnd(-16, 16));
         for (const [mult, level] of [
-          [1, 0.08],
-          [2, 0.022],
-          [3.01, 0.01],
+          [1, 0.045],
+          [2, 0.012],
+          [3.01, 0.006],
         ] as const) {
           const o = osc(c, "sine", base * mult);
           const g = c.createGain();
-          env(g, at, level, 0.004, 1.3);
-          o.connect(g).connect(bus(c, 1, 0.75));
+          env(g, at, level, 0.004, 1.5);
+          o.connect(g).connect(bus(c, 1, 0.85));
           o.start(at);
-          o.stop(at + 1.4);
+          o.stop(at + 1.6);
         }
       });
       break;

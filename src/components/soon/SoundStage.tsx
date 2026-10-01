@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { scene, type Scene } from "./sound";
+import { getLenis } from "@/lib/lenis";
+import { flow, scene, type Scene } from "./sound";
 
 const SCENES: [string, Scene][] = [
   ["#heard", "heard"],
@@ -11,9 +12,10 @@ const SCENES: [string, Scene][] = [
 ];
 
 /**
- * Tells the score where you are: whichever section is across the middle of
- * the screen sets the scene (see sound.ts). One observer, on a line through
- * the middle of the viewport; nothing runs while you scroll.
+ * Tells the score where you are and how you're moving: whichever section is
+ * across the middle of the screen sets the scene (one observer, on a line
+ * through the middle of the viewport), and the scroll's speed moves the
+ * wind (see sound.ts). When the scroll stops, the wind settles on its own.
  */
 export default function SoundStage() {
   useEffect(() => {
@@ -36,7 +38,24 @@ export default function SoundStage() {
       el.dataset.scene = s;
       io.observe(el);
     }
-    return () => io.disconnect();
+    let still = 0;
+    const onScroll = ({ velocity }: { velocity: number }) => {
+      flow(velocity);
+      window.clearTimeout(still);
+      still = window.setTimeout(() => flow(0), 160);
+    };
+    // the smooth scroll starts up after this does (its effect is the layout's)
+    let lenis = getLenis();
+    const wait = window.setTimeout(() => {
+      lenis ??= getLenis();
+      lenis?.on("scroll", onScroll);
+    }, 0);
+    return () => {
+      io.disconnect();
+      window.clearTimeout(wait);
+      lenis?.off("scroll", onScroll);
+      window.clearTimeout(still);
+    };
   }, []);
   return null;
 }
