@@ -10,6 +10,7 @@ import Words from "@/components/fx/Words";
 import Awake from "./Awake";
 import Cut from "./Cut";
 import { cue } from "./sound";
+import { hold } from "./hold";
 import InkEyes from "./InkEyes";
 import Sleeper, { EYES, FACE, OPEN_EYES, ZZZ } from "./Sleeper";
 import { getLenis } from "@/lib/lenis";
@@ -192,6 +193,8 @@ export default function InTheDark() {
     const wake = () => {
       if (awake) return;
       awake = true;
+      // stay and watch it happen
+      hold("room-wake", 2400);
       setWoke(true);
       el.dataset.cat = "awake";
       overEl.dataset.look = "true";
@@ -326,6 +329,7 @@ export default function InTheDark() {
           window.innerHeight * (0.5 + 0.22 * Math.cos(p * Math.PI * 2.4)),
         );
       }
+      if (p > 0.03) hold("room-in", 2700);
       if (!firstStrike && p > 0.04) {
         // the first thing that happens in here: you see what you're standing in front of
         firstStrike = true;

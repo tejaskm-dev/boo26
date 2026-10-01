@@ -16,6 +16,7 @@ import { SECRETS, SOON, TROLL } from "@/lib/soon";
 import { buzz, shiver, troll } from "./troll";
 import { cue, heart } from "./sound";
 import { jumpscare } from "./JumpScare";
+import { hold } from "./hold";
 
 /** the ink JUMP lands on */
 const SPLASH = {
@@ -143,29 +144,27 @@ export default function ThePoint() {
               heart(0);
             }, calm),
           );
-          timers.push(
-            window.setTimeout(() => {
-              // only if you're still here, watching it
-              const r = fake.current?.getBoundingClientRect();
-              const lenis = getLenis();
-              if (!r || !lenis || r.bottom < window.innerHeight * 0.5 || r.top > window.innerHeight * 0.25) return;
-              lenis.scrollTo(jump.current!, {
-                offset: -window.innerHeight * 0.06,
-                duration: 1.9,
-                easing: (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2),
-                onComplete: () => letGo(),
-              });
-              // the moment you scroll yourself, it lets go of you
-              const letGo = () => {
-                for (const type of ["wheel", "touchstart", "keydown", "pointerdown"]) window.removeEventListener(type, interrupt);
-              };
-              const interrupt = () => {
-                letGo();
-                lenis.scrollTo(lenis.scroll, { immediate: true, force: true });
-              };
-              for (const type of ["wheel", "touchstart", "keydown", "pointerdown"]) window.addEventListener(type, interrupt, { passive: true, once: true });
-            }, calm + 1500),
-          );
+          // held while it counts — then carried down to the real one
+          const toJump = () => {
+            const lenis = getLenis();
+            if (!lenis || !jump.current) return;
+            lenis.scrollTo(jump.current, {
+              offset: -window.innerHeight * 0.06,
+              duration: 1.9,
+              easing: (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2),
+              force: true,
+              lock: true,
+            });
+          };
+          if (!hold("countdown", calm + 1300, { to: fake.current!, glide: 0.45, onRelease: toJump })) {
+            // not held (you were going the other way): carry you on only if you're still watching
+            timers.push(
+              window.setTimeout(() => {
+                const r = fake.current?.getBoundingClientRect();
+                if (r && r.bottom > window.innerHeight * 0.5 && r.top < window.innerHeight * 0.25) toJump();
+              }, calm + 1500),
+            );
+          }
         },
       });
 
@@ -307,6 +306,10 @@ export default function ThePoint() {
           // the oldest trick there is: get them to lean in to read something
           // small — and then. Once a visit, for anyone who stays a moment.
           window.clearTimeout(leaning);
+          if (isActive && lean.current) {
+            const r = lean.current.getBoundingClientRect();
+            hold("lean", 2500, { to: r.top + window.scrollY + r.height * 0.41 - window.innerHeight * 0.5, glide: 0.5 });
+          }
           if (isActive)
             leaning = window.setTimeout(() => {
               if (lean.current?.dataset.close !== "true") return;
@@ -334,6 +337,7 @@ export default function ThePoint() {
         onEnter: () => {
           what.current!.dataset.slammed = "true";
           cue("beep", true);
+          hold("what", 1500);
           timers.push(window.setTimeout(() => shiver(what.current, 7), 150));
         },
       });

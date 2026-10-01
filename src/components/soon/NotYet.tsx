@@ -14,6 +14,7 @@ import Critters from "./Critters";
 import Cut from "./Cut";
 import InkEyes from "./InkEyes";
 import { cue } from "./sound";
+import { hold } from "./hold";
 import { answer, buzz, shiver } from "./troll";
 
 /** what a silenced rumour says instead — block glyphs read as a broken font, not a redaction */
@@ -84,6 +85,25 @@ export default function NotYet() {
       let slammed = false;
       let said = false;
       let asked = false;
+      const slam = () => {
+        gsap.to(lock.current, { scale: 1, rotation: 0, autoAlpha: 1, duration: 0.42, ease: "power4.in" });
+        gsap.delayedCall(0.42, () => {
+          shiver(st, 12);
+          buzz(80);
+          cue("slam", true);
+          st.dataset.slammed = "true";
+        });
+      };
+      const say = () => {
+        if (said) return;
+        said = true;
+        gsap.to(lines, { yPercent: 0, rotation: 0, autoAlpha: 1, duration: 0.9, ease: "power4.out", stagger: 0.1 });
+      };
+      const ask = () => {
+        if (asked) return;
+        asked = true;
+        gsap.to(cta.current, { y: 0, autoAlpha: 1, duration: 0.8, ease: "power3.out" });
+      };
       ScrollTrigger.create({
         trigger: run,
         start: "top top",
@@ -94,24 +114,16 @@ export default function NotYet() {
             const open = p > 0.02 + (i / wrappers.length) * 0.36 ? "true" : "false";
             if (w.dataset.look !== open) w.dataset.look = open;
           });
-          if (!slammed && p > 0.4) {
+          // the slam: held for it, and what follows plays on its own clock
+          if (!slammed && p > 0.38) {
             slammed = true;
-            gsap.to(lock.current, { scale: 1, rotation: 0, autoAlpha: 1, duration: 0.42, ease: "power4.in" });
-            gsap.delayedCall(0.42, () => {
-              shiver(st, 12);
-              buzz(80);
-              cue("slam", true);
-              st.dataset.slammed = "true";
-            });
+            hold("drop", 3200);
+            slam();
+            gsap.delayedCall(0.9, say);
+            gsap.delayedCall(1.7, ask);
           }
-          if (!said && p > 0.52) {
-            said = true;
-            gsap.to(lines, { yPercent: 0, rotation: 0, autoAlpha: 1, duration: 0.9, ease: "power4.out", stagger: 0.1 });
-          }
-          if (!asked && p > 0.64) {
-            asked = true;
-            gsap.to(cta.current, { y: 0, autoAlpha: 1, duration: 0.8, ease: "power3.out" });
-          }
+          if (!said && p > 0.52) say();
+          if (!asked && p > 0.64) ask();
         },
       });
     }, st);

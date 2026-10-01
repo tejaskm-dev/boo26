@@ -5,6 +5,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { prefersReducedMotion } from "@/lib/motion";
 import InkEyes from "./InkEyes";
+import { hold } from "./hold";
 import { cue } from "./sound";
 
 /** where eyes open in the dark while the card is up */
@@ -16,16 +17,20 @@ const DARK_EYES: { at: string; tilt: number }[] = [
   { at: "left-[46%] top-[88%] hidden w-[2rem] md:block", tilt: 3 },
 ];
 
-/** the goo off a line: which letters it runs from, how long it hangs, when it lets go */
+/** how long each line has before the next comes up, in ms */
+const STEP = 950;
+
+/** which letters of a line run, how far, and when */
 function drips(line: string, i: number) {
   const letters = [...line].map((ch, k) => ({ ch, k })).filter(({ ch }) => /[A-Z]/i.test(ch));
-  if (!letters.length) return [];
-  const picks = [0.18, 0.55, 0.86].slice(0, line.length > 8 ? 3 : 2);
-  return picks.map((at, j) => ({
-    k: letters[Math.min(letters.length - 1, Math.floor(at * letters.length) + ((i + j) % 2))].k,
-    long: 0.6 + ((i * 7 + j * 5) % 5) * 0.16,
-    delay: 0.35 + j * 0.28 + (i % 2) * 0.1,
-  }));
+  if (!letters.length) return new Map<number, { long: number; delay: number; x: number }>();
+  const picks = [0.2, 0.58, 0.88].slice(0, line.length > 8 ? 3 : 2);
+  return new Map(
+    picks.map((at, j) => {
+      const k = letters[Math.min(letters.length - 1, Math.floor(at * letters.length) + ((i + j) % 2))].k;
+      return [k, { long: 0.55 + ((i * 7 + j * 5) % 5) * 0.14, delay: 0.32 + j * 0.24, x: ((i + j * 3) % 5) * 0.03 - 0.06 }] as const;
+    }),
+  );
 }
 
 /** a line's words, each knowing where its first letter sits in the line */
@@ -42,15 +47,16 @@ function words(line: string) {
  * A cut between acts — a scene of its own, a screen and a bit long.
  *
  * The picture fades to black; the film flickers; eyes open round the edge
- * of the frame; and one line at a time comes up in the dark, in the BOO!
- * brush — each letter dropping in like a blob of the lockup's goo, landing
- * soft, and a few drips running off the line after it, the last one in lime.
- * The next act fades in behind it all.
+ * of the frame; and the lines come up one at a time in the BOO! brush, each
+ * letter dropping in like a blob of the lockup's goo and landing soft, and
+ * then running — drips sliding off the bottom of the letters, in their own
+ * colour, the last line in lime. The next act fades in behind it.
  *
- * The scroll decides which line you're on; the line itself plays on its own
- * clock, so a quick flick never makes it stutter, and stopping holds it. Its
- * own stretch of page, so nothing underneath is missed while it's dark.
- * With motion turned down there's no cut at all.
+ * Once the card is up, the page holds still for as long as the lines take
+ * (hold.ts), so a quick flick can't skip it. The lines play on their own
+ * clock either way, so the scroll never makes them stutter; scroll back
+ * above it and it resets, ready to play again. With motion turned down
+ * there's no cut at all.
  */
 export default function Cut({ lines }: { lines: readonly string[] }) {
   const room = useRef<HTMLDivElement>(null);
@@ -62,11 +68,38 @@ export default function Cut({ lines }: { lines: readonly string[] }) {
     const el = room.current;
     const veilEl = veil.current;
     const cardEl = card.current;
-    if (!el || !veilEl || !cardEl || prefersReducedMotion()) return;
+    const eyesEl = eyes.current;
+    if (!el || !veilEl || !cardEl || !eyesEl || prefersReducedMotion()) return;
     gsap.registerPlugin(ScrollTrigger);
     const rows = [...cardEl.querySelectorAll<HTMLElement>("[data-row]")];
-    let rose = false;
-    let landed = false;
+    let timers: number[] = [];
+    let playing = false;
+    let breathed = false;
+
+    const play = () => {
+      if (playing) return;
+      playing = true;
+      rows.forEach((row, i) => {
+        timers.push(
+          window.setTimeout(() => {
+            if (!row.isConnected) return;
+            row.dataset.on = "true";
+            if (i > 0) rows[i - 1].dataset.past = "true";
+            if (i === 0) cue("toll");
+          }, i * STEP),
+        );
+      });
+    };
+    const reset = () => {
+      timers.forEach((t) => window.clearTimeout(t));
+      timers = [];
+      playing = false;
+      for (const row of rows) {
+        row.dataset.on = "false";
+        row.dataset.past = "false";
+      }
+    };
+
     const st = ScrollTrigger.create({
       trigger: el,
       start: "top 85%",
@@ -75,31 +108,33 @@ export default function Cut({ lines }: { lines: readonly string[] }) {
       onToggle: ({ isActive }) => {
         veilEl.style.visibility = isActive ? "visible" : "hidden";
       },
-      onUpdate: ({ progress: p }) => {
+      onUpdate: (self) => {
+        const p = self.progress;
         // dark in, hold, dark out
         veilEl.style.opacity = String(Math.max(0, Math.min(1, p / 0.18, (1 - p) / 0.22)));
-        if (eyes.current) eyes.current.dataset.look = p > 0.3 && p < 0.76 ? "true" : "false";
-        // which line you're on — the line plays itself from there
-        const span = 0.5 / lines.length;
-        rows.forEach((row, i) => {
-          const start = 0.2 + i * span;
-          const on = p > start ? "true" : "false";
-          const past = i < lines.length - 1 && p > start + span ? "true" : "false";
-          if (row.dataset.on !== on) row.dataset.on = on;
-          if (row.dataset.past !== past) row.dataset.past = past;
-        });
-        if (!rose && p > 0.06) {
-          rose = true;
+        eyesEl.dataset.look = p > 0.26 && p < 0.78 ? "true" : "false";
+        if (!breathed && p > 0.06) {
+          breathed = true;
           cue("inhale");
         }
-        if (!landed && p > 0.21) {
-          landed = true;
-          cue("toll");
+        if (p > 0.2) {
+          play();
+          // the card's up: hold the page while it says its piece
+          hold(`cut:${lines.join("|")}`, lines.length * STEP + 700, {
+            to: self.start + (self.end - self.start) * 0.36,
+            glide: 0.7,
+          });
         }
-        if (p < 0.03) rose = landed = false;
+        if (p < 0.08) {
+          reset();
+          breathed = false;
+        }
       },
     });
-    return () => st.kill();
+    return () => {
+      st.kill();
+      timers.forEach((t) => window.clearTimeout(t));
+    };
   }, [lines]);
 
   return (
@@ -116,27 +151,28 @@ export default function Cut({ lines }: { lines: readonly string[] }) {
           {lines.map((line, i) => {
             const goo = drips(line, i);
             return (
-              <p key={line} data-row data-on="false" className="soon-goo brush">
+              <p key={line} data-row data-on="false" data-past="false" className="soon-goo brush">
                 {words(line).map((w, wi) => (
                   <span key={wi}>
                     {wi > 0 ? " " : null}
                     <span className="soon-goo-w">
                       {[...w.text].map((ch, n) => {
                         const k = w.at + n;
+                        const d = goo.get(k);
                         return (
                           <span key={k} className="soon-goo-l" style={{ "--i": k, "--r": `${((k * 37) % 9) - 4}deg` } as React.CSSProperties}>
                             {ch}
-                            {goo
-                              .filter((d) => d.k === k)
-                              .map((d, j) => (
+                            {d ? (
+                              <span className="soon-drip-at">
                                 <span
-                                  key={j}
                                   className="soon-drip"
-                                  style={{ "--long": d.long, "--d": `${d.delay + k * 0.035}s` } as React.CSSProperties}
+                                  style={{ "--long": d.long, "--d": `${d.delay + k * 0.04}s`, "--x": `${d.x}em` } as React.CSSProperties}
                                 >
+                                  <b />
                                   <i />
                                 </span>
-                              ))}
+                              </span>
+                            ) : null}
                           </span>
                         );
                       })}

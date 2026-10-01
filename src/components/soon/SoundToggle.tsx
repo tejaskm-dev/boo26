@@ -6,32 +6,27 @@ import { prefersReducedMotion, whenOpen } from "@/lib/motion";
 import { setSound, subscribeSound } from "./sound";
 
 /*
- * A drop of the site's ink, with the lime hairline every field carries. All
- * four shapes share one command structure, so GSAP can move between them
- * the way BlobButton moves its slab — no morph plugin.
+ * The site's own button, the melted slab "Come closer" is made of
+ * (BlobButton): the same two shapes, the same melt on hover, the same glow.
+ * Sound on, it breathes between them on its own.
  */
-const SHAPES = [
-  "M8 32C8 17 17 8 32 8C47 8 56 17 56 32C56 47 47 56 32 56C17 56 8 47 8 32Z",
-  "M7 31C8 15 19 7 33 9C47 10 57 18 55 33C54 48 45 57 31 55C17 54 6 46 7 31Z",
-  "M9 33C7 18 16 9 31 7C46 6 57 15 57 31C57 46 48 56 33 57C18 57 10 48 9 33Z",
-  "M8 30C10 16 20 8 34 8C48 9 56 19 56 33C55 47 44 56 30 56C16 55 7 44 8 30Z",
-];
-/** the sound inside it: flat, or a wave going one way and the other */
-const FLAT = "M19 32C23 32 28 32 32 32C36 32 41 32 45 32";
-const WAVE = ["M19 32C23 23 28 23 32 32C36 41 41 41 45 32", "M19 32C23 41 28 41 32 32C36 23 41 23 45 32"];
+const REST =
+  "M6 36C6 16 20 7 44 6C78 5 96 15 120 15C144 15 162 5 196 6C220 7 234 16 234 36C234 56 220 65 196 66C162 67 144 57 120 57C96 57 78 67 44 66C20 65 6 56 6 36Z";
+const HOVER =
+  "M3 36C3 12 21 3 44 2C78 1 96 8 120 8C144 8 162 1 196 2C219 3 237 12 237 36C237 60 219 69 196 70C162 71 144 64 120 64C96 64 78 71 44 70C21 69 3 60 3 36Z";
 
 /**
- * The sound switch: a living drop of ink in the corner rather than a button.
- * Off, it sits still with a flat line through it. On, it breathes — the drop
- * slowly changing shape — and the line becomes a wave that won't stop
- * moving. For a few seconds after the page opens, a note says it's worth it.
+ * The sound switch, in the bottom corner — the site's lime slab, saying
+ * SOUND OFF or SOUND ON, with a little wave of bars that lies flat while it's
+ * off and won't keep still while it's on. For a few seconds after the page
+ * opens, a note above it says it's worth turning on.
  */
 export default function SoundToggle() {
   const [on, setOn] = useState(false);
   const [hint, setHint] = useState(false);
-  const body = useRef<SVGPathElement>(null);
-  const echo = useRef<SVGPathElement>(null);
-  const wave = useRef<SVGPathElement>(null);
+  const root = useRef<HTMLButtonElement>(null);
+  const shape = useRef<SVGPathElement>(null);
+  const glow = useRef<HTMLSpanElement>(null);
 
   useEffect(() => subscribeSound(setOn), []);
 
@@ -47,24 +42,38 @@ export default function SoundToggle() {
     };
   }, []);
 
-  // alive while it's on
+  // the melt on hover, as BlobButton does it
   useEffect(() => {
-    if (prefersReducedMotion()) {
-      gsap.set(wave.current, { attr: { d: on ? WAVE[0] : FLAT } });
-      return;
-    }
-    if (!on) {
-      gsap.to([body.current, echo.current], { attr: { d: SHAPES[0] }, duration: 0.8, ease: "power3.out", overwrite: true });
-      gsap.to(wave.current, { attr: { d: FLAT }, duration: 0.5, ease: "power3.out", overwrite: true });
-      return;
-    }
-    const breathe = gsap.timeline({ repeat: -1, yoyo: true, defaults: { duration: 1.6, ease: "sine.inOut" } });
-    breathe.to([body.current, echo.current], { attr: { d: SHAPES[1] } }).to([body.current, echo.current], { attr: { d: SHAPES[2] } }).to([body.current, echo.current], { attr: { d: SHAPES[3] } });
-    const ripple = gsap.timeline({ repeat: -1, yoyo: true, defaults: { duration: 0.42, ease: "sine.inOut" } });
-    ripple.fromTo(wave.current, { attr: { d: WAVE[0] } }, { attr: { d: WAVE[1] } });
+    const el = root.current;
+    if (!el || prefersReducedMotion()) return;
+    const enter = () => {
+      gsap.to(shape.current, { attr: { d: HOVER }, duration: 0.55, ease: "power3.out", overwrite: "auto" });
+      gsap.to(glow.current, { opacity: 0.9, scale: 1.2, duration: 0.55, ease: "power3.out" });
+    };
+    const leave = () => {
+      gsap.to(shape.current, { attr: { d: REST }, duration: 0.75, ease: "elastic.out(1, 0.65)", overwrite: "auto" });
+      gsap.to(glow.current, { opacity: 0.35, scale: 1, duration: 0.6, ease: "power3.out" });
+    };
+    el.addEventListener("pointerenter", enter);
+    el.addEventListener("pointerleave", leave);
+    el.addEventListener("focus", enter);
+    el.addEventListener("blur", leave);
+    return () => {
+      el.removeEventListener("pointerenter", enter);
+      el.removeEventListener("pointerleave", leave);
+      el.removeEventListener("focus", enter);
+      el.removeEventListener("blur", leave);
+    };
+  }, []);
+
+  // sound on: the slab breathes, slowly, and the glow with it
+  useEffect(() => {
+    const g = glow.current;
+    if (!on || !g || prefersReducedMotion()) return;
+    const breathe = gsap.to(g, { opacity: 0.75, scale: 1.25, duration: 1.4, ease: "sine.inOut", repeat: -1, yoyo: true });
     return () => {
       breathe.kill();
-      ripple.kill();
+      gsap.to(g, { opacity: 0.35, scale: 1, duration: 0.4 });
     };
   }, [on]);
 
@@ -74,6 +83,7 @@ export default function SoundToggle() {
         better with sound ↓
       </p>
       <button
+        ref={root}
         type="button"
         onClick={() => {
           setHint(false);
@@ -81,15 +91,26 @@ export default function SoundToggle() {
         }}
         aria-pressed={on}
         aria-label={on ? "Turn the sound off" : "Turn the sound on"}
-        className="soon-blob"
-        data-on={on ? "true" : "false"}
+        className="group relative isolate inline-flex cursor-pointer items-center justify-center px-5 py-3 outline-none md:px-6 md:py-3.5"
       >
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <path ref={echo} d={SHAPES[0]} className="soon-blob-echo" />
-          <path ref={body} d={SHAPES[0]} className="soon-blob-body" />
-          <path ref={wave} d={FLAT} className="soon-blob-wave" />
+        <span
+          ref={glow}
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-[16%] -z-10 rounded-[50%] bg-lime opacity-35 blur-2xl"
+        />
+        <svg viewBox="0 0 240 72" preserveAspectRatio="none" aria-hidden="true" className="absolute inset-0 -z-10 h-full w-full">
+          <path ref={shape} d={REST} fill="var(--color-lime)" />
         </svg>
-        <span className="soon-blob-label hand">{on ? "sound on" : "sound off"}</span>
+        <span className="label relative flex items-center gap-2.5 whitespace-nowrap text-[0.62rem] text-ink group-focus-visible:underline group-focus-visible:underline-offset-4 md:text-[0.68rem]">
+          <span className="soon-bars" data-on={on ? "true" : "false"} aria-hidden="true">
+            <i />
+            <i />
+            <i />
+            <i />
+            <i />
+          </span>
+          {on ? "Sound on" : "Sound off"}
+        </span>
       </button>
     </div>
   );
