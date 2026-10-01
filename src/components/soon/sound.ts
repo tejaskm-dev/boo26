@@ -40,7 +40,8 @@ export type Cue =
   | "creak"
   | "thunder"
   | "musicbox"
-  | "beep";
+  | "beep"
+  | "vine";
 
 export type Scene = "none" | "heard" | "room" | "point" | "finale";
 
@@ -350,6 +351,7 @@ const COOLDOWN: Partial<Record<Cue, number>> = {
   thunder: 5,
   musicbox: 12,
   beep: 1,
+  vine: 2,
 };
 /** the ones that are only atmosphere: they don't happen while you're rushing through */
 const AIR = new Set<Cue>(["inhale", "toll", "whisper", "creak", "musicbox"]);
@@ -654,6 +656,25 @@ function play(c: AudioContext, name: Cue, t: number) {
         s.start(t);
         s.stop(t + long + 0.1);
       }
+      break;
+    }
+    case "vine": {
+      // the meme: one deep, round boom
+      const o = osc(c, "sine", 82);
+      o.frequency.setValueAtTime(82, t);
+      o.frequency.exponentialRampToValueAtTime(44, t + 0.55);
+      const g = c.createGain();
+      env(g, t, 0.55, 0.004, 0.7);
+      const d = c.createWaveShaper();
+      const curve = new Float32Array(512);
+      for (let i = 0; i < 512; i++) {
+        const x = (i / 511) * 2 - 1;
+        curve[i] = Math.tanh(x * 2.2);
+      }
+      d.curve = curve;
+      o.connect(d).connect(g).connect(bus(c, 1, 0.35));
+      o.start(t);
+      o.stop(t + 0.8);
       break;
     }
     case "beep": {

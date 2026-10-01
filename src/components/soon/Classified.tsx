@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Sprite from "@/components/ui/Sprite";
-import { SECRETS, SOON, TROLL } from "@/lib/soon";
+import { BACK, SECRETS, SOON, TROLL } from "@/lib/soon";
 import InkEyes from "./InkEyes";
 import { jumpscare } from "./JumpScare";
 import { answer, buzz, once, shiver } from "./troll";
@@ -41,6 +41,16 @@ export default function Classified() {
   const [said, setSaid] = useState<Record<string, string>>({});
   const [level, setLevel] = useState(0);
   const [whenOpen, setWhenOpen] = useState(false);
+  // come back up from the room and the file has changed its story
+  const [back, setBack] = useState(false);
+  useEffect(() => {
+    const onBack = () => {
+      setBack(true);
+      setSaid((s) => ({ ...s, What: BACK.bar }));
+    };
+    window.addEventListener("soon:back:heard", onBack);
+    return () => window.removeEventListener("soon:back:heard", onBack);
+  }, []);
 
   const poke = (el: HTMLElement, k: string) => {
     shiver(el, 7);
@@ -166,7 +176,7 @@ export default function Classified() {
       >
         <span className="relative flex flex-col items-end pb-6">
           <span className="hand -rotate-[6deg] whitespace-nowrap text-[clamp(1.15rem,1.8vw,1.45rem)] leading-none text-ink/75 transition-colors duration-300 group-hover:text-ink">
-            {t.leak.label}
+            {back ? BACK.leak : t.leak.label}
           </span>
           <Sprite name="arrow-lime" scale={0.2} className="mr-[-10%] mt-1 rotate-[28deg]" />
         </span>

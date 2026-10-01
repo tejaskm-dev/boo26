@@ -54,11 +54,11 @@ function words(line: string) {
  *
  * Once the card is up, the page holds still for as long as the lines take
  * (hold.ts), so a quick flick can't skip it. The lines play on their own
- * clock either way, so the scroll never makes them stutter; scroll back
- * above it and it resets, ready to play again. With motion turned down
- * there's no cut at all.
+ * clock either way, so the scroll never makes them stutter. Come back up
+ * through it and it says something else (`back`). Leave it either way and
+ * it resets, ready to play again. With motion turned down there's no cut.
  */
-export default function Cut({ lines }: { lines: readonly string[] }) {
+export default function Cut({ lines, back = [] }: { lines: readonly string[]; back?: readonly string[] }) {
   const room = useRef<HTMLDivElement>(null);
   const veil = useRef<HTMLDivElement>(null);
   const eyes = useRef<HTMLDivElement>(null);
@@ -71,14 +71,17 @@ export default function Cut({ lines }: { lines: readonly string[] }) {
     const eyesEl = eyes.current;
     if (!el || !veilEl || !cardEl || !eyesEl || prefersReducedMotion()) return;
     gsap.registerPlugin(ScrollTrigger);
-    const rows = [...cardEl.querySelectorAll<HTMLElement>("[data-row]")];
+    const down = [...cardEl.querySelectorAll<HTMLElement>("[data-row]")];
+    const up = [...cardEl.querySelectorAll<HTMLElement>("[data-row-back]")];
     let timers: number[] = [];
-    let playing = false;
+    let playing: "down" | "up" | null = null;
     let breathed = false;
 
-    const play = () => {
+    const play = (way: "down" | "up") => {
       if (playing) return;
-      playing = true;
+      playing = way;
+      cardEl.dataset.way = way;
+      const rows = way === "down" ? down : up;
       rows.forEach((row, i) => {
         timers.push(
           window.setTimeout(() => {
@@ -93,8 +96,8 @@ export default function Cut({ lines }: { lines: readonly string[] }) {
     const reset = () => {
       timers.forEach((t) => window.clearTimeout(t));
       timers = [];
-      playing = false;
-      for (const row of rows) {
+      playing = null;
+      for (const row of [...down, ...up]) {
         row.dataset.on = "false";
         row.dataset.past = "false";
       }
@@ -117,15 +120,16 @@ export default function Cut({ lines }: { lines: readonly string[] }) {
           breathed = true;
           cue("inhale");
         }
-        if (p > 0.2) {
-          play();
+        if (!playing && p > 0.2 && p < 0.8) play(self.direction < 0 && up.length ? "up" : "down");
+        if (playing === "down" && p > 0.2) {
           // the card's up: hold the page while it says its piece
           hold(`cut:${lines.join("|")}`, lines.length * STEP + 700, {
             to: self.start + (self.end - self.start) * 0.36,
             glide: 0.7,
           });
         }
-        if (p < 0.08) {
+        // left behind, either way: ready to play again
+        if (p < 0.08 || p > 0.96) {
           reset();
           breathed = false;
         }
@@ -135,7 +139,7 @@ export default function Cut({ lines }: { lines: readonly string[] }) {
       st.kill();
       timers.forEach((t) => window.clearTimeout(t));
     };
-  }, [lines]);
+  }, [lines, back]);
 
   return (
     <div ref={room} className="soon-cut-room" aria-hidden="true">
@@ -147,11 +151,14 @@ export default function Cut({ lines }: { lines: readonly string[] }) {
             <InkEyes key={i} className={e.at} tilt={e.tilt} blink={4 + i} delay={i * 0.12} />
           ))}
         </div>
-        <div ref={card} className="soon-cut-card">
-          {lines.map((line, i) => {
+        <div ref={card} className="soon-cut-card" data-way="down">
+          {[
+            ...lines.map((line, k) => ({ line, attr: "data-row", last: k === lines.length - 1 })),
+            ...back.map((line, k) => ({ line, attr: "data-row-back", last: k === back.length - 1 })),
+          ].map(({ line, attr, last }, i) => {
             const goo = drips(line, i);
             return (
-              <p key={line} data-row data-on="false" data-past="false" className="soon-goo brush">
+              <p key={line} {...{ [attr]: "" }} data-last={last ? "" : undefined} data-on="false" data-past="false" className="soon-goo brush">
                 {words(line).map((w, wi) => (
                   <span key={wi}>
                     {wi > 0 ? " " : null}

@@ -178,15 +178,40 @@ export const SOON = {
 } as const;
 
 /**
- * What comes up in the dark between acts (Cut.tsx), one line at a time.
+ * What changes when you scroll back up to somewhere you've already been —
+ * swapped in just before it comes back into view, once, and left that way.
+ */
+export const BACK = {
+  /** the rumours, now that you've been further in */
+  whispers: [
+    "we told you not to.",
+    "it’s still behind you.",
+    "you scrolled back. why?",
+    "too late to unhear it.",
+    "it heard you too.",
+    "the cats know you’re here.",
+  ],
+  leak: "the schedule is a lie.",
+  bar: "it’s behind you.",
+  count: "you sure about that?",
+  words: { jump: "Still jumpy?", freeze: "Too late.", laugh: "Not funny.", lean: "lean out.", what: "Language!" },
+  heading: "It\nknows.",
+} as const;
+
+/**
+ * What comes up in the dark between acts (Cut.tsx), one line at a time —
+ * and what comes up instead if you're going back the way you came.
  */
 export const CUTS = {
   /** after the hero, into the rumours */
   open: ["SHH.", "DID YOU HEAR THAT?"],
+  openBack: ["WRONG WAY."],
   /** into the room */
   dark: ["LIGHTS OFF.", "EYES OPEN.", "SOMETHING’S BREATHING."],
+  darkBack: ["LEAVING SO SOON?", "IT FOLLOWED YOU."],
   /** into the end */
   drop: ["YOU MADE IT.", "MOST DON’T.", "WHEN IT DROPS,"],
+  dropBack: ["BACK FOR MORE?"],
 } as const;
 
 /**
@@ -226,6 +251,8 @@ export const TROLL = {
   fell: "you fell for it.",
   seen: "it saw that.",
   safe: "bro thought he was safe 💀",
+  anyway: "oh no. anyway.",
+  hello: "hello there.",
   peek: "they don’t know i’m here.",
   winning: "are you winning, son?",
   lightMode: "light mode? this part’s gonna hurt.",

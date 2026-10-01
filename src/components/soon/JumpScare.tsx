@@ -19,6 +19,7 @@ export function jumpscare(kind: Scare = "face") {
   const pick = done.has(kind) ? (kind === "face" ? "eyes" : "face") : kind;
   if (done.has(pick)) return false;
   done.add(pick);
+  window.dispatchEvent(new CustomEvent("soon:scare", { detail: pick }));
   for (const fn of listeners) fn(pick);
   return true;
 }

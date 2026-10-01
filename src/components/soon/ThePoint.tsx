@@ -6,15 +6,17 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Section, { SectionLabel } from "@/components/sections/Section";
 import Sprite from "@/components/ui/Sprite";
 import Awake from "./Awake";
+import Countdown from "./Countdown";
+import { useBacktrack } from "./backtrack";
 import Critters from "./Critters";
 import InkEyes from "./InkEyes";
 import InkField from "./InkField";
 import { HERO_FIELD } from "@/lib/shapes";
 import { getLenis } from "@/lib/lenis";
-import { prefersReducedMotion, useReducedMotion } from "@/lib/motion";
-import { SECRETS, SOON, TROLL } from "@/lib/soon";
+import { prefersReducedMotion } from "@/lib/motion";
+import { BACK, SECRETS, SOON, TROLL } from "@/lib/soon";
 import { buzz, shiver, troll } from "./troll";
-import { cue, heart } from "./sound";
+import { cue } from "./sound";
 import { jumpscare } from "./JumpScare";
 import { hold } from "./hold";
 
@@ -35,17 +37,6 @@ const CLOSE = {
   view: "0 0 600 1000",
   d: "M-200 120C-100 60 40 40 140 70C240 100 260 160 330 210C400 260 520 300 540 400C560 500 430 540 440 620C450 700 560 760 500 840C440 920 300 900 200 930C100 960 0 990 -200 960Z",
 };
-/** what's watching from the dark while it counts — more of them each count */
-const COUNT_EYES: { at: string; from: number; tilt: number }[] = [
-  { at: "left-[6%] top-[14%] w-[4.2rem] md:w-[6rem]", from: 0, tilt: -8 },
-  { at: "right-[7%] top-[70%] w-[3.4rem] md:w-[5rem]", from: 0, tilt: 9 },
-  { at: "right-[10%] top-[16%] w-[2.6rem] md:w-[3.6rem]", from: 1, tilt: 6 },
-  { at: "left-[9%] top-[74%] w-[2.8rem] md:w-[4rem]", from: 1, tilt: -4 },
-  { at: "left-[24%] top-[6%] w-[2rem] md:w-[2.6rem]", from: 2, tilt: 4 },
-  { at: "right-[26%] top-[86%] w-[2.2rem] md:w-[3rem]", from: 2, tilt: -10 },
-  { at: "left-[3%] top-[44%] w-[2.4rem] md:w-[3.2rem]", from: 2, tilt: 12 },
-];
-
 /** where each "ha" is scrawled round LAUGH */
 const HA_AT = [
   "left-[6%] top-[16%] -rotate-[12deg] text-[clamp(1.6rem,3vw,2.6rem)]",
@@ -72,7 +63,6 @@ const HA_AT = [
  */
 export default function ThePoint() {
   const t = SOON.point;
-  const fake = useRef<HTMLDivElement>(null);
   const jump = useRef<HTMLDivElement>(null);
   const splash = useRef<HTMLDivElement>(null);
   const jumpWord = useRef<HTMLHeadingElement>(null);
@@ -87,11 +77,15 @@ export default function ThePoint() {
   const closeR = useRef<HTMLDivElement>(null);
   const what = useRef<HTMLDivElement>(null);
   const why = useRef<HTMLDivElement>(null);
-  const [step, setStep] = useState(0);
-  const [relaxed, setRelaxed] = useState(false);
-  const [counting, setCounting] = useState(false);
-  // the still version tells the same story, all at once
-  const still = useReducedMotion();
+  const carryTo = useRef<() => void>(() => {});
+  // what the words say if you come back up to them
+  const [back, setBack] = useState<Partial<Record<"jump" | "freeze" | "laugh" | "lean" | "what", true>>>({});
+  const flip = (k: keyof typeof back) => () => setBack((b) => (b[k] ? b : { ...b, [k]: true }));
+  useBacktrack(jump, flip("jump"));
+  useBacktrack(freeze, flip("freeze"));
+  useBacktrack(laugh, flip("laugh"));
+  useBacktrack(lean, flip("lean"));
+  useBacktrack(what, flip("what"));
 
   useEffect(() => {
     const section = jump.current?.closest("section");
@@ -114,70 +108,18 @@ export default function ThePoint() {
     const grain = document.querySelector<HTMLElement>(".grain");
 
     const ctx = gsap.context(() => {
-      // jump scare in 3… 2… 1… — the room darkens a step each count, more
-      // eyes in it each time — and then nothing. Relax. And while you're
-      // relaxing, the page carries you on, down to the real one.
-      ScrollTrigger.create({
-        trigger: fake.current,
-        start: "top top",
-        once: true,
-        onEnter: () => {
-          setCounting(true);
-          buzz(14);
-          // a heart under the count, quicker each number — then nothing at all
-          heart(1.1);
-          t.fakeout.forEach((_, i) => {
-            if (i)
-              timers.push(
-                window.setTimeout(() => {
-                  setStep(i);
-                  buzz(14);
-                  heart(1.1 + i * 0.55);
-                  if (i === t.fakeout.length - 1) timers.push(window.setTimeout(() => cue("inhale", true), 300));
-                }, i * 950),
-              );
-          });
-          const calm = t.fakeout.length * 950 + 700;
-          timers.push(
-            window.setTimeout(() => {
-              setRelaxed(true);
-              heart(0);
-            }, calm),
-          );
-          // held while it counts — then carried down to the real one
-          const toJump = () => {
-            const lenis = getLenis();
-            if (!lenis || !jump.current) return;
-            lenis.scrollTo(jump.current, {
-              offset: -window.innerHeight * 0.06,
-              duration: 1.9,
-              easing: (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2),
-              force: true,
-              lock: true,
-            });
-          };
-          if (!hold("countdown", calm + 1300, { to: fake.current!, glide: 0.45, onRelease: toJump })) {
-            // not held (you were going the other way): carry you on only if you're still watching
-            timers.push(
-              window.setTimeout(() => {
-                const r = fake.current?.getBoundingClientRect();
-                if (r && r.bottom > window.innerHeight * 0.5 && r.top < window.innerHeight * 0.25) toJump();
-              }, calm + 1500),
-            );
-          }
-        },
-      });
-
       // …then the real one, a screen later, once you've relaxed: the ink
       // lands, the word lunges out of it, the cat leaps, and whatever's in
       // the ink opens its eyes
       gsap.set([jumpWord.current, jumpCat.current, jumpBang.current], { autoAlpha: 0 });
       gsap.set(splash.current, { scale: 0, autoAlpha: 0 });
-      ScrollTrigger.create({
-        trigger: jump.current,
-        start: "top 58%",
-        once: true,
-        onEnter: () => {
+      // JUMP itself: fired as the carry from the countdown lands, or by just
+      // scrolling down to it — whichever comes first, and only once
+      let jumped = false;
+      let carrying = false;
+      const jumpNow = () => {
+        if (jumped) return;
+        jumped = true;
           gsap
             .timeline()
             .fromTo(splash.current, { scale: 0.2, rotation: -10, autoAlpha: 1 }, { scale: 1.1, rotation: 0, duration: 0.22, ease: "power4.out" }, 0)
@@ -218,8 +160,35 @@ export default function ThePoint() {
               }, 120),
             );
           }
+      };
+      ScrollTrigger.create({
+        trigger: jump.current,
+        start: "top 58%",
+        once: true,
+        onEnter: () => {
+          // being carried there: it waits until you've landed
+          if (!carrying) jumpNow();
         },
       });
+      // the countdown's carry: down to JUMP, and JUMP the moment you arrive
+      carryTo.current = () => {
+        const lenis = getLenis();
+        if (!lenis || !jump.current) return jumpNow();
+        carrying = true;
+        lenis.scrollTo(jump.current, {
+          offset: -window.innerHeight * 0.06,
+          duration: 1.7,
+          easing: (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2),
+          force: true,
+          lock: true,
+          onComplete: () => {
+            carrying = false;
+            jumpNow();
+          },
+        });
+        // in case the glide never reports back
+        timers.push(window.setTimeout(() => (carrying ? ((carrying = false), jumpNow()) : undefined), 2300));
+      };
       // and it won't stop hopping while it's on screen
       ScrollTrigger.create({
         trigger: jump.current,
@@ -376,7 +345,6 @@ export default function ThePoint() {
   }, [t.fakeout]);
 
   const word = "brush select-none text-center leading-[0.84]";
-  const count = t.fakeout.length - (still ? t.fakeout.length - 1 : step);
 
   return (
     <Section
@@ -392,42 +360,7 @@ export default function ThePoint() {
       </div>
 
       {/* the warning: a whole screen, held while it counts, getting darker */}
-      <div ref={fake} className="relative h-[150svh]">
-        <div
-          className="soon-countdown sticky top-0 grid h-[100svh] place-items-center overflow-hidden px-[var(--edge)] text-center"
-          data-step={still ? t.fakeout.length - 1 : counting ? step : -1}
-          data-relaxed={relaxed || still ? "true" : "false"}
-        >
-          <span aria-hidden="true" className="soon-vignette" />
-          {COUNT_EYES.map((e, i) => (
-            <span key={i} data-look={!still && counting && !relaxed && step >= e.from ? "true" : "false"} className="contents">
-              <InkEyes className={e.at} tilt={e.tilt} blink={4 + (i % 3)} delay={i * 0.08} />
-            </span>
-          ))}
-          <div className="relative flex flex-col items-center gap-3">
-            <span
-              key={count}
-              aria-hidden="true"
-              className={`soon-count ghost-index pointer-events-none select-none text-[clamp(13rem,42vw,30rem)] leading-[0.8] transition-opacity duration-700 ${
-                relaxed || still ? "!opacity-0" : ""
-              }`}
-            >
-              {count}
-            </span>
-            <p className="label label-loose flex items-center gap-3 text-ink/70" aria-live="off">
-              <span aria-hidden="true" className="h-[0.42rem] w-[0.42rem] shrink-0 rotate-45 bg-lime [box-shadow:0_0_0_1px_rgba(8,8,8,0.35)]" />
-              {t.fakeout[still ? t.fakeout.length - 1 : step]}
-            </p>
-            <p className={`flex items-center gap-2 transition-opacity duration-700 ${relaxed || still ? "opacity-100" : "opacity-0"}`}>
-              <span className="hand -rotate-[3deg] text-[clamp(1.3rem,2vw,1.8rem)] text-ink/60">{t.relax}</span>
-              <Sprite name="zzz" scale={0.18} className="-mt-4 rotate-[8deg]" />
-            </p>
-            <p className={`label text-[0.62rem] tracking-[0.24em] text-ink/40 transition-opacity delay-700 duration-700 ${relaxed || still ? "opacity-100" : "opacity-0"}`}>
-              {t.promise}
-            </p>
-          </div>
-        </div>
-      </div>
+      <Countdown onCarry={() => carryTo.current()} />
 
       {/* JUMP — onto a splash of ink, with something in it */}
       <div ref={jump} data-look="false" className="relative grid min-h-[86svh] place-items-center px-[var(--edge)]">
@@ -436,8 +369,13 @@ export default function ThePoint() {
           <InkEyes className="left-[13%] top-[17%] w-[11%]" tilt={-12} blink={5.4} />
           <InkEyes className="left-[76%] top-[73%] w-[7.5%]" tilt={9} blink={7.1} delay={0.3} />
         </div>
-        <h3 ref={jumpWord} data-secret={SECRETS.jump} className={`${word} relative -rotate-[2.5deg] text-[clamp(5rem,22vw,17rem)] text-bone`} aria-label={t.words.jump}>
-          {[...t.words.jump].map((ch, i) => (
+        <h3
+          ref={jumpWord}
+          data-secret={SECRETS.jump}
+          className={`${word} relative -rotate-[2.5deg] text-bone ${back.jump ? "text-[clamp(2.8rem,10vw,8.5rem)]" : "text-[clamp(5rem,22vw,17rem)]"}`}
+          aria-label={back.jump ? BACK.words.jump : t.words.jump}
+        >
+          {[...(back.jump ? BACK.words.jump : t.words.jump)].map((ch, i) => (
             <span key={i} aria-hidden="true" className="soon-hop soon-loop" style={{ "--i": i } as React.CSSProperties}>
               {ch}
             </span>
@@ -457,7 +395,9 @@ export default function ThePoint() {
       <div ref={freeze} className="relative mt-[8svh] h-[200svh] overflow-clip">
         <div className="sticky top-0 grid h-[100svh] place-items-center px-[var(--edge)]">
           <div className="relative">
-            <h3 data-secret={SECRETS.freeze} className={`${word} rotate-[1.5deg] text-[clamp(4.6rem,20vw,16rem)]`}>{t.words.freeze}</h3>
+            <h3 data-secret={SECRETS.freeze} className={`${word} rotate-[1.5deg] ${back.freeze ? "text-[clamp(3.4rem,14vw,12rem)]" : "text-[clamp(4.6rem,20vw,16rem)]"}`}>
+              {back.freeze ? BACK.words.freeze : t.words.freeze}
+            </h3>
             {/* the bats from JUMP, stopped mid-flap */}
             <Sprite name="bat-up" scale={0.36} className="absolute -left-[8%] -top-[40%] rotate-[-18deg]" />
             <Sprite name="bat-down" scale={0.28} className="absolute left-[30%] -top-[70%] rotate-[12deg]" />
@@ -485,8 +425,12 @@ export default function ThePoint() {
           shape={GIGGLE.d}
           className="left-1/2 top-1/2 aspect-[10/7] w-[min(94vw,60rem)] -translate-x-1/2 -translate-y-1/2"
         />
-        <h3 data-secret={SECRETS.laugh} className={`${word} relative -rotate-[1.5deg] text-[clamp(4.6rem,20vw,16rem)]`} aria-label={t.words.laugh}>
-          {[...t.words.laugh].map((ch, i) => (
+        <h3
+          data-secret={SECRETS.laugh}
+          className={`${word} relative -rotate-[1.5deg] ${back.laugh ? "text-[clamp(3rem,12vw,10rem)]" : "text-[clamp(4.6rem,20vw,16rem)]"}`}
+          aria-label={back.laugh ? BACK.words.laugh : t.words.laugh}
+        >
+          {[...(back.laugh ? BACK.words.laugh : t.words.laugh)].map((ch, i) => (
             <span key={i} aria-hidden="true" className="soon-letter soon-loop" style={{ "--i": i } as React.CSSProperties}>
               {ch}
             </span>
@@ -520,7 +464,7 @@ export default function ThePoint() {
           <InkEyes className="left-[56%] top-[36%] w-[20%]" tilt={6} blink={6.2} delay={0.3} />
         </div>
         <div data-secret={SECRETS.lean} className="absolute left-1/2 top-[41%] -translate-x-1/2 -translate-y-1/2 p-6">
-          <p className="label text-[0.6rem] tracking-[0.34em] text-ink/75">{t.words.lean}</p>
+          <p className="label text-[0.6rem] tracking-[0.34em] text-ink/75">{back.lean ? BACK.words.lean : t.words.lean}</p>
           <p className="soon-lean-up label mt-2 text-[0.44rem] tracking-[0.3em] text-ink/45">{t.leanUp}</p>
         </div>
       </div>
@@ -538,7 +482,9 @@ export default function ThePoint() {
                 </span>
               ))}
               {wi === all.length - 1 ? (
-                <span className="soon-bar soon-cutbar label ml-[0.08em]">{t.language}</span>
+                <span className="soon-bar soon-cutbar label ml-[0.08em]" data-back={back.what ? "true" : undefined}>
+                  {back.what ? BACK.words.what : t.language}
+                </span>
               ) : null}
             </span>
           ))}

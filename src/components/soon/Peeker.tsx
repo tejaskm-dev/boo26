@@ -5,6 +5,7 @@ import Sprite from "@/components/ui/Sprite";
 import { prefersReducedMotion } from "@/lib/motion";
 import { TROLL } from "@/lib/soon";
 import { cue } from "./sound";
+import { buzz } from "./troll";
 
 /**
  * Something keeps following you down the page.
@@ -70,9 +71,11 @@ export default function Peeker() {
       peeks += 1;
       showing = catEl;
       catEl.dataset.side = Math.random() < 0.5 ? "left" : "right";
+      catEl.dataset.secret = Math.random() < 0.5 ? TROLL.peek : TROLL.hello;
       catEl.dataset.on = "true";
       cue("whisper");
       away = window.setTimeout(hide, 2600);
+      onShow();
     };
 
     // stop scrolling for a few seconds, and it comes
@@ -84,11 +87,30 @@ export default function Peeker() {
       hide();
       wait();
     };
-    // go toward it and it ducks
+    // go toward it and it ducks — except once, when it comes at you instead
+    let lunged = false;
+    const lunge = (el: HTMLElement) => {
+      lunged = true;
+      window.clearTimeout(away);
+      el.dataset.lunge = "true";
+      cue("hiss", true);
+      buzz(60);
+      away = window.setTimeout(() => {
+        delete el.dataset.lunge;
+        hide();
+      }, 700);
+    };
     const onMove = (e: PointerEvent) => {
-      if (!showing || e.pointerType !== "mouse") return;
+      if (!showing || e.pointerType !== "mouse" || showing.dataset.lunge) return;
       const r = showing.getBoundingClientRect();
-      if (Math.hypot(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2)) < 180) hide();
+      if (Math.hypot(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2)) < 180) {
+        if (!lunged && showing === catEl) lunge(catEl);
+        else hide();
+      }
+    };
+    // on a phone there's no going toward it: it lunges on its own, the second time
+    const onShow = () => {
+      if (coarse && !lunged && peeks >= 2 && showing === catEl) window.setTimeout(() => showing === catEl && lunge(catEl), 1500);
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("pointermove", onMove, { passive: true });

@@ -14,9 +14,15 @@ import { prefersReducedMotion } from "@/lib/motion";
  * anything ever went wrong — a few seconds after that. With motion turned
  * down nothing is ever held.
  *
- * Held means Lenis stopped: wheel and touch are swallowed, and the root is
- * clipped (soon.css) so the keyboard can't move it either.
+ * Held means Lenis stopped (wheel and touch swallowed) and the scrolling
+ * keys ignored. Whatever was already moving the page — a fling's momentum on
+ * a phone — is stopped dead first, for two frames, so the ease to the right
+ * spot never has to fight it.
  */
+
+/** the keys that scroll a page */
+const KEYS = new Set(["ArrowDown", "ArrowUp", "PageDown", "PageUp", "Home", "End", " ", "Spacebar"]);
+const twoFrames = (fn: () => void) => requestAnimationFrame(() => requestAnimationFrame(fn));
 
 let current: { key: string; release: () => void } | null = null;
 const done = new Set<string>();
@@ -38,15 +44,30 @@ export function hold(key: string, ms: number, opts: HoldOptions = {}): boolean {
   const lenis = getLenis();
   if (!lenis || lenis.direction < 0) return false;
   done.add(key);
+  // claim the slot before anything else: stopping the scroll fires a scroll
+  // event right away, and whatever's listening mustn't start a second hold
+  const slot = { key, release: () => {} };
+  current = slot;
   let released = false;
   const timers: number[] = [];
+  const root = document.documentElement;
+  // stop whatever's moving the page, momentum and all
+  lenis.stop();
+  root.classList.add("soon-halt");
+  twoFrames(() => root.classList.remove("soon-halt"));
+  const onKey = (e: KeyboardEvent) => {
+    if (KEYS.has(e.key) && !(e.target as Element)?.closest?.("input,textarea,select,[contenteditable]")) e.preventDefault();
+  };
+  window.addEventListener("keydown", onKey);
   const release = () => {
     if (released) return;
     released = true;
     timers.forEach((t) => window.clearTimeout(t));
     document.removeEventListener("visibilitychange", onHide);
+    window.removeEventListener("keydown", onKey);
+    root.classList.remove("soon-halt");
     lenis.start();
-    current = null;
+    if (current === slot) current = null;
     window.dispatchEvent(new CustomEvent("soon:hold", { detail: { key, held: false } }));
     opts.onRelease?.();
   };
@@ -58,27 +79,31 @@ export function hold(key: string, ms: number, opts: HoldOptions = {}): boolean {
   const still = () => {
     if (released || held) return;
     held = true;
-    lenis.stop();
     window.dispatchEvent(new CustomEvent("soon:hold", { detail: { key, held: true } }));
     opts.onHeld?.();
     timers.push(window.setTimeout(release, ms));
   };
   if (opts.to !== undefined) {
-    lenis.scrollTo(opts.to, {
-      offset: opts.offset ?? 0,
-      duration: opts.glide ?? 0.6,
-      easing: (x: number) => 1 - Math.pow(1 - x, 3),
-      force: true,
-      lock: true,
-      onComplete: still,
+    const to = opts.to;
+    // once the halt has taken, ease to the spot
+    twoFrames(() => {
+      if (released) return;
+      lenis.scrollTo(to, {
+        offset: opts.offset ?? 0,
+        duration: opts.glide ?? 0.6,
+        easing: (x: number) => 1 - Math.pow(1 - x, 3),
+        force: true,
+        lock: true,
+        onComplete: still,
+      });
     });
     // if the ease never reports back, hold from where we are
-    timers.push(window.setTimeout(still, (opts.glide ?? 0.6) * 1000 + 250));
+    timers.push(window.setTimeout(still, (opts.glide ?? 0.6) * 1000 + 400));
   } else {
     still();
   }
   timers.push(window.setTimeout(release, ms + (opts.glide ?? 0.6) * 1000 + 6000));
-  current = { key, release };
+  slot.release = release;
   return true;
 }
 

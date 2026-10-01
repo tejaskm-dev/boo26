@@ -11,6 +11,8 @@ import Awake from "./Awake";
 import Cut from "./Cut";
 import { cue } from "./sound";
 import { hold } from "./hold";
+import { onBacktrack } from "./backtrack";
+import { jumpscare } from "./JumpScare";
 import InkEyes from "./InkEyes";
 import Sleeper, { EYES, FACE, OPEN_EYES, ZZZ } from "./Sleeper";
 import { getLenis } from "@/lib/lenis";
@@ -329,6 +331,10 @@ export default function InTheDark() {
           window.innerHeight * (0.5 + 0.22 * Math.cos(p * Math.PI * 2.4)),
         );
       }
+      // the torch handle only while the room has the whole screen: as it
+      // slides in or out, a swipe that starts on the handle has to scroll
+      const docked = Math.abs(stageTop()) < window.innerHeight * 0.04 ? "true" : "false";
+      if (el.dataset.docked !== docked) el.dataset.docked = docked;
       if (p > 0.03) hold("room-in", 2700);
       if (!firstStrike && p > 0.04) {
         // the first thing that happens in here: you see what you're standing in front of
@@ -436,6 +442,20 @@ export default function InTheDark() {
     });
     io.observe(run);
 
+    // go back up toward it after you woke it, and it's right there
+    const stopBack = onBacktrack(run, () => {
+      if (awake) jumpscare("eyes");
+    });
+    // and if you just keep going after waking it
+    const leaving = ScrollTrigger.create({
+      trigger: run,
+      start: "top top",
+      end: "bottom top",
+      onLeave: () => {
+        if (awake) troll("anyway", TROLL.anyway);
+      },
+    });
+
     measure();
     const ro = new ResizeObserver(() => measure());
     ro.observe(run);
@@ -444,6 +464,8 @@ export default function InTheDark() {
     gsap.ticker.add(tick);
 
     return () => {
+      stopBack();
+      leaving.kill();
       gsap.ticker.remove(tick);
       unsub();
       io.disconnect();
@@ -474,7 +496,7 @@ export default function InTheDark() {
       forms={[{ shape: "shelf", tone: "bone", at: "inset-x-0 top-0 w-full h-[9vh] md:h-[13vh]" }]}
       className="pt-[clamp(5rem,14vh,11rem)] md:pt-[clamp(5rem,20vh,11rem)]"
     >
-      <Cut lines={CUTS.dark} />
+      <Cut lines={CUTS.dark} back={CUTS.darkBack} />
       <Awake />
 
       <div className="px-[var(--edge)]">

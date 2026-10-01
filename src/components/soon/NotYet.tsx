@@ -8,13 +8,14 @@ import BlobButton from "@/components/ui/BlobButton";
 import Marquee from "@/components/fx/Marquee";
 import HeroLockup from "@/components/hero/HeroLockup";
 import { prefersReducedMotion } from "@/lib/motion";
-import { CUTS, SECRETS, SOON, TROLL } from "@/lib/soon";
+import { BACK, CUTS, SECRETS, SOON, TROLL } from "@/lib/soon";
 import Awake from "./Awake";
 import Critters from "./Critters";
 import Cut from "./Cut";
 import InkEyes from "./InkEyes";
 import { cue } from "./sound";
 import { hold } from "./hold";
+import { useBacktrack } from "./backtrack";
 import { answer, buzz, shiver } from "./troll";
 
 /** what a silenced rumour says instead — block glyphs read as a broken font, not a redaction */
@@ -65,6 +66,8 @@ export default function NotYet() {
   const lock = useRef<HTMLDivElement>(null);
   const title = useRef<HTMLHeadingElement>(null);
   const cta = useRef<HTMLDivElement>(null);
+  const [knows, setKnows] = useState(false);
+  useBacktrack(runway, () => setKnows(true), "bottom 12%");
 
   // the shot: eyes, then the slam, then the line, then the ask
   useEffect(() => {
@@ -176,7 +179,7 @@ export default function NotYet() {
       forms={[{ shape: "spillLeft", tone: "bone", at: "inset-x-0 top-0 w-full h-[13vh] md:h-[21vh]" }]}
       className="flex flex-col"
     >
-      <Cut lines={CUTS.drop} />
+      <Cut lines={CUTS.drop} back={CUTS.dropBack} />
       <Awake />
       <Critters bats={2} wisps={10} ghosts={0} sky={[0.06, 0.24]} ground={[0.2, 0.9]} className="z-[1]" />
 
@@ -204,10 +207,10 @@ export default function NotYet() {
             <h2
               ref={title}
               onClick={patience}
-              aria-label={t.heading.replace("\n", " ")}
+              aria-label={(knows ? BACK.heading : t.heading).replace("\n", " ")}
               className="soon-glitch brush -mt-[0.15em] -rotate-[1.5deg] cursor-default select-none text-center text-[clamp(3.6rem,11vw,8.5rem)] leading-[0.84] text-lime"
             >
-              {t.heading.split("\n").map((l) => (
+              {(knows ? BACK.heading : t.heading).split("\n").map((l) => (
                 <span key={l} className="block overflow-hidden pb-[0.06em]" aria-hidden="true">
                   <span data-line className="block">
                     {l}

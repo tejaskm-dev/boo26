@@ -6,6 +6,7 @@ import Awake from "./Awake";
 import Boing from "./Boing";
 import Classified from "./Classified";
 import Cut from "./Cut";
+import HeardSwitch from "./HeardSwitch";
 import Critters from "./Critters";
 import InkEyes from "./InkEyes";
 import InkField from "./InkField";
@@ -62,8 +63,9 @@ export default function Heard() {
       field="bone"
       className="pb-[clamp(4rem,11vh,7.5rem)] pt-[clamp(5.5rem,17vh,13rem)] md:pt-[clamp(5.5rem,24vh,13rem)]"
     >
-      <Cut lines={CUTS.open} />
+      <Cut lines={CUTS.open} back={CUTS.openBack} />
       <Awake />
+      <HeardSwitch />
 
       {/* the cat is hauling itself over the boundary above — and it knows */}
       <RiseIn className="absolute -top-[clamp(2.5rem,7vw,6rem)] right-[6%] z-10 md:right-[26%]" start="top 96%">
@@ -117,7 +119,7 @@ export default function Heard() {
           ))}
 
           {/* a cat in a pumpkin, sat on the field's lip */}
-          <Boing secret={SECRETS.pumpkin} className="absolute bottom-[-4%] left-[5%] z-[2] lg:bottom-[1%] lg:left-[2%]">
+          <Boing secret={SECRETS.pumpkin} className="soon-pumpkin absolute bottom-[-4%] left-[5%] z-[2] lg:bottom-[1%] lg:left-[2%]">
             <Sprite name="cat-pumpkin" scale={0.78} drift={12} idle={4} />
           </Boing>
         </div>
