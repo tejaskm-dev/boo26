@@ -70,7 +70,16 @@ export default function NotYet() {
   const title = useRef<HTMLHeadingElement>(null);
   const cta = useRef<HTMLDivElement>(null);
   const [knows, setKnows] = useState(false);
-  useBacktrack(runway, () => setKnows(true), "bottom 12%");
+  // the same, for the scroll's callbacks
+  const knew = useRef(false);
+  useBacktrack(
+    runway,
+    () => {
+      knew.current = true;
+      setKnows(true);
+    },
+    "bottom 12%",
+  );
   // it won't hold still — and now and then, for a frame, it says the other thing
   useGlitch(title);
 
@@ -121,11 +130,24 @@ export default function NotYet() {
         asked = true;
         gsap.to(cta.current, { y: 0, autoAlpha: 1, duration: 0.8, ease: "power3.out" });
       };
+      // back up into it from below, it isn't saying what it said ("It
+      // knows."): held on it, and it tears, slipping for a frame into what it
+      // used to say. A fling up straight past is brought back for it.
+      const knowing = (to?: number) =>
+        hold("drop:up", 2400, {
+          way: "up",
+          ...(to !== undefined ? { to, glide: 0.6 } : {}),
+          onHeld: () => {
+            glitch(title.current, "tear");
+            gsap.delayedCall(0.9, () => glitch(title.current, "slip"));
+          },
+        });
       ScrollTrigger.create({
         trigger: run,
         start: "top top",
         end: "bottom bottom",
-        onUpdate: ({ progress: p }) => {
+        onLeaveBack: (self) => knew.current && knowing(self.start + (self.end - self.start) * 0.5),
+        onUpdate: ({ progress: p, direction }) => {
           // the crowd: one more pair each step into the shot
           wrappers.forEach((w, i) => {
             const open = p > 0.02 + (i / wrappers.length) * 0.36 ? "true" : "false";
@@ -141,6 +163,7 @@ export default function NotYet() {
           }
           if (!said && p > 0.52) say();
           if (!asked && p > 0.64) ask();
+          if (direction < 0 && knew.current && p < 0.9) knowing();
         },
       });
     }, st);

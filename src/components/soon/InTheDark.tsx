@@ -315,6 +315,8 @@ export default function InTheDark() {
 
     // --- as you go through the room ------------------------------------------
     let firstStrike = false;
+    /** come back up toward it from well past it */
+    let returned = false;
     let lastScale = 1;
     let dived = false;
     let through = false;
@@ -336,6 +338,16 @@ export default function InTheDark() {
       const docked = Math.abs(stageTop()) < window.innerHeight * 0.04 ? "true" : "false";
       if (el.dataset.docked !== docked) el.dataset.docked = docked;
       if (p > 0.03) hold("room-in", 2700);
+      // back up into it once it's awake: it's watching the way you came, and
+      // it holds you there a moment, growling. A fling up straight through
+      // it is brought back to the middle of the room for it.
+      if (awake && returned && p < 0.62) {
+        hold("room:up", 2400, {
+          way: "up",
+          ...(p < 0.05 ? { to: runTop + (runH - stageH) * 0.5, glide: 0.6 } : {}),
+          onHeld: () => cue("growl"),
+        });
+      }
       if (!firstStrike && p > 0.04) {
         // the first thing that happens in here: you see what you're standing in front of
         firstStrike = true;
@@ -444,6 +456,7 @@ export default function InTheDark() {
 
     // go back up toward it after you woke it, and it's right there
     const stopBack = onBacktrack(run, () => {
+      returned = true;
       if (awake) jumpscare("eyes");
     });
     // and if you just keep going after waking it

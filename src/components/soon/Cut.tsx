@@ -55,8 +55,9 @@ function words(line: string) {
  * Once the card is up, the page holds still for as long as the lines take
  * (hold.ts), so a quick flick can't skip it. The lines play on their own
  * clock either way, so the scroll never makes them stutter. Come back up
- * through it and it says something else (`back`). Leave it either way and
- * it resets, ready to play again. With motion turned down there's no cut.
+ * through it and it says something else (`back`) — held for that too. Leave
+ * it either way and it resets, ready to play again. With motion turned down
+ * there's no cut.
  */
 export default function Cut({ lines, back = [] }: { lines: readonly string[]; back?: readonly string[] }) {
   const room = useRef<HTMLDivElement>(null);
@@ -76,8 +77,11 @@ export default function Cut({ lines, back = [] }: { lines: readonly string[]; ba
     let timers: number[] = [];
     let playing: "down" | "up" | null = null;
     let breathed = false;
-    /** held for it this visit */
+    /** held for it this visit — on the way down, and on the way back up */
     let caught = false;
+    let caughtUp = false;
+    /** one of its holds has the page (easing it back, or holding it) */
+    let mine = false;
 
     const play = (way: "down" | "up") => {
       if (playing) return;
@@ -122,19 +126,40 @@ export default function Cut({ lines, back = [] }: { lines: readonly string[]; ba
           breathed = true;
           cue("inhale");
         }
-        // a fling that went clean past it in one frame (a slow phone, a busy
-        // moment) still gets the card: the hold brings it back for it
-        const missed = !playing && !caught && self.direction > 0 && p >= 0.8;
-        if (!playing && ((p > 0.2 && p < 0.8) || missed)) play(!missed && self.direction < 0 && up.length ? "up" : "down");
-        if (playing === "down" && p > 0.2 && !caught) {
-          // the card's up: hold the page while it says its piece
-          caught = hold(`cut:${lines.join("|")}`, lines.length * STEP + 700, {
-            to: self.start + (self.end - self.start) * 0.36,
+        // while one of its holds has the page, the card plays on as it is —
+        // the ease back can start from past either end, which would otherwise
+        // reset it and replay the other way's lines
+        if (mine) return;
+        const goingUp = self.direction < 0;
+        const range = self.end - self.start;
+        // the card's up: hold the page while it says its piece — on the way
+        // down at a third of the way in, and on the way back up (where it
+        // says something else) at a third of the way from the bottom
+        const holdFor = (way: "down" | "up") => {
+          const ok = hold(way === "up" ? `cut-up:${lines.join("|")}` : `cut:${lines.join("|")}`, way === "up" ? up.length * STEP + 600 : lines.length * STEP + 700, {
+            to: self.start + range * (way === "up" ? 0.64 : 0.36),
             glide: 0.7,
+            way,
+            onRelease: () => (mine = false),
           });
+          if (!ok) return false;
+          mine = true;
+          if (way === "up") caughtUp = true;
+          else caught = true;
+          return true;
+        };
+        // a fling that went clean past it in one frame (a slow phone, a busy
+        // moment) still gets the card, either way: the hold brings it back
+        // for it. A jump (a link) isn't held, and then it's simply left behind.
+        if (!playing && (goingUp ? !caughtUp && up.length > 0 && p <= 0.2 : !caught && p >= 0.8)) {
+          if (holdFor(goingUp ? "up" : "down")) play(goingUp ? "up" : "down");
+          return;
         }
+        if (!playing && p > 0.2 && p < 0.8) play(goingUp && up.length ? "up" : "down");
+        if (playing === "down" && p > 0.2 && !caught) holdFor("down");
+        if (playing === "up" && p < 0.8 && !caughtUp) holdFor("up");
         // left behind, either way: ready to play again
-        if (!missed && (p < 0.08 || p > 0.96)) {
+        if (p < 0.08 || p > 0.96) {
           reset();
           breathed = false;
         }

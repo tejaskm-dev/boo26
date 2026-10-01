@@ -80,7 +80,12 @@ export default function ThePoint() {
   const carryTo = useRef<() => void>(() => {});
   // what the words say if you come back up to them
   const [back, setBack] = useState<Partial<Record<"jump" | "freeze" | "laugh" | "lean" | "what", true>>>({});
-  const flip = (k: keyof typeof back) => () => setBack((b) => (b[k] ? b : { ...b, [k]: true }));
+  // the same, for the scroll's callbacks: only what's changed holds you on the way back up
+  const flipped = useRef<typeof back>({});
+  const flip = (k: keyof typeof back) => () => {
+    flipped.current[k] = true;
+    setBack((b) => (b[k] ? b : { ...b, [k]: true }));
+  };
   useBacktrack(jump, flip("jump"));
   useBacktrack(freeze, flip("freeze"));
   useBacktrack(laugh, flip("laugh"));
@@ -276,14 +281,20 @@ export default function ThePoint() {
         end: "bottom 60%",
         // flung clean past it in one frame: brought back to lean in after all
         onLeave: () => hold("lean", 2500, { to: leanAt(), glide: 0.6 }),
-        onToggle: ({ isActive }) => {
+        // back up to it, and it says "lean out." — held for that, and brought
+        // back for it if the way up went straight past
+        onEnterBack: () => flipped.current.lean && hold("lean:up", 1600, { to: leanAt(), glide: 0.5, way: "up" }),
+        onLeaveBack: () => flipped.current.lean && hold("lean:up", 1600, { to: leanAt(), glide: 0.6, way: "up" }),
+        onToggle: ({ isActive, direction }) => {
           lean.current!.dataset.close = isActive ? "true" : "false";
           lean.current!.dataset.look = isActive ? "true" : "false";
           // the oldest trick there is: get them to lean in to read something
-          // small — and then. Once a visit, for anyone who stays a moment.
+          // small — and then. Once a visit, for anyone who stays a moment, on
+          // the way down: held here again on the way back up, it would take
+          // the scare that's waiting for them in the room.
           window.clearTimeout(leaning);
           if (isActive && lean.current) hold("lean", 2500, { to: leanAt(), glide: 0.5 });
-          if (isActive)
+          if (isActive && direction > 0)
             leaning = window.setTimeout(() => {
               if (lean.current?.dataset.close !== "true") return;
               if (jumpscare("face")) timers.push(window.setTimeout(() => troll("safe", TROLL.safe), 1900));
@@ -316,6 +327,23 @@ export default function ThePoint() {
           timers.push(window.setTimeout(() => shiver(what.current, 7), 150));
         },
       });
+      // and back up past it, it's "Language!" — bleeped, and held a moment
+      const whatAt = () => {
+        const r = what.current!.getBoundingClientRect();
+        return r.top + window.scrollY + r.height / 2 - window.innerHeight / 2;
+      };
+      const tellOff = () =>
+        flipped.current.what &&
+        hold("what:up", 1500, {
+          to: whatAt(),
+          glide: 0.4,
+          way: "up",
+          onHeld: () => {
+            cue("beep", true);
+            shiver(what.current, 6);
+          },
+        });
+      ScrollTrigger.create({ trigger: what.current, start: "top 70%", end: "bottom 30%", onEnterBack: tellOff, onLeaveBack: tellOff });
 
       // why
       ScrollTrigger.create({

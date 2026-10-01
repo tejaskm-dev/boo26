@@ -26,7 +26,7 @@ type Scene = {
   start: string;
   end: string;
   /** what it says if you stop in it, or it lets you go in it — null says nothing */
-  line: (el: HTMLElement, p: number) => string | null;
+  line: (el: HTMLElement, p: number, up: boolean) => string | null;
 };
 
 /** the pinned scenes, by their data-wait */
@@ -39,8 +39,8 @@ const SCENES: Record<string, Scene> = {
     line: (el) => (el.querySelector<HTMLElement>("[data-cat]")?.dataset.cat === "awake" ? WAIT.idle.woke : WAIT.idle.room),
   },
   freeze: { start: "top top", end: "bottom bottom", line: () => WAIT.idle.freeze },
-  // the last shot: once the ask is up, it leaves you to it
-  drop: { start: "top top", end: "bottom bottom", line: (_, p) => (p < 0.36 ? WAIT.idle.drop : null) },
+  // the last shot: once the ask is up (or you're on your way back up), it leaves you to it
+  drop: { start: "top top", end: "bottom bottom", line: (_, p, up) => (!up && p < 0.36 ? WAIT.idle.drop : null) },
 };
 
 type Live = { scene: HTMLElement; kind: Scene; st: ScrollTrigger };
@@ -56,7 +56,8 @@ type Live = { scene: HTMLElement; kind: Scene; st: ScrollTrigger };
  * In a pinned scene the line is how far through it you are. Scroll while
  * it's holding and it glares and says so ("not yet."); stop in a pinned
  * scene and it tells you to keep going, in that scene's own words (the
- * room says "tiptoe", until the cat's awake). The first time it holds you
+ * room says "tiptoe", until the cat's awake). It looks, and points, the way
+ * you're going — back up included. The first time it holds you
  * it says "wait for it…"; after that it lets the line do the talking.
  *
  * Nothing in it re-renders: it's one fixed element and a handful of data
@@ -94,12 +95,17 @@ export default function Waiting() {
     let tries = 0;
     let first = true;
     let moved = 0;
+    /** the way you're going: its eyes and its arrow follow */
+    const facing = (way: "down" | "up") => {
+      if (el.dataset.way !== way) el.dataset.way = way;
+    };
+    const up = () => el.dataset.way === "up";
     const live: Live[] = [];
     const top = () => live[live.length - 1];
     const timers = { note: 0, idle: 0, beat: 0, off: 0, glare: 0 };
     const clear = (...keys: (keyof typeof timers)[]) => keys.forEach((k) => window.clearTimeout(timers[k]));
 
-    const eyes = (state: "open" | "glare" | "shut" | "down") => {
+    const eyes = (state: "open" | "glare" | "shut" | "go") => {
       if (el.dataset.eyes !== state) el.dataset.eyes = state;
     };
     const show = (m: typeof mode) => {
@@ -144,7 +150,7 @@ export default function Waiting() {
     const idleCheck = () => {
       const s = top();
       if (mode !== "run" || !s || s.st.progress > 0.97) return;
-      const words = s.kind.line(s.scene, s.st.progress);
+      const words = s.kind.line(s.scene, s.st.progress, up());
       if (words) say(words, true);
     };
     const armIdle = (ms = IDLE) => {
@@ -159,7 +165,7 @@ export default function Waiting() {
       show("run");
       unclock();
       draw(s.st.progress, from === "off");
-      eyes("down");
+      eyes("go");
       armIdle();
     };
 
@@ -227,9 +233,9 @@ export default function Waiting() {
       timers.beat = window.setTimeout(() => {
         if (mode !== "free") return;
         const s = top();
-        const words = s ? s.kind.line(s.scene, s.st.progress) : WAIT.go;
+        const words = s ? s.kind.line(s.scene, s.st.progress, up()) : WAIT.go;
         if (s) run();
-        else eyes("down");
+        else eyes("go");
         if (tried) {
           if (words) say(words, true, s ? 0 : 1800);
         } else if (s) {
@@ -246,8 +252,9 @@ export default function Waiting() {
     // (the scene's own slam, and the halt that has to reach the screen)
     let next = 0;
     const onHold = (e: Event) => {
-      const d = (e as CustomEvent<{ held: boolean; ms?: number }>).detail;
+      const d = (e as CustomEvent<{ held: boolean; ms?: number; way?: "down" | "up" }>).detail;
       cancelAnimationFrame(next);
+      facing(d.way ?? "down");
       if (d.held) next = requestAnimationFrame(() => held(Math.max(400, (d.ms ?? 2000) - 16)));
       else letGo();
     };
@@ -288,7 +295,9 @@ export default function Waiting() {
               else if (mode === "run") off();
             },
             onUpdate: (self) => {
-              if (mode === "run" && top()?.st === self) draw(self.progress);
+              if (mode !== "run" || top()?.st !== self) return;
+              draw(self.progress);
+              facing(self.direction < 0 ? "up" : "down");
             },
           }),
         ];
@@ -310,7 +319,7 @@ export default function Waiting() {
   }, []);
 
   return (
-    <div ref={root} className="soon-wait" data-mode="off" aria-hidden="true">
+    <div ref={root} className="soon-wait" data-mode="off" data-way="down" aria-hidden="true">
       <p ref={note} className="soon-wait-note hand">
         <span ref={words} />
         <svg viewBox="0 0 16 30" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round">

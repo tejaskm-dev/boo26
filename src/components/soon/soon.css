@@ -1614,9 +1614,13 @@ html.soon-halt {
   transition-duration: 0.12s;
 }
 
-/* on you go: lids down, looking down the page */
-.soon-wait[data-eyes="down"] .soon-wait-eyes {
+/* on you go: lids down, looking the way you're going — down the page, or back up it */
+.soon-wait[data-eyes="go"] .soon-wait-eyes {
   transform: translateY(18%) scaleY(0.62);
+}
+
+.soon-wait[data-way="up"][data-eyes="go"] .soon-wait-eyes {
+  transform: translateY(-16%) scaleY(0.62);
 }
 
 .soon-wait-note {
@@ -1670,6 +1674,11 @@ html.soon-halt {
 .soon-wait[data-arrow="true"] .soon-wait-note svg {
   display: block;
   animation: cue 2.2s var(--ease-out-soft) infinite;
+}
+
+/* back up: the arrow (and its nudge) points up */
+.soon-wait[data-way="up"] .soon-wait-note svg {
+  rotate: 180deg;
 }
 
 /* ------------------------------------------------- anywhere on the page */

@@ -8,15 +8,19 @@ import { prefersReducedMotion } from "@/lib/motion";
  * the count, the cat waking up — so a quick flick can't carry you straight
  * past it.
  *
- * Each moment holds once a visit, only on the way down, and never while
- * another is holding. It can ease the page to the right spot first. It
+ * Each moment holds once a visit, only on the way it's set for — down, or
+ * (`way: "up"`) back up, where the scenes have changed — and never while
+ * another is holding. Never on a jump, either: a link to the top or a
+ * section moves the page screens at once, and that's somewhere to go, not
+ * a scroll through. It can ease the page to the right spot first. It
  * always lets go: after its time, the moment the tab is hidden, and — if
  * anything ever went wrong — a few seconds after that. With motion turned
  * down nothing is ever held.
  *
- * Every hold says so on window as "soon:hold" — `{ key, held: true, ms }`
- * once it's still, `{ key, held: false }` as it lets go — which is how the
- * eyes in the corner (Waiting.tsx) know how long you're waiting.
+ * Every hold says so on window as "soon:hold" — `{ key, held: true, ms,
+ * way }` once it's still, `{ key, held: false, way }` as it lets go — which
+ * is how the eyes in the corner (Waiting.tsx) know how long you're waiting,
+ * and which way you were going.
  *
  * Held means Lenis stopped (wheel and touch swallowed) and the scrolling
  * keys ignored. Whatever was already moving the page — a fling's momentum on
@@ -41,12 +45,18 @@ export type HoldOptions = {
   onHeld?: () => void;
   /** as it lets go */
   onRelease?: () => void;
+  /** the way you have to be going for it to catch you: down, unless it says */
+  way?: "down" | "up";
 };
 
 export function hold(key: string, ms: number, opts: HoldOptions = {}): boolean {
   if (done.has(key) || current || prefersReducedMotion()) return false;
   const lenis = getLenis();
-  if (!lenis || lenis.direction < 0) return false;
+  const way = opts.way ?? "down";
+  if (!lenis || (way === "down" ? lenis.direction < 0 : lenis.direction >= 0)) return false;
+  // a jump (a link, the scrollbar's rail) covers screens in one go; a
+  // scroll, however hard, is a fraction of one a frame
+  if (Math.abs(lenis.velocity) > window.innerHeight * 1.6) return false;
   done.add(key);
   // claim the slot before anything else: stopping the scroll fires a scroll
   // event right away, and whatever's listening mustn't start a second hold
@@ -86,7 +96,7 @@ export function hold(key: string, ms: number, opts: HoldOptions = {}): boolean {
     root.classList.remove("soon-halt");
     lenis.start();
     if (current === slot) current = null;
-    window.dispatchEvent(new CustomEvent("soon:hold", { detail: { key, held: false } }));
+    window.dispatchEvent(new CustomEvent("soon:hold", { detail: { key, held: false, way } }));
     opts.onRelease?.();
   };
   const onHide = () => {
@@ -97,7 +107,7 @@ export function hold(key: string, ms: number, opts: HoldOptions = {}): boolean {
   const still = () => {
     if (released || held) return;
     held = true;
-    window.dispatchEvent(new CustomEvent("soon:hold", { detail: { key, held: true, ms } }));
+    window.dispatchEvent(new CustomEvent("soon:hold", { detail: { key, held: true, ms, way } }));
     opts.onHeld?.();
     timers.push(window.setTimeout(release, ms));
   };

@@ -33,7 +33,8 @@ const BEAT = 950;
  * `onCarry` takes you down to the real one.
  *
  * Its own component so a tick of the count redraws the count and nothing
- * else. Comes back up to it later and it isn't counting any more.
+ * else. Come back up to it later and it isn't counting any more — and it
+ * holds you there a moment to make sure you notice.
  */
 export default function Countdown({ onCarry }: { onCarry: () => void }) {
   const t = SOON.point;
@@ -50,7 +51,12 @@ export default function Countdown({ onCarry }: { onCarry: () => void }) {
     carry.current = onCarry;
   });
 
-  useBacktrack(room, () => setBack(true));
+  // came back up to it from well past it: it's stopped counting, and it holds you there
+  const returned = useRef(false);
+  useBacktrack(room, () => {
+    returned.current = true;
+    setBack(true);
+  });
 
   useEffect(() => {
     const el = room.current;
@@ -100,8 +106,25 @@ export default function Countdown({ onCarry }: { onCarry: () => void }) {
         }
       },
     });
+    // back up into it, and it's stopped counting — "0. you sure about
+    // that?" — held there a moment, a heart going under it. Flung past it
+    // on the way up, and it brings you back for it.
+    const again = () =>
+      returned.current &&
+      hold("countdown:up", 2000, {
+        to: el,
+        glide: 0.4,
+        way: "up",
+        onHeld: () => {
+          buzz(14);
+          heart(1.5);
+        },
+        onRelease: () => heart(0),
+      });
+    const up = ScrollTrigger.create({ trigger: el, start: "top top", end: "bottom bottom", onEnterBack: again, onLeaveBack: again });
     return () => {
       st.kill();
+      up.kill();
       timers.forEach((id) => window.clearTimeout(id));
       heart(0);
     };
