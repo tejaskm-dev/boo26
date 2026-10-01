@@ -8,6 +8,8 @@ import Sprite from "@/components/ui/Sprite";
 import GhostIndex from "@/components/ui/GhostIndex";
 import { GlowEyes } from "@/components/ui/Glyphs";
 import Words from "@/components/fx/Words";
+import Critters from "./Critters";
+import { TREE } from "./tree";
 import { getLenis } from "@/lib/lenis";
 import { prefersReducedMotion } from "@/lib/motion";
 import { subscribePointer } from "@/lib/pointer";
@@ -61,6 +63,8 @@ export default function InTheDark() {
   const cam = useRef<HTMLSpanElement>(null);
   const tv = useRef<HTMLDivElement>(null);
   const handle = useRef<HTMLButtonElement>(null);
+  const shade = useRef<HTMLDivElement>(null);
+  const strikeRef = useRef<() => void>(() => {});
   const pumpkin = useRef(false);
 
   const [door, setDoor] = useState<"shut" | "asking" | "smashed">("shut");
@@ -297,16 +301,43 @@ export default function InTheDark() {
       scheduleFlicker();
     }
 
+    // Lightning, through the window: for a moment the dark lifts and the
+    // branches outside are thrown across the wall. Two flashes in 0.8s,
+    // inside the three-a-second limit.
+    let thunder = 0;
+    let lastStrike = 0;
+    const strike = () => {
+      const now = performance.now();
+      if (now - lastStrike < 3500) return;
+      lastStrike = now;
+      shade.current?.animate(
+        [{ opacity: 1 }, { opacity: 0.12, offset: 0.08 }, { opacity: 0.85, offset: 0.24 }, { opacity: 0.3, offset: 0.36 }, { opacity: 1 }],
+        { duration: 820, easing: "ease-out" },
+      );
+      el.dataset.strike = "true";
+      window.setTimeout(() => delete el.dataset.strike, 820);
+    };
+    strikeRef.current = strike;
+    const scheduleStrike = () => {
+      window.clearTimeout(thunder);
+      thunder = window.setTimeout(() => {
+        if (active && !document.hidden) strike();
+        scheduleStrike();
+      }, 15000 + Math.random() * 10000);
+    };
+
     const io = new IntersectionObserver(([e]) => {
       active = e.isIntersecting;
       el.dataset.active = active ? "true" : "false";
       if (!active) {
         window.clearTimeout(flicker);
         window.clearTimeout(dying);
+        window.clearTimeout(thunder);
         return;
       }
       measure();
       scheduleFlicker(first);
+      scheduleStrike();
       if (first) {
         first = false;
         const light = window.matchMedia("(prefers-color-scheme: light)").matches;
@@ -344,6 +375,7 @@ export default function InTheDark() {
       handleEl?.removeEventListener("pointercancel", onHandleUp);
       window.clearTimeout(flicker);
       window.clearTimeout(dying);
+      window.clearTimeout(thunder);
       delete el.dataset.torch;
     };
   }, []);
@@ -488,7 +520,9 @@ export default function InTheDark() {
               <span><Sprite name="bat-down" scale={0.22} className="w-full" /></span>
             </span>
           </div>
-          <Sprite name="window" scale={0.62} className="relative opacity-80" />
+          <button type="button" tabIndex={-1} aria-label="The window" onClick={() => strikeRef.current()} className="relative block cursor-pointer">
+            <Sprite name="window" scale={0.62} className="relative opacity-80" />
+          </button>
         </div>
 
         {/* The camera in the corner, above the dark: you always see it, and it
@@ -629,8 +663,17 @@ export default function InTheDark() {
         <span className="soon-fog soon-loop pointer-events-none top-[66%]" />
         <span className="soon-fog soon-loop pointer-events-none top-[78%]" />
 
+        {/* what lightning shows: the window's light on the wall, the tree outside across it */}
+        <span aria-hidden="true" className="soon-strike-light" />
+        <svg aria-hidden="true" viewBox={TREE.view} className="soon-strike-shadow">
+          <path d={TREE.d} />
+        </svg>
+
+        {/* things that are only there in the beam */}
+        <Critters bats={3} wisps={0} ghosts={2} sky={[0.08, 0.6]} ground={[0.6, 0.9]} className="z-[12]" />
+
         {/* the dark, with a torch-shaped hole in it */}
-        <div className="soon-shade" aria-hidden="true">
+        <div ref={shade} className="soon-shade" aria-hidden="true">
           <div className="soon-shake soon-loop">
             <div ref={beam} className="soon-beam">
               <span className="soon-dust soon-loop left-[44%] top-[40%]" />

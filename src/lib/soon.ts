@@ -59,12 +59,14 @@ export const SOON = {
     label: "Rumours",
     heading: "Heard\nanything?",
     body: "BOO! is coming to ASIET. That’s about all we’re allowed to tell you.",
-    cat: "ask the cat.",
-    notes: [
-      { front: "no, we won’t tell you when.", back: "why are you flipping notes" },
-      { front: "it’s not a seminar. promise.", back: "nothing here." },
-      { front: "bring your weirdest idea.", back: "ok fine, one thing: ▇▇▇" },
-      { front: "if you smell pala flowers, don’t turn around.", back: "don’t." },
+    /** rumours in the dark — they only read clearly up close */
+    whispers: [
+      "no, we won’t tell you when.",
+      "it’s not a seminar. promise.",
+      "bring your weirdest idea.",
+      "if you smell pala flowers, don’t turn around.",
+      "who keeps leaving the lights on upstairs?",
+      "the cats know something.",
     ],
     card: {
       title: "What we know",
@@ -113,7 +115,11 @@ export const SOON = {
     fakeout: ["jump scare in 3…", "jump scare in 3… 2…", "jump scare in 3… 2… 1…"],
     relax: "relax.",
     words: { jump: "Jump.", freeze: "Freeze.", laugh: "Laugh.", lean: "lean in.", what: "What the—" },
+    /** under FREEZE, where something only sees you while you're moving */
+    still: "it can’t see you\nif you don’t move.",
     leanUp: "you just did.",
+    /** scrawled round LAUGH. as it goes */
+    ha: ["ha", "haha", "HA!", "ha ha", "hehe", "HAHAHA"],
     /** under the bar that cuts WHAT THE— off */
     language: "language.",
     why: "Why",
@@ -183,6 +189,8 @@ export const SOON = {
 export const TROLL = {
   closer: "not that close.",
   boo: "boo.",
+  poke: "rude.",
+  seen: "it saw that.",
   lightMode: "light mode? this part’s gonna hurt.",
   darkMode: "they’re here.",
   camera: "IT’S ME.",

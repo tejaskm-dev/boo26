@@ -11,47 +11,6 @@
  * (globals.css), so each is written to rest in a sensible pose there.
  * ------------------------------------------------------------------ */
 
-/* ---------------------------------------------------------- the notes */
-.soon-note {
-  perspective: 900px;
-}
-
-.soon-note-inner {
-  display: grid;
-  transform-style: preserve-3d;
-  transition: transform 0.7s var(--ease-out-soft);
-}
-
-.soon-note[data-flipped="true"] .soon-note-inner {
-  transform: rotateY(180deg);
-}
-
-/* the kraft of The People's pinned note */
-.soon-note-face {
-  grid-area: 1 / 1;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  background: #ded5c2;
-  border: 1px solid #beaf95;
-  border-radius: 2px;
-  box-shadow: 0 8px 24px rgba(8, 8, 8, 0.12);
-}
-
-.soon-note-back {
-  transform: rotateY(180deg);
-  background: #d4c9b1;
-}
-
-.soon-sway {
-  transform-origin: 50% 0;
-  animation: soon-sway 5.6s var(--ease-organic) infinite alternate;
-}
-
-@keyframes soon-sway {
-  from { rotate: -0.9deg; }
-  to { rotate: 1.1deg; }
-}
-
 /* ------------------------------------------------------ black bars */
 .soon-bar {
   position: relative;
@@ -77,16 +36,66 @@
   transform: scaleX(0);
 }
 
-/* ------------------------------------------------------ the spider */
-.soon-thread {
-  position: absolute;
-  left: 50%;
-  top: 0;
-  width: 1px;
-  height: 100%;
-  background: currentColor;
-  opacity: 0.45;
-  transform-origin: 50% 0;
+/* the same bars, set big: a marker someone went over twice. On hover the
+   lime hairline the site's fields carry slips out from behind it. */
+.soon-bar-big {
+  display: block;
+  height: clamp(1.9rem, 3.4vw, 2.6rem);
+  padding: 0 0.8em;
+  line-height: clamp(1.9rem, 3.4vw, 2.6rem);
+  overflow: hidden;
+  /* there, but unseen — selecting the bar shows it (the site's ::selection inks it) */
+  color: transparent;
+  background-color: var(--color-ink);
+  background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.3' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='90' height='90' filter='url(%23n)' opacity='0.22'/></svg>");
+  background-blend-mode: screen;
+  box-shadow: 0 0 0 0 var(--color-lime);
+  transition:
+    box-shadow 0.35s var(--ease-out-soft),
+    transform 0.7s var(--ease-out-soft);
+}
+
+.soon-bar-big:hover,
+.soon-bar-big:focus-visible {
+  box-shadow: -7px 6px 0 -1px var(--color-lime);
+}
+
+/* the one fact, gone over with a highlighter */
+.soon-marker {
+  padding: 0 0.12em;
+  background: linear-gradient(transparent 58%, var(--color-lime) 58%, var(--color-lime) 92%, transparent 92%);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+/* a heading with nerves (Tremble.tsx) */
+[data-shiver="true"] .soon-tremble {
+  animation: soon-shiver 0.12s steps(2, end) infinite;
+  animation-delay: calc(var(--i) * -17ms);
+}
+
+@keyframes soon-shiver {
+  0% { translate: 0 0; rotate: 0deg; }
+  50% { translate: 0.025em -0.035em; rotate: 1.6deg; }
+  100% { translate: -0.02em 0.025em; rotate: -1.3deg; }
+}
+
+/* the rumours in the fog: Critters sets how clearly each reads */
+.soon-whisper {
+  opacity: 0.16;
+  animation: soon-drift 11s ease-in-out infinite alternate;
+}
+
+/* nothing brings them up near you with motion turned down, so they're just there */
+@media (prefers-reduced-motion: reduce) {
+  .soon-whisper {
+    opacity: 0.8;
+  }
+}
+
+@keyframes soon-drift {
+  from { translate: -10px 4px; }
+  to { translate: 14px -8px; }
 }
 
 /* ------------------------------------------------------- the room */
@@ -231,6 +240,44 @@ html[data-js="true"] .soon-room[data-torch]::after {
 
 .soon-room[data-flash="true"] .soon-lit-only {
   opacity: 1;
+}
+
+/* lightning in the room: the window's light thrown on the wall, and the tree
+   outside across it — only there while the flash lasts */
+.soon-strike-light {
+  position: absolute;
+  left: 4%;
+  top: 2%;
+  width: 78%;
+  height: 58%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(243, 240, 231, 0.26), rgba(243, 240, 231, 0.09) 62%, rgba(243, 240, 231, 0));
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.55s ease;
+}
+
+.soon-strike-shadow {
+  position: absolute;
+  left: 2%;
+  top: 0;
+  width: min(84%, 62rem);
+  height: auto;
+  opacity: 0;
+  rotate: 16deg;
+  transform-origin: 0 0;
+  pointer-events: none;
+  transition: opacity 0.55s ease;
+}
+
+.soon-strike-shadow path {
+  fill: #040404;
+}
+
+.soon-room[data-strike="true"] .soon-strike-light,
+.soon-room[data-strike="true"] .soon-strike-shadow {
+  opacity: 1;
+  transition-duration: 0.05s;
 }
 
 /* things that are only there after the torch has gone out once */
@@ -439,7 +486,18 @@ html[data-js="true"] .soon-room[data-torch] .soon-eyes {
   to { translate: 0 -9px; }
 }
 
-.soon-cutbar {
+/* the bar that cuts WHAT THE— off: about a capital high and a word and a
+   half long, in the heading's own ems (it's a label inside it, so it's
+   sized here rather than by utilities the label's own type would win over) */
+.soon-bar.soon-cutbar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 3.8em;
+  min-width: 10em;
+  padding: 0 1em;
+  font-size: 0.16em;
+  line-height: 1;
   transform-origin: 0 50%;
   transform: scaleX(0);
 }
@@ -468,6 +526,110 @@ html[data-js="true"] .soon-room[data-torch] .soon-eyes {
 
 [data-close="true"] .soon-lean-up {
   opacity: 1;
+}
+
+/* the countdown's hollow numeral, landing on each count */
+.soon-count {
+  animation: soon-count 0.5s var(--ease-out-soft);
+}
+
+@keyframes soon-count {
+  from { scale: 1.45; opacity: 0; }
+}
+
+/* JUMP won't stop hopping — one letter after another, squash and stretch */
+[data-hopping="true"] .soon-hop {
+  display: inline-block;
+  transform-origin: 50% 100%;
+  animation: soon-hop 1.7s var(--ease-organic) infinite;
+  animation-delay: calc(var(--i) * 0.09s);
+}
+
+.soon-hop {
+  display: inline-block;
+}
+
+@keyframes soon-hop {
+  0%, 46%, 100% { translate: 0 0; scale: 1 1; }
+  8% { translate: 0 0; scale: 1.08 0.9; }
+  20% { translate: 0 -0.2em; scale: 0.94 1.08; }
+  32% { translate: 0 0; scale: 1.1 0.88; }
+  40% { scale: 0.98 1.03; }
+}
+
+/* the ha's round LAUGH, one after another */
+.soon-ha {
+  opacity: 0;
+  scale: 0.4;
+  pointer-events: none;
+}
+
+[data-laughing="true"] .soon-ha {
+  animation: soon-ha 2.8s var(--ease-out-soft) infinite;
+  animation-delay: calc(var(--i) * 0.4s);
+}
+
+@keyframes soon-ha {
+  0% { opacity: 0; scale: 0.4; translate: 0 0; }
+  10% { opacity: 1; scale: 1.12; }
+  18% { scale: 1; }
+  68% { opacity: 1; }
+  100% { opacity: 0; scale: 1; translate: 0 -14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .soon-ha {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+/* WHAT THE— and the !! it gets, and the cat it scares */
+.soon-slam-pop {
+  opacity: 0;
+  scale: 0;
+  rotate: -30deg;
+}
+
+[data-slammed="true"] .soon-slam-pop {
+  opacity: 1;
+  scale: 1;
+  rotate: 10deg;
+  transition:
+    opacity 0.15s ease 0.14s,
+    scale 0.5s cubic-bezier(0.2, 1.7, 0.4, 1) 0.14s,
+    rotate 0.5s cubic-bezier(0.2, 1.7, 0.4, 1) 0.14s;
+}
+
+.soon-slam-rise {
+  opacity: 0;
+  translate: 0 70%;
+}
+
+[data-slammed="true"] .soon-slam-rise {
+  opacity: 1;
+  translate: 0 0;
+  transition:
+    opacity 0.2s ease 0.22s,
+    translate 0.6s cubic-bezier(0.2, 1.5, 0.4, 1) 0.22s;
+}
+
+/* "look twice": once the bar's off, the line's lime echo slips out from
+   behind it — the hairline every field on the site carries */
+.soon-echo {
+  pointer-events: none;
+  user-select: none;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 2px var(--color-lime);
+  opacity: 0;
+}
+
+[data-open="true"] > .soon-echo {
+  opacity: 1;
+  translate: -0.06em 0.05em;
+  transition:
+    opacity 0.3s ease 0.95s,
+    translate 0.9s cubic-bezier(0.2, 1.5, 0.4, 1) 0.95s;
 }
 
 /* FREEZE stops the grain too */
@@ -513,6 +675,66 @@ html[data-js="true"] .soon-room[data-torch] .soon-eyes {
   opacity: 1;
   visibility: visible;
   transition: opacity 0.25s ease;
+}
+
+/* ------------------------------------------------------ the night field
+   (Heard). The hero's narrowed eyes, open while the section's on screen —
+   one after another as you arrive — and shut when you leave or get too close
+   (Critters). The glow is on the shape itself, so a blink only scales a
+   picture the browser already has. */
+.soon-inkeyes {
+  pointer-events: none;
+  transition: translate 0.4s var(--ease-out-soft);
+}
+
+.soon-inkeyes svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  fill: var(--color-lime);
+  filter: drop-shadow(0 0 5px rgba(216, 255, 40, 0.55)) drop-shadow(0 0 14px rgba(216, 255, 40, 0.28));
+  transform-origin: 50% 62%;
+  transition: transform 0.18s ease;
+  animation: soon-blink 6s infinite;
+}
+
+/* closed until their section's on screen — or, where they're waiting for
+   something, until it happens */
+section:not([data-awake="true"]) .soon-inkeyes svg,
+[data-look]:not([data-look="true"]) .soon-inkeyes svg {
+  transform: scaleY(0.02);
+  opacity: 0;
+}
+
+section[data-awake="true"] .soon-inkeyes:not([data-shut="true"]) svg {
+  transition:
+    transform 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) var(--d, 0s),
+    opacity 0.2s ease var(--d, 0s);
+}
+
+/* too close, and they're gone */
+.soon-inkeyes[data-shut="true"] svg {
+  transform: scaleY(0.02);
+  opacity: 0;
+  transition:
+    transform 0.16s ease,
+    opacity 0.2s ease 0.06s;
+}
+
+/* the living things, on one canvas fixed to the screen and clipped to the section */
+.soon-critters {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  clip-path: inset(0);
+}
+
+.soon-critters-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 
 /* ------------------------------------------------------------ the loops
