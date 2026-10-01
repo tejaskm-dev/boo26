@@ -15,6 +15,7 @@ import SoundStage from "@/components/soon/SoundStage";
 import Peeker from "@/components/soon/Peeker";
 import Dread from "@/components/soon/Dread";
 import ScrollHealth from "@/components/soon/ScrollHealth";
+import Waiting from "@/components/soon/Waiting";
 import { SOON } from "@/lib/soon";
 import { LEGAL } from "@/lib/site";
 import { siteLive } from "@/lib/live";
@@ -59,6 +60,7 @@ export default function SoonPage() {
       <JumpScareHost />
       <HoverNotes />
       <SoundToggle />
+      <Waiting />
       <SoundStage />
       <Peeker />
       <Dread />

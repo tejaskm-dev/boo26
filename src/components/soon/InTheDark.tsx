@@ -517,7 +517,7 @@ export default function InTheDark() {
       <GhostIndex className="right-[6%] top-[4%] hidden text-[clamp(9rem,21vw,19rem)] text-bone lg:block">02</GhostIndex>
 
       {/* the room holds still for a screen's worth of scrolling */}
-      <div ref={runway} className="soon-runway relative mt-[clamp(2rem,6vh,4rem)]">
+      <div ref={runway} data-wait="room" className="soon-runway relative mt-[clamp(2rem,6vh,4rem)]">
         <div ref={room} className="soon-room sticky top-0 h-[100svh] min-h-[34rem] w-full overflow-hidden">
           {/* --- the room, as it is with the lights on ----------------------- */}
           <div className="soon-cover soon-loop">

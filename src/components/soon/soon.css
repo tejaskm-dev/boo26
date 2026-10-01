@@ -1282,6 +1282,106 @@ html.soon-halt {
   97.8% { text-shadow: none; }
 }
 
+/* ------------------------------- lines that tear (glitch.ts, "You'll know.")
+   The ghosts above are lime and ink, which a lime heading on ink swallows
+   whole — so this one doesn't lean on colour. Each line holds its words
+   twice more, in ::before and ::after, laid exactly over it and hidden.
+   While the heading says it's torn (data-g), the line itself goes
+   see-through and the copies show instead: cut into bands and pushed
+   apart, a bone ghost on one, a hollow double, or, for one frame, the
+   other words. The insets reach past the box so the cut never clips the
+   tops of the letters. */
+/* each line's row clips top and bottom, for the rise the lines come up on,
+   but not the sides, so a tear (or longer words) can run past the edge */
+.soon-slice-row {
+  overflow: hidden;
+}
+
+@supports (overflow: clip) {
+  .soon-slice-row {
+    overflow: visible clip;
+  }
+}
+
+.soon-slice {
+  position: relative;
+}
+
+/* twice as wide as the line, so whatever's in them stays centred on it */
+.soon-slice::before,
+.soon-slice::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0 -50%;
+  visibility: hidden;
+  pointer-events: none;
+  -webkit-text-fill-color: currentColor;
+}
+
+.soon-slices[data-g] .soon-slice {
+  -webkit-text-fill-color: transparent;
+}
+
+.soon-slices[data-g] .soon-slice::before,
+.soon-slices[data-g] .soon-slice::after {
+  visibility: visible;
+}
+
+/* a — torn across the middle: the top half thrown left with its ghost, the bottom right */
+.soon-slices[data-g="a"] {
+  translate: 0.02em 0;
+}
+
+.soon-slices[data-g="a"] .soon-slice::before {
+  clip-path: inset(-40% 0 52% 0);
+  translate: -0.08em 0;
+  text-shadow: 0.07em 0 rgba(243, 240, 231, 0.8);
+}
+
+.soon-slices[data-g="a"] .soon-slice::after {
+  clip-path: inset(48% 0 -40% 0);
+  translate: 0.05em 0;
+}
+
+/* b — one thin band thrown well out; the rest barely moves */
+.soon-slices[data-g="b"] .soon-slice::before {
+  clip-path: inset(30% 0 52% 0);
+  translate: 0.18em 0;
+  text-shadow: -0.06em 0 rgba(243, 240, 231, 0.85);
+}
+
+.soon-slices[data-g="b"] .soon-slice::after {
+  clip-path: polygon(0 -40%, 100% -40%, 100% 30%, 0 30%, 0 48%, 100% 48%, 100% 140%, 0 140%);
+  translate: -0.025em 0;
+}
+
+/* c — a double exposure: a hollow bone outline a step off the solid line */
+.soon-slices[data-g="c"] {
+  translate: -0.02em 0;
+}
+
+.soon-slices[data-g="c"] .soon-slice::before {
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0.028em var(--color-bone);
+  translate: -0.09em 0.025em;
+}
+
+.soon-slices[data-g="c"] .soon-slice::after {
+  translate: 0.03em 0;
+}
+
+/* x — for one frame, the other words, with a band of them torn off */
+.soon-slices[data-g="x"] .soon-slice::before {
+  content: attr(data-alt);
+  text-shadow: 0.06em 0 rgba(243, 240, 231, 0.7);
+}
+
+.soon-slices[data-g="x"] .soon-slice::after {
+  content: attr(data-alt);
+  clip-path: inset(58% 0 -40% 0);
+  translate: 0.1em 0;
+}
+
 /* waking: its eyes come at you, then settle */
 .soon-room[data-lunge="true"] .soon-big-eyes > span {
   animation: soon-lunge 0.9s cubic-bezier(0.2, 1.4, 0.3, 1);
@@ -1377,6 +1477,199 @@ html.soon-halt {
 .soon-sound-hint.is-shown {
   opacity: 1;
   translate: 0 0;
+}
+
+/* ------------------------------------------ the eyes in the corner (Waiting)
+   Opposite the sound switch, and only while the page won't move on: a blob
+   of ink with the hero's eyes in it, and a lime line round its edge that
+   fills while you wait (or, in a pinned scene, as you scroll through it).
+   The blob carries its own ink, and the note its own, so both read the same
+   on the bone fields, the ink ones and the black of a title card. */
+.soon-wait {
+  position: fixed;
+  right: var(--edge);
+  bottom: clamp(0.85rem, 2.2vh, 1.4rem);
+  z-index: 72;
+  display: flex;
+  /* on a phone the note goes above the eyes, as the sound switch's does —
+     the bottom edge is busy there (the switch, the torch) */
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.45rem;
+  pointer-events: none;
+  opacity: 0;
+  translate: 0 1.1rem;
+  scale: 0.7;
+  transform-origin: 100% 100%;
+  transition:
+    opacity 0.3s ease,
+    translate 0.4s var(--ease-out-soft),
+    scale 0.4s var(--ease-out-soft);
+}
+
+@media (min-width: 48rem) {
+  .soon-wait {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.55rem;
+  }
+}
+
+/* clear of the scroll rail, where there is one */
+@media (pointer: fine) {
+  .soon-wait {
+    right: max(var(--edge), 3rem);
+  }
+}
+
+.soon-wait:not([data-mode="off"]) {
+  opacity: 1;
+  translate: 0 0;
+  scale: 1;
+  transition:
+    opacity 0.35s ease,
+    translate 0.65s cubic-bezier(0.2, 1.4, 0.4, 1),
+    scale 0.65s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+.soon-wait-blob {
+  position: relative;
+  width: clamp(3.2rem, 4.2vw, 3.9rem);
+  aspect-ratio: 1;
+  filter: drop-shadow(0 10px 18px rgba(8, 8, 8, 0.35));
+}
+
+/* alive while it's up: a slow breath */
+.soon-wait:not([data-mode="off"]) .soon-wait-blob {
+  animation: soon-wait-breathe 2.8s ease-in-out infinite;
+}
+
+@keyframes soon-wait-breathe {
+  0%, 100% { scale: 1; }
+  50% { scale: 1.045 0.97; }
+}
+
+/* the ring it lets go with */
+.soon-wait-burst {
+  position: absolute;
+  inset: 4%;
+  border: 2px solid var(--color-lime);
+  border-radius: 50%;
+  opacity: 0;
+}
+
+.soon-wait-blob > svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.soon-wait-body {
+  fill: var(--color-ink);
+  stroke: rgba(216, 255, 40, 0.2);
+  stroke-width: 3;
+}
+
+.soon-wait-ring {
+  fill: none;
+  stroke: var(--color-lime);
+  stroke-width: 3.6;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.45s var(--ease-out-soft);
+}
+
+.soon-wait-eyes {
+  position: absolute;
+  left: 19%;
+  top: 33%;
+  width: 62%;
+  transform-origin: 50% 62%;
+  transition: transform 0.35s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+.soon-wait-eyes svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  fill: var(--color-lime);
+  filter: drop-shadow(0 0 4px rgba(216, 255, 40, 0.55));
+  transform-origin: 50% 62%;
+}
+
+.soon-wait:not([data-mode="off"]) .soon-wait-eyes svg {
+  animation: soon-blink 4.6s infinite;
+}
+
+/* scrolling while it's holding: a glare */
+.soon-wait[data-eyes="glare"] .soon-wait-eyes {
+  transform: scale(1.1, 0.42);
+}
+
+/* let go: shut, for a beat */
+.soon-wait[data-eyes="shut"] .soon-wait-eyes {
+  transform: scaleY(0.06);
+  transition-duration: 0.12s;
+}
+
+/* on you go: lids down, looking down the page */
+.soon-wait[data-eyes="down"] .soon-wait-eyes {
+  transform: translateY(18%) scaleY(0.62);
+}
+
+.soon-wait-note {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.22rem 0.85rem 0.34rem;
+  white-space: nowrap;
+  color: var(--color-bone);
+  font-size: clamp(1.1rem, 1.5vw, 1.3rem);
+  background: var(--color-ink);
+  border-radius: 46% 54% 58% 42% / 42% 60% 40% 58%;
+  box-shadow:
+    0 0 0 1px rgba(216, 255, 40, 0.4),
+    0 10px 24px rgba(8, 8, 8, 0.3);
+  rotate: -3deg;
+  opacity: 0;
+  translate: 0 0.5rem;
+  scale: 0.8;
+  transform-origin: 100% 100%;
+  transition:
+    opacity 0.2s ease,
+    translate 0.3s var(--ease-out-soft),
+    scale 0.3s var(--ease-out-soft);
+}
+
+.soon-wait[data-note="true"] .soon-wait-note {
+  opacity: 1;
+  translate: 0 0;
+  scale: 1;
+  transition:
+    opacity 0.25s ease,
+    translate 0.55s cubic-bezier(0.2, 1.4, 0.4, 1),
+    scale 0.55s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+@media (min-width: 48rem) {
+  .soon-wait-note {
+    translate: 0.8rem 0;
+    transform-origin: 100% 50%;
+  }
+}
+
+.soon-wait-note svg {
+  display: none;
+  width: 0.6em;
+  height: 1.15em;
+  color: var(--color-lime);
+}
+
+.soon-wait[data-arrow="true"] .soon-wait-note svg {
+  display: block;
+  animation: cue 2.2s var(--ease-out-soft) infinite;
 }
 
 /* ------------------------------------------------- anywhere on the page */

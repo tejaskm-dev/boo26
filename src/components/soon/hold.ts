@@ -14,6 +14,10 @@ import { prefersReducedMotion } from "@/lib/motion";
  * anything ever went wrong — a few seconds after that. With motion turned
  * down nothing is ever held.
  *
+ * Every hold says so on window as "soon:hold" — `{ key, held: true, ms }`
+ * once it's still, `{ key, held: false }` as it lets go — which is how the
+ * eyes in the corner (Waiting.tsx) know how long you're waiting.
+ *
  * Held means Lenis stopped (wheel and touch swallowed) and the scrolling
  * keys ignored. Whatever was already moving the page — a fling's momentum on
  * a phone — is stopped dead first, for two frames, so the ease to the right
@@ -54,7 +58,21 @@ export function hold(key: string, ms: number, opts: HoldOptions = {}): boolean {
   // stop whatever's moving the page, momentum and all
   lenis.stop();
   root.classList.add("soon-halt");
-  twoFrames(() => root.classList.remove("soon-halt"));
+  // where it caught you: stopping just synced Lenis with the page (a phone's
+  // own scrolling can leave it behind), so this is the real position
+  const at = lenis.scroll;
+  twoFrames(() => {
+    root.classList.remove("soon-halt");
+    // On a phone the fling runs on the compositor, which only learns the
+    // page has stopped once this frame is drawn — and the frame a scene
+    // starts in is a busy one (a slam, a sound, a heading), so a fast
+    // fling can carry on a few hundred pixels before it does. Bring the
+    // page back to where it was caught, or the moment is held off screen.
+    if (released || opts.to !== undefined) return;
+    if (Math.abs(window.scrollY - at) > 24) {
+      lenis.scrollTo(at, { duration: 0.35, easing: (x: number) => 1 - Math.pow(1 - x, 3), force: true, lock: true });
+    }
+  });
   const onKey = (e: KeyboardEvent) => {
     if (KEYS.has(e.key) && !(e.target as Element)?.closest?.("input,textarea,select,[contenteditable]")) e.preventDefault();
   };
@@ -79,7 +97,7 @@ export function hold(key: string, ms: number, opts: HoldOptions = {}): boolean {
   const still = () => {
     if (released || held) return;
     held = true;
-    window.dispatchEvent(new CustomEvent("soon:hold", { detail: { key, held: true } }));
+    window.dispatchEvent(new CustomEvent("soon:hold", { detail: { key, held: true, ms } }));
     opts.onHeld?.();
     timers.push(window.setTimeout(release, ms));
   };

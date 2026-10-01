@@ -274,3 +274,26 @@ export const TROLL = {
   notYet: "not yet.",
   ghosted: "you’ve been ghosted.",
 } as const;
+
+/**
+ * The eyes in the corner (Waiting.tsx), there only while the page is being
+ * held or a scene is pinned: the line round them fills while you wait (or
+ * scroll), and when it closes you're through.
+ */
+export const WAIT = {
+  /** the first time it holds you still */
+  first: "wait for it…",
+  /** scrolling while it's holding — one per try, a different one each time */
+  push: ["not yet.", "it’s watching.", "shh.", "nice try.", "still no."],
+  /** let go, and you haven't moved — or you'd been trying to */
+  go: "now go",
+  /** stopped partway through a pinned scene, or let go inside one */
+  idle: {
+    cut: "keep going",
+    room: "tiptoe",
+    /** the room, once it's awake */
+    woke: "run.",
+    freeze: "ok. you can move.",
+    drop: "almost",
+  },
+} as const;

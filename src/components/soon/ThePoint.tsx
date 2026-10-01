@@ -265,20 +265,24 @@ export default function ThePoint() {
         .to({}, { duration: 0.16 })
         .to(closeL.current, { xPercent: -105, ease: "power2.in", duration: 0.42 })
         .to(closeR.current, { xPercent: 105, ease: "power2.in", duration: 0.42 }, "<");
+      // the page, with "lean in" in the middle of the screen
+      const leanAt = () => {
+        const r = lean.current!.getBoundingClientRect();
+        return r.top + window.scrollY + r.height * 0.41 - window.innerHeight * 0.5;
+      };
       ScrollTrigger.create({
         trigger: lean.current,
         start: "top 40%",
         end: "bottom 60%",
+        // flung clean past it in one frame: brought back to lean in after all
+        onLeave: () => hold("lean", 2500, { to: leanAt(), glide: 0.6 }),
         onToggle: ({ isActive }) => {
           lean.current!.dataset.close = isActive ? "true" : "false";
           lean.current!.dataset.look = isActive ? "true" : "false";
           // the oldest trick there is: get them to lean in to read something
           // small — and then. Once a visit, for anyone who stays a moment.
           window.clearTimeout(leaning);
-          if (isActive && lean.current) {
-            const r = lean.current.getBoundingClientRect();
-            hold("lean", 2500, { to: r.top + window.scrollY + r.height * 0.41 - window.innerHeight * 0.5, glide: 0.5 });
-          }
+          if (isActive && lean.current) hold("lean", 2500, { to: leanAt(), glide: 0.5 });
           if (isActive)
             leaning = window.setTimeout(() => {
               if (lean.current?.dataset.close !== "true") return;
@@ -306,7 +310,9 @@ export default function ThePoint() {
         onEnter: () => {
           what.current!.dataset.slammed = "true";
           cue("beep", true);
-          hold("what", 1500);
+          // a fling that ran on well past it is brought back to it
+          const top = what.current!.getBoundingClientRect().top;
+          hold("what", 1500, top < window.innerHeight * 0.05 ? { to: top + window.scrollY - window.innerHeight * 0.36, glide: 0.35 } : {});
           timers.push(window.setTimeout(() => shiver(what.current, 7), 150));
         },
       });
@@ -392,7 +398,7 @@ export default function ThePoint() {
       </div>
 
       {/* FREEZE — held while the page goes past */}
-      <div ref={freeze} className="relative mt-[8svh] h-[200svh] overflow-clip">
+      <div ref={freeze} data-wait="freeze" className="relative mt-[8svh] h-[200svh] overflow-clip">
         <div className="sticky top-0 grid h-[100svh] place-items-center px-[var(--edge)]">
           <div className="relative">
             <h3 data-secret={SECRETS.freeze} className={`${word} rotate-[1.5deg] ${back.freeze ? "text-[clamp(3.4rem,14vw,12rem)]" : "text-[clamp(4.6rem,20vw,16rem)]"}`}>

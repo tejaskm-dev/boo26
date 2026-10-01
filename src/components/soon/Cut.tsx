@@ -76,6 +76,8 @@ export default function Cut({ lines, back = [] }: { lines: readonly string[]; ba
     let timers: number[] = [];
     let playing: "down" | "up" | null = null;
     let breathed = false;
+    /** held for it this visit */
+    let caught = false;
 
     const play = (way: "down" | "up") => {
       if (playing) return;
@@ -120,16 +122,19 @@ export default function Cut({ lines, back = [] }: { lines: readonly string[]; ba
           breathed = true;
           cue("inhale");
         }
-        if (!playing && p > 0.2 && p < 0.8) play(self.direction < 0 && up.length ? "up" : "down");
-        if (playing === "down" && p > 0.2) {
+        // a fling that went clean past it in one frame (a slow phone, a busy
+        // moment) still gets the card: the hold brings it back for it
+        const missed = !playing && !caught && self.direction > 0 && p >= 0.8;
+        if (!playing && ((p > 0.2 && p < 0.8) || missed)) play(!missed && self.direction < 0 && up.length ? "up" : "down");
+        if (playing === "down" && p > 0.2 && !caught) {
           // the card's up: hold the page while it says its piece
-          hold(`cut:${lines.join("|")}`, lines.length * STEP + 700, {
+          caught = hold(`cut:${lines.join("|")}`, lines.length * STEP + 700, {
             to: self.start + (self.end - self.start) * 0.36,
             glide: 0.7,
           });
         }
         // left behind, either way: ready to play again
-        if (p < 0.08 || p > 0.96) {
+        if (!missed && (p < 0.08 || p > 0.96)) {
           reset();
           breathed = false;
         }
@@ -142,7 +147,7 @@ export default function Cut({ lines, back = [] }: { lines: readonly string[]; ba
   }, [lines, back]);
 
   return (
-    <div ref={room} className="soon-cut-room" aria-hidden="true">
+    <div ref={room} className="soon-cut-room" data-wait="cut" aria-hidden="true">
       <div ref={veil} className="soon-cut">
         <span className="soon-cut-grain" />
         <span className="soon-cut-flicker" />

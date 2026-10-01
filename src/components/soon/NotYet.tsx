@@ -16,6 +16,7 @@ import InkEyes from "./InkEyes";
 import { cue } from "./sound";
 import { hold } from "./hold";
 import { useBacktrack } from "./backtrack";
+import { glitch, useGlitch } from "./glitch";
 import { answer, buzz, shiver } from "./troll";
 
 /** what a silenced rumour says instead — block glyphs read as a broken font, not a redaction */
@@ -48,7 +49,9 @@ const CROWD: { at: string; tilt: number }[] = [
  * ("When it drops,"), and in the dark, eyes open one after another all round
  * the edge of the frame — everyone's here. Then the cat from the top of the
  * page slams in, the BOO! lockup and all, and "You'll know." comes up under
- * it, then the one thing to do: pass it on. What gets passed on is the old
+ * it — and won't hold still: it tears now and then (glitch.ts), and for a
+ * frame, once in a while, it says what it says when you come back up. Then
+ * the one thing to do: pass it on. What gets passed on is the old
  * chain-message curse.
  *
  * The band runs the rumours, with a different couple hushed on every
@@ -68,6 +71,8 @@ export default function NotYet() {
   const cta = useRef<HTMLDivElement>(null);
   const [knows, setKnows] = useState(false);
   useBacktrack(runway, () => setKnows(true), "bottom 12%");
+  // it won't hold still — and now and then, for a frame, it says the other thing
+  useGlitch(title);
 
   // the shot: eyes, then the slam, then the line, then the ask
   useEffect(() => {
@@ -100,7 +105,16 @@ export default function NotYet() {
       const say = () => {
         if (said) return;
         said = true;
-        gsap.to(lines, { yPercent: 0, rotation: 0, autoAlpha: 1, duration: 0.9, ease: "power4.out", stagger: 0.1 });
+        gsap.to(lines, {
+          yPercent: 0,
+          rotation: 0,
+          autoAlpha: 1,
+          duration: 0.9,
+          ease: "power4.out",
+          stagger: 0.1,
+          // and the moment it's landed, it tears
+          onComplete: () => glitch(title.current, "tear"),
+        });
       };
       const ask = () => {
         if (asked) return;
@@ -167,6 +181,10 @@ export default function NotYet() {
     }
   };
 
+  const heading = knows ? BACK.heading : t.heading;
+  // what it slips into for a frame when it glitches: whichever it isn't saying
+  const other = (knows ? t.heading : BACK.heading).split("\n");
+
   const patience = () => {
     answer(TROLL.patience[Math.min(pokes.current, TROLL.patience.length - 1)]);
     pokes.current += 1;
@@ -184,7 +202,7 @@ export default function NotYet() {
       <Critters bats={2} wisps={10} ghosts={0} sky={[0.06, 0.24]} ground={[0.2, 0.9]} className="z-[1]" />
 
       {/* the last shot, held for a while */}
-      <div ref={runway} className="soon-drop-runway relative">
+      <div ref={runway} data-wait="drop" className="soon-drop-runway relative">
         <div ref={stage} className="sticky top-0 grid h-[100svh] min-h-[36rem] place-items-center overflow-hidden px-[var(--edge)]">
           {/* everyone's here */}
           <div ref={crowd} className="absolute inset-0" aria-hidden="true">
@@ -207,12 +225,12 @@ export default function NotYet() {
             <h2
               ref={title}
               onClick={patience}
-              aria-label={(knows ? BACK.heading : t.heading).replace("\n", " ")}
-              className="soon-glitch brush -mt-[0.15em] -rotate-[1.5deg] cursor-default select-none text-center text-[clamp(3.6rem,11vw,8.5rem)] leading-[0.84] text-lime"
+              aria-label={heading.replace("\n", " ")}
+              className="soon-slices brush -mt-[0.15em] -rotate-[1.5deg] cursor-default select-none text-center text-[clamp(3.6rem,11vw,8.5rem)] leading-[0.84] text-lime"
             >
-              {(knows ? BACK.heading : t.heading).split("\n").map((l) => (
-                <span key={l} className="block overflow-hidden pb-[0.06em]" aria-hidden="true">
-                  <span data-line className="block">
+              {heading.split("\n").map((l, i) => (
+                <span key={l} className="soon-slice-row block pb-[0.06em]" aria-hidden="true">
+                  <span data-line data-text={l} data-alt={other[i] ?? ""} className="soon-slice block">
                     {l}
                   </span>
                 </span>
