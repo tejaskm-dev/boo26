@@ -387,7 +387,7 @@ export default function ThePoint() {
       className="pb-[clamp(4rem,11vh,8rem)] pt-[clamp(3rem,8vh,6rem)]"
     >
       <Awake />
-      <Critters bats={0} wisps={0} ghosts={0} className="z-[6]" />
+      <Critters bats={0} className="z-[6]" />
 
       <div className="px-[var(--edge)]">
         <SectionLabel index="03">{t.label}</SectionLabel>

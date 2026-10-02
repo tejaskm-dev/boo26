@@ -116,6 +116,8 @@ export default function Cut({ lines, back = [] }: { lines: readonly string[]; ba
       end: "bottom 55%",
       onToggle: ({ isActive }) => {
         veilEl.style.visibility = isActive ? "visible" : "hidden";
+        // its film (grain, flicker, the eyes' blinks) runs only while it's up
+        veilEl.dataset.on = isActive ? "true" : "false";
       },
       onUpdate: (self) => {
         const p = self.progress;

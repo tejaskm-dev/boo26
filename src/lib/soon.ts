@@ -61,15 +61,11 @@ export const SOON = {
     /** the same heading, when you scroll back up to it after the room */
     again: "Heard\nthat?",
     body: "BOO! is coming to ASIET. That’s about all we’re allowed to tell you.",
-    /** rumours in the dark — they only read clearly up close */
-    whispers: [
-      "no, we won’t tell you when.",
-      "it’s not a seminar. promise.",
-      "bring your weirdest idea.",
-      "if you smell pala flowers, don’t turn around.",
-      "who keeps leaving the lights on upstairs?",
-      "the cats know something.",
-    ],
+    /**
+     * The rumour, passed along a chain of eyes in the dark — a little
+     * different every time it's passed on (Rumour.tsx)
+     */
+    rumour: ["psst. it’s not a seminar.", "bring your weirdest idea.", "and don’t come alone.", "says who?", "…the cats."],
     card: {
       rows: [
         { k: "What", hidden: "nice try" },
@@ -182,15 +178,8 @@ export const SOON = {
  * swapped in just before it comes back into view, once, and left that way.
  */
 export const BACK = {
-  /** the rumours, now that you've been further in */
-  whispers: [
-    "we told you not to.",
-    "it’s still behind you.",
-    "you scrolled back. why?",
-    "too late to unhear it.",
-    "it heard you too.",
-    "the cats know you’re here.",
-  ],
+  /** the rumour, now that you've been further in */
+  rumour: ["you scrolled back. why?", "it heard you too.", "it’s still behind you.", "too late to unhear it.", "the cats know you’re here."],
   leak: "the schedule is a lie.",
   bar: "it’s behind you.",
   count: "you sure about that?",
@@ -222,8 +211,8 @@ export const SECRETS = {
   heading: "we heard you heard.",
   body: "that’s genuinely all. we checked.",
   moon: "it’s always this full here.",
-  whispers: ["we really won’t.", "pinky promise.", "weirder than that.", "too late.", "it’s not us.", "ask them nicely."],
-  pumpkin: "there’s a cat in it. obviously.",
+  /** one for each link of the rumour */
+  rumour: ["pinky promise.", "weirder than that.", "someone to scream with.", "not us.", "ask them nicely."],
   where: "that part’s real.",
   leak: "don’t.",
   window: "tap it. go on.",

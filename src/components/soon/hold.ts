@@ -35,6 +35,39 @@ const twoFrames = (fn: () => void) => requestAnimationFrame(() => requestAnimati
 let current: { key: string; release: () => void } | null = null;
 const done = new Set<string>();
 
+// how far the page moved at its last step. A jump — a link, a script, the
+// scrollbar's rail — moves screens at once; a scroll, however hard, is a
+// fraction of one a frame. Measured here rather than asked of Lenis, which
+// can skip a native scroll event and report no movement at all.
+let stepFrom = 0;
+let stepTo = 0;
+if (typeof window !== "undefined") {
+  stepFrom = stepTo = window.scrollY;
+  window.addEventListener(
+    "scroll",
+    () => {
+      stepFrom = stepTo;
+      stepTo = window.scrollY;
+    },
+    { passive: true },
+  );
+}
+// (the page may have moved since this last heard of it: whatever asks for a
+// hold can be answering the same scroll event, ahead of this listener)
+const jumped = () => Math.max(Math.abs(stepTo - stepFrom), Math.abs(window.scrollY - stepTo)) > window.innerHeight * 1.6;
+
+// fingers on the glass. A drag already under way when a hold starts can't be
+// cancelled, and some phones go on scrolling under it until it lifts — so
+// anything that moves the page itself waits for the finger to come off,
+// rather than fighting it.
+let fingers = 0;
+if (typeof window !== "undefined") {
+  const count = (e: TouchEvent) => (fingers = e.touches.length);
+  window.addEventListener("touchstart", count, { passive: true });
+  window.addEventListener("touchend", count, { passive: true });
+  window.addEventListener("touchcancel", count, { passive: true });
+}
+
 export type HoldOptions = {
   /** ease here first: a scroll position, or an element to bring to the top */
   to?: number | HTMLElement;
@@ -54,9 +87,7 @@ export function hold(key: string, ms: number, opts: HoldOptions = {}): boolean {
   const lenis = getLenis();
   const way = opts.way ?? "down";
   if (!lenis || (way === "down" ? lenis.direction < 0 : lenis.direction >= 0)) return false;
-  // a jump (a link, the scrollbar's rail) covers screens in one go; a
-  // scroll, however hard, is a fraction of one a frame
-  if (Math.abs(lenis.velocity) > window.innerHeight * 1.6) return false;
+  if (jumped()) return false;
   done.add(key);
   // claim the slot before anything else: stopping the scroll fires a scroll
   // event right away, and whatever's listening mustn't start a second hold
@@ -71,6 +102,23 @@ export function hold(key: string, ms: number, opts: HoldOptions = {}): boolean {
   // where it caught you: stopping just synced Lenis with the page (a phone's
   // own scrolling can leave it behind), so this is the real position
   const at = lenis.scroll;
+  const ease = (x: number) => 1 - Math.pow(1 - x, 3);
+  let lifted = () => {};
+  /** once the finger's off the glass (straight away, if it isn't on it) */
+  const afterLift = (fn: () => void) => {
+    if (!fingers) return fn();
+    const up = () => {
+      if (fingers) return;
+      lifted();
+      fn();
+    };
+    lifted = () => {
+      window.removeEventListener("touchend", up);
+      window.removeEventListener("touchcancel", up);
+    };
+    window.addEventListener("touchend", up, { passive: true });
+    window.addEventListener("touchcancel", up, { passive: true });
+  };
   twoFrames(() => {
     root.classList.remove("soon-halt");
     // On a phone the fling runs on the compositor, which only learns the
@@ -79,9 +127,9 @@ export function hold(key: string, ms: number, opts: HoldOptions = {}): boolean {
     // fling can carry on a few hundred pixels before it does. Bring the
     // page back to where it was caught, or the moment is held off screen.
     if (released || opts.to !== undefined) return;
-    if (Math.abs(window.scrollY - at) > 24) {
-      lenis.scrollTo(at, { duration: 0.35, easing: (x: number) => 1 - Math.pow(1 - x, 3), force: true, lock: true });
-    }
+    afterLift(() => {
+      if (!released && Math.abs(window.scrollY - at) > 24) lenis.scrollTo(at, { duration: 0.35, easing: ease, force: true, lock: true });
+    });
   });
   const onKey = (e: KeyboardEvent) => {
     if (KEYS.has(e.key) && !(e.target as Element)?.closest?.("input,textarea,select,[contenteditable]")) e.preventDefault();
@@ -90,6 +138,7 @@ export function hold(key: string, ms: number, opts: HoldOptions = {}): boolean {
   const release = () => {
     if (released) return;
     released = true;
+    lifted();
     timers.forEach((t) => window.clearTimeout(t));
     document.removeEventListener("visibilitychange", onHide);
     window.removeEventListener("keydown", onKey);
@@ -113,20 +162,15 @@ export function hold(key: string, ms: number, opts: HoldOptions = {}): boolean {
   };
   if (opts.to !== undefined) {
     const to = opts.to;
-    // once the halt has taken, ease to the spot
-    twoFrames(() => {
-      if (released) return;
-      lenis.scrollTo(to, {
-        offset: opts.offset ?? 0,
-        duration: opts.glide ?? 0.6,
-        easing: (x: number) => 1 - Math.pow(1 - x, 3),
-        force: true,
-        lock: true,
-        onComplete: still,
-      });
-    });
-    // if the ease never reports back, hold from where we are
-    timers.push(window.setTimeout(still, (opts.glide ?? 0.6) * 1000 + 400));
+    // once the halt has taken (and the finger's off), ease to the spot
+    twoFrames(() =>
+      afterLift(() => {
+        if (released) return;
+        lenis.scrollTo(to, { offset: opts.offset ?? 0, duration: opts.glide ?? 0.6, easing: ease, force: true, lock: true, onComplete: still });
+        // if the ease never reports back, hold from where we are
+        timers.push(window.setTimeout(still, (opts.glide ?? 0.6) * 1000 + 400));
+      }),
+    );
   } else {
     still();
   }
