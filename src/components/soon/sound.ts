@@ -470,7 +470,6 @@ export type Line =
   | "when-it-drops"
   | "know"
   // and the jokes
-  | "damage"
   | "what"
   | "safe"
   | "nerd"
@@ -495,8 +494,6 @@ const LINES: Record<Line, { level: number; wet: number; pan?: number }> = {
   followed: { level: 0.8, wet: 0.3, pan: 0.35 },
   "back-for-more": { level: 0.8, wet: 0.3, pan: 0.35 },
   // and something that thinks it's all very funny
-  // (said under its breath, a way off — not shouted in your ear)
-  damage: { level: 0.32, wet: 0.35 },
   // (what anyone says when the face comes at them — bleeped before they get to the end of it)
   what: { level: 0.85, wet: 0.12 },
   safe: { level: 0.75, wet: 0.18 },

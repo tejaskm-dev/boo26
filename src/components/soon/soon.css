@@ -6,8 +6,7 @@
  *
  * Every loop here is transform or opacity. They run only while their section
  * is on screen ([data-awake], set by an observer — see Awake.tsx), stop while
- * the page is left idle (html[data-idle], IdleGuard), and stop when FREEZE
- * says so ([data-frozen]). Reduced motion ends every one on its first frame
+ * the page is left idle (html[data-idle], IdleGuard). Reduced motion ends every one on its first frame
  * (globals.css), so each is written to rest in a sensible pose there.
  * ------------------------------------------------------------------ */
 
@@ -639,29 +638,6 @@ html[data-js="true"] .soon-room[data-torch] .soon-shade {
 }
 
 /* ------------------------------------------------------- the point */
-.soon-letter {
-  display: inline-block;
-}
-
-[data-laughing="true"] .soon-letter {
-  animation: soon-laugh 0.46s ease-in-out infinite alternate;
-  animation-delay: calc(var(--i) * -110ms);
-}
-
-@keyframes soon-laugh {
-  from { translate: 0 0; rotate: 0deg; }
-  to { translate: 0 -0.14em; rotate: -5deg; }
-}
-
-.soon-float {
-  animation: soon-float 3.4s ease-in-out infinite alternate;
-}
-
-@keyframes soon-float {
-  from { translate: 0 0; }
-  to { translate: 0 -9px; }
-}
-
 /* the bar that cuts WHAT THE— off: about a capital high and a word and a
    half long, in the heading's own ems (it's a label inside it, so it's
    sized here rather than by utilities the label's own type would win over) */
@@ -772,53 +748,6 @@ html[data-js="true"] .soon-room[data-torch] .soon-shade {
   from { scale: 1.45; opacity: 0; }
 }
 
-/* JUMP won't stop hopping — one letter after another, squash and stretch */
-[data-hopping="true"] .soon-hop {
-  display: inline-block;
-  transform-origin: 50% 100%;
-  animation: soon-hop 1.7s var(--ease-organic) infinite;
-  animation-delay: calc(var(--i) * 0.09s);
-}
-
-.soon-hop {
-  display: inline-block;
-}
-
-@keyframes soon-hop {
-  0%, 46%, 100% { translate: 0 0; scale: 1 1; }
-  8% { translate: 0 0; scale: 1.08 0.9; }
-  20% { translate: 0 -0.2em; scale: 0.94 1.08; }
-  32% { translate: 0 0; scale: 1.1 0.88; }
-  40% { scale: 0.98 1.03; }
-}
-
-/* the ha's round LAUGH, one after another */
-.soon-ha {
-  opacity: 0;
-  scale: 0.4;
-  pointer-events: none;
-}
-
-[data-laughing="true"] .soon-ha {
-  animation: soon-ha 2.8s var(--ease-out-soft) infinite;
-  animation-delay: calc(var(--i) * 0.4s);
-}
-
-@keyframes soon-ha {
-  0% { opacity: 0; scale: 0.4; translate: 0 0; }
-  10% { opacity: 1; scale: 1.12; }
-  18% { scale: 1; }
-  68% { opacity: 1; }
-  100% { opacity: 0; scale: 1; translate: 0 -14px; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .soon-ha {
-    opacity: 1;
-    scale: 1;
-  }
-}
-
 /* WHAT THE— and the !! it gets, and the cat it scares */
 .soon-slam-pop {
   opacity: 0;
@@ -865,11 +794,6 @@ html[data-js="true"] .soon-room[data-torch] .soon-shade {
   transition:
     opacity 0.3s ease 0.95s,
     translate 0.9s cubic-bezier(0.2, 1.5, 0.4, 1) 0.95s;
-}
-
-/* FREEZE stops the grain too */
-.grain[data-frozen="true"] {
-  animation-play-state: paused;
 }
 
 /* ------------------------------------------------------- the last shot

@@ -38,7 +38,6 @@ const SCENES: Record<string, Scene> = {
     end: "bottom bottom",
     line: (el) => (el.querySelector<HTMLElement>("[data-cat]")?.dataset.cat === "awake" ? WAIT.idle.woke : WAIT.idle.room),
   },
-  freeze: { start: "top top", end: "bottom bottom", line: () => WAIT.idle.freeze },
   // the last shot: once the ask is up (or you're on your way back up), it leaves you to it
   drop: { start: "top top", end: "bottom bottom", line: (_, p, up) => (!up && p < 0.36 ? WAIT.idle.drop : null) },
 };
