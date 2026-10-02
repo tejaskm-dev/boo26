@@ -115,6 +115,8 @@ export default function Cut({
     let caughtUp = false;
     /** one of its holds has the page (easing it back, or holding it) */
     let mine = false;
+    /** where the last update had it (or which end it was left by): a step through it, or clean past it? */
+    let lastP = -1;
 
     /**
      * When it all happens, this time through, in ms: when each line comes
@@ -229,13 +231,17 @@ export default function Cut({
       start: "top 85%",
       // gone before the next act's words come up
       end: "bottom 55%",
-      onToggle: ({ isActive }) => {
+      onToggle: (self) => {
+        const { isActive } = self;
+        if (!isActive) lastP = self.progress >= 0.5 ? 1 : 0;
         if (touch) return;
         veilEl.style.visibility = isActive ? "visible" : "hidden";
         veilEl.dataset.on = isActive ? "true" : "false";
       },
       onUpdate: (self) => {
         const p = self.progress;
+        const was = lastP < 0 ? (self.direction < 0 ? 1 : 0) : lastP;
+        lastP = p;
         // dark in, hold, dark out
         if (!touch) veilEl.style.opacity = String(Math.max(0, Math.min(1, p / 0.18, (1 - p) / 0.22)));
         if (!breathed && p > 0.06) {
@@ -277,13 +283,18 @@ export default function Cut({
         // a fling that went clean past it in one frame (a slow phone, a busy
         // moment) still gets the card, either way: the hold brings it back
         // for it. A jump (a link) isn't held, and then it's simply left behind.
-        if (!playing && (goingUp ? !caughtUp && up.length > 0 && p <= 0.2 : !caught && p >= 0.8)) {
+        // Only one that skipped it, though: a page that went through it while
+        // it played and wasn't caught (it had just turned round, or the menu
+        // put it there) has seen it, and isn't dragged back for it.
+        if (!playing && (goingUp ? !caughtUp && up.length > 0 && p <= 0.2 && was > 0.8 : !caught && p >= 0.8 && was < 0.2)) {
           if (holdFor(goingUp ? "up" : "down", true)) play(goingUp ? "up" : "down");
           return;
         }
         if (!playing && p > 0.2 && p < 0.8) play(goingUp && up.length ? "up" : "down");
-        if (playing === "down" && p > 0.2 && !caught) holdFor("down");
-        if (playing === "up" && p < 0.8 && !caughtUp) holdFor("up");
+        // caught while it's playing, in the stretch it plays in — not on the
+        // way out of it, which would only ease the page back again
+        if (playing === "down" && p > 0.2 && p < 0.8 && !caught) holdFor("down");
+        if (playing === "up" && p > 0.2 && p < 0.8 && !caughtUp) holdFor("up");
         // left behind, either way: ready to play again
         if (p < 0.08 || p > 0.96) {
           reset();

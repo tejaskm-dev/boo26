@@ -36,7 +36,10 @@ import { isNavActive, subscribeNavActive } from "@/lib/navState";
  * Held means Lenis stopped (wheel and touch swallowed) and the scrolling
  * keys ignored. Whatever was already moving the page — a fling's momentum on
  * a phone — is stopped dead first, for two frames, so the ease to the right
- * spot never has to fight it.
+ * spot never has to fight it. A wheel, a trackpad or the keys move the page
+ * on Lenis's own glide instead, which a hold can simply take over: the page
+ * carries on as it was going and comes to rest, rather than stopping dead
+ * and lurching on into place.
  */
 
 /** the keys that scroll a page */
@@ -52,6 +55,8 @@ const done = new Set<string>();
 // can skip a native scroll event and report no movement at all.
 let stepFrom = 0;
 let stepTo = 0;
+let stepAt = 0;
+let stepMs = 16;
 // and when the visitor last changed direction (their scrolling, not a hold's
 // own easing): flicking back and forth isn't someone to catch
 let lastWay = 0;
@@ -63,6 +68,9 @@ if (typeof window !== "undefined") {
     () => {
       stepFrom = stepTo;
       stepTo = window.scrollY;
+      const now = performance.now();
+      stepMs = Math.min(50, Math.max(4, now - stepAt));
+      stepAt = now;
       const way = Math.sign(stepTo - stepFrom);
       if (way && !current) {
         if (lastWay && way !== lastWay) turnedAt = performance.now();
@@ -75,6 +83,8 @@ if (typeof window !== "undefined") {
 // (the page may have moved since this last heard of it: whatever asks for a
 // hold can be answering the same scroll event, ahead of this listener)
 const jumped = () => Math.max(Math.abs(stepTo - stepFrom), Math.abs(window.scrollY - stepTo)) > window.innerHeight * 1.6;
+/** how fast the page was going at its last step, in px a second (still, if that was a while ago) */
+const speed = () => (performance.now() - stepAt < 100 ? (Math.abs(stepTo - stepFrom) / stepMs) * 1000 : 0);
 
 /** the visitor's taken the page somewhere else: let go, and say so */
 function away() {
@@ -91,11 +101,16 @@ if (typeof window !== "undefined") {
 // anything that moves the page itself waits for the finger to come off,
 // rather than fighting it.
 let fingers = 0;
+// and whether the page was last moved by one, or by a wheel, a trackpad or
+// the keys (Lenis's glide, not the phone's own momentum)
+let touched = false;
 if (typeof window !== "undefined") {
   const count = (e: TouchEvent) => (fingers = e.touches.length);
-  window.addEventListener("touchstart", count, { passive: true });
+  window.addEventListener("touchstart", (e) => ((touched = true), count(e)), { passive: true });
   window.addEventListener("touchend", count, { passive: true });
   window.addEventListener("touchcancel", count, { passive: true });
+  window.addEventListener("wheel", () => (touched = false), { passive: true });
+  window.addEventListener("keydown", () => (touched = false), { passive: true });
 }
 
 export type HoldOptions = {
@@ -134,6 +149,11 @@ export function hold(key: string, ms: number, opts: HoldOptions = {}): boolean {
   let released = false;
   const timers: number[] = [];
   const root = document.documentElement;
+  // where a wheel's glide was taking the page, and how fast it was going
+  // (stopping forgets both)
+  const headed = lenis.targetScroll;
+  const going = speed();
+  const wheel = !touched;
   // stop whatever's moving the page, momentum and all
   lenis.stop();
   root.classList.add("soon-halt");
@@ -141,6 +161,22 @@ export function hold(key: string, ms: number, opts: HoldOptions = {}): boolean {
   // own scrolling can leave it behind), so this is the real position
   const at = lenis.scroll;
   const ease = (x: number) => 1 - Math.pow(1 - x, 3);
+  const slack = Math.min(window.innerHeight * 0.18, 160);
+  if (wheel && opts.to === undefined) {
+    // The page carries on the way it was going, as fast, and comes to rest
+    // where the glide was taking it — but no further than the stretch it's
+    // held in (or a little past where it caught you), and at least into it.
+    // An ease out starts at three times its average speed, so the length of
+    // the ease is what makes it pick up at the page's own speed.
+    const [lo, hi] = opts.range ?? [at - slack, at + slack];
+    const rest = Math.min(hi, Math.max(lo, headed));
+    const d = rest - at;
+    if (Math.abs(d) > 2) {
+      const on = going > 0 && Math.sign(d) === Math.sign(stepTo - stepFrom);
+      const duration = on ? Math.min(1.1, Math.max(0.3, (3 * Math.abs(d)) / going)) : 0.45;
+      lenis.scrollTo(rest, { duration, easing: ease, force: true, lock: true });
+    }
+  }
   let lifted = () => {};
   /** once the finger's off the glass (straight away, if it isn't on it) */
   const afterLift = (fn: () => void) => {
@@ -167,11 +203,10 @@ export function hold(key: string, ms: number, opts: HoldOptions = {}): boolean {
     // where it caught you (or anywhere in the stretch it was given). Only
     // further than that is it eased back, and only as far as it has to be —
     // easing it all the way back every time was the lock looking jittery.
-    if (released || opts.to !== undefined) return;
+    if (released || opts.to !== undefined || wheel) return;
     afterLift(() => {
       if (released) return;
       const y = window.scrollY;
-      const slack = Math.min(window.innerHeight * 0.18, 160);
       const [lo, hi] = opts.range ?? [at - slack, at + slack];
       const rest = Math.min(hi, Math.max(lo, y));
       if (Math.abs(rest - y) > 4) lenis.scrollTo(rest, { duration: 0.35, easing: ease, force: true, lock: true });
@@ -209,15 +244,16 @@ export function hold(key: string, ms: number, opts: HoldOptions = {}): boolean {
   };
   if (opts.to !== undefined) {
     const to = opts.to;
-    // once the halt has taken (and the finger's off), ease to the spot
-    twoFrames(() =>
-      afterLift(() => {
-        if (released) return;
-        lenis.scrollTo(to, { offset: opts.offset ?? 0, duration: opts.glide ?? 0.6, easing: ease, force: true, lock: true, onComplete: still });
-        // if the ease never reports back, hold from where we are
-        timers.push(window.setTimeout(still, (opts.glide ?? 0.6) * 1000 + 400));
-      }),
-    );
+    const glide = () => {
+      if (released) return;
+      lenis.scrollTo(to, { offset: opts.offset ?? 0, duration: opts.glide ?? 0.6, easing: ease, force: true, lock: true, onComplete: still });
+      // if the ease never reports back, hold from where we are
+      timers.push(window.setTimeout(still, (opts.glide ?? 0.6) * 1000 + 400));
+    };
+    // once the halt has taken (and the finger's off), ease to the spot — on
+    // a wheel there's no momentum to wait out, so straight away
+    if (wheel) glide();
+    else twoFrames(() => afterLift(glide));
   } else {
     still();
   }
