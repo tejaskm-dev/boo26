@@ -6,6 +6,7 @@ import { MD, OPEN_EVENT, prefersReducedMotion } from "@/lib/motion";
 import { getLenis } from "@/lib/lenis";
 import { STORAGE } from "@/lib/storage";
 import { setLeave } from "@/lib/leave";
+import BlobButton from "@/components/ui/BlobButton";
 
 /**
  * The page wipe, and the preloader it doubles as.
@@ -150,6 +151,8 @@ export default function PageWipe({
   venue,
   line,
   hint,
+  enter,
+  quiet,
 }: {
   /** top left, beside the lime diamond — the date, on the full site */
   corner: string;
@@ -159,6 +162,15 @@ export default function PageWipe({
   line: string;
   /** under the wordmark, if there's anything to say there (the teaser: headphones) */
   hint?: string;
+  /**
+   * The teaser's way in: once it's loaded, it waits to be let in — `enter`
+   * with the sound, `quiet` without — rather than opening on its own. A
+   * browser won't play a sound before a click or a tap, and on a laptop the
+   * scroll never makes one: this is that click. Says which on window, as
+   * "boo:enter" ({ sound }), in the click itself.
+   */
+  enter?: string;
+  quiet?: string;
 }) {
   const root = useRef<HTMLDivElement>(null);
   const ink = useRef<HTMLDivElement>(null);
@@ -167,6 +179,7 @@ export default function PageWipe({
   const inner = useRef<HTMLDivElement>(null);
   const mark = useRef<HTMLDivElement>(null);
   const count = useRef<HTMLParagraphElement>(null);
+  const gate = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const html = document.documentElement;
@@ -180,6 +193,39 @@ export default function PageWipe({
     if (!box || !inkEl || !boneEl || !loaderEl || !innerEl || !markEl || !countEl) return;
     const discs = [inkEl, boneEl];
     let leaving: Element | null = null;
+
+    /**
+     * Waits to be let in (the teaser): Enter — or a click or a tap anywhere
+     * on the cover, or the Enter key — with the sound; "enter quietly"
+     * without. Says which in the click itself, so whatever plays the sound
+     * can start it there and then.
+     */
+    const asked = (el: HTMLElement) =>
+      new Promise<void>((done) => {
+        let chosen = false;
+        const choose = (sound: boolean) => {
+          if (chosen) return;
+          chosen = true;
+          box.removeEventListener("click", onClick);
+          window.removeEventListener("keydown", onKey);
+          window.dispatchEvent(new CustomEvent("boo:enter", { detail: { sound } }));
+          el.dataset.on = "false";
+          box.setAttribute("aria-hidden", "true");
+          done();
+        };
+        const onClick = (e: MouseEvent) => choose(!(e.target as Element | null)?.closest?.("[data-quiet]"));
+        const onKey = (e: KeyboardEvent) => {
+          if (e.key !== "Enter" && e.key !== " ") return;
+          e.preventDefault();
+          choose(!(document.activeElement as Element | null)?.closest?.("[data-quiet]"));
+        };
+        // (it's the one thing on screen to use now: no longer hidden from a screen reader)
+        box.setAttribute("aria-hidden", "false");
+        el.dataset.on = "true";
+        box.addEventListener("click", onClick);
+        window.addEventListener("keydown", onKey);
+        requestAnimationFrame(() => el.querySelector<HTMLElement>("[data-enter]")?.focus({ preventScroll: true }));
+      });
 
     const cancel = (els: Element[]) => els.forEach((el) => el.getAnimations().forEach((a) => a.cancel()));
 
@@ -259,6 +305,8 @@ export default function PageWipe({
         count?.stop();
         innerEl.style.setProperty("--p", "100");
         await wait(140);
+        // (only where there's a sound to let in: the page has its switch)
+        if (gate.current && document.querySelector("[data-sound]")) await asked(gate.current);
 
         // the count drops out of its line, the labels go, the mark lifts away
         countEl.animate([{ transform: "translateY(0)" }, { transform: "translateY(108%)" }], {
@@ -429,6 +477,22 @@ export default function PageWipe({
                 </svg>
                 {hint}
               </p>
+            ) : null}
+            {enter ? (
+              <div ref={gate} data-on="false" className="preloader-gate flex flex-col items-center gap-[clamp(0.6rem,1.6vh,0.9rem)]">
+                <BlobButton type="button" size="lg" data-enter="">
+                  {enter}
+                </BlobButton>
+                {quiet ? (
+                  <button
+                    type="button"
+                    data-quiet=""
+                    className="hand cursor-pointer text-[clamp(1.05rem,1.5vw,1.3rem)] text-ink/55 underline-offset-4 outline-none transition-colors duration-300 hover:text-ink hover:underline focus-visible:text-ink focus-visible:underline"
+                  >
+                    {quiet}
+                  </button>
+                ) : null}
+              </div>
             ) : null}
           </div>
 

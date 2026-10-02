@@ -294,6 +294,22 @@ html[data-wipe="reload"] .preloader {
    through frames a busy phone never draws: the count went 00, then 100. */
 
 /* the wordmark fills with ink from the bottom as the page loads */
+/* the teaser's way in: up once the count's done, waiting to be used */
+.preloader-gate {
+  opacity: 0;
+  translate: 0 10px;
+  pointer-events: none;
+  transition:
+    opacity 0.45s ease,
+    translate 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.preloader-gate[data-on="true"] {
+  opacity: 1;
+  translate: 0 0;
+  pointer-events: auto;
+}
+
 .preloader-fill {
   clip-path: inset(calc(100% - var(--p) * 1%) 0 0 0);
 }

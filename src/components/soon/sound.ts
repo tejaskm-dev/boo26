@@ -322,7 +322,8 @@ export function listenForFirstTap(): () => void {
   const stop = () => events.forEach((type) => window.removeEventListener(type, go, true));
   function go(e: Event) {
     if (!wanted || on) return stop();
-    if ((e.target as Element | null)?.closest?.(".soon-sound")) return;
+    // (the switch is its own business; so is the way in, on the cover)
+    if ((e.target as Element | null)?.closest?.(".soon-sound, [data-page-wipe]")) return;
     // (where the browser can say, only a real gesture: a touch that scrolled isn't one)
     const nav = navigator as Navigator & { userActivation?: { isActive: boolean } };
     if (nav.userActivation && !nav.userActivation.isActive) return;
@@ -605,7 +606,11 @@ export function hush() {
     out.gain.setTargetAtTime(full, t, 0.3);
   }
 }
-if (typeof window !== "undefined") window.addEventListener("soon:away", hush);
+if (typeof window !== "undefined") {
+  window.addEventListener("soon:away", hush);
+  // let in through the cover (PageWipe): with the sound, or without — in the click itself
+  window.addEventListener("boo:enter", (e) => void setSound(!!(e as CustomEvent<{ sound: boolean }>).detail?.sound));
+}
 
 function play(c: AudioContext, name: Cue, t: number) {
   switch (name) {

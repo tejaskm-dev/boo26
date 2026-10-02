@@ -88,7 +88,7 @@ export default function SoundToggle() {
   }, [on]);
 
   return (
-    <div className="soon-sound">
+    <div className="soon-sound" data-sound="">
       <p className={`soon-sound-hint hand ${hint && !on && soundWanted() ? "is-shown" : ""}`} aria-hidden="true">
         {hint ?? "tap"} anywhere for sound
       </p>

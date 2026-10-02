@@ -31,7 +31,15 @@ export const SOON = {
   format: "SOMETHING IS WAKING UP",
 
   /** the loading screen: its corner, and the line across the bottom */
-  preloader: { corner: "SHH.", venue: EVENT.venue, line: "SOMETHING IS WAKING UP", hint: "Wear headphones for a better experience" },
+  preloader: {
+    corner: "SHH.",
+    venue: EVENT.venue,
+    line: "SOMETHING IS WAKING UP",
+    hint: "Wear headphones for a better experience",
+    /** the way in, once it's loaded: with the sound (that click is what lets a browser play it), or without */
+    enter: "Enter",
+    quiet: "enter quietly",
+  },
 
   hero: {
     facts: [{ text: EVENT.venue }],
