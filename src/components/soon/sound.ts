@@ -399,7 +399,6 @@ export function cue(name: Cue, force = false) {
  */
 export type Line =
   // the cards between acts (Cut.tsx), in the order they come up
-  | "presents"
   | "shh"
   | "hear"
   | "wrong-way"
@@ -422,8 +421,6 @@ export type Line =
 
 /** how loud each sits, how much of it goes into the room, and which side it's on */
 const LINES: Record<Line, { level: number; wet: number; pan?: number }> = {
-  // the studio card, read the way a trailer's is
-  presents: { level: 0.8, wet: 0.25 },
   // something in the dark, whispering — close, at one shoulder…
   shh: { level: 0.75, wet: 0.35, pan: -0.35 },
   hear: { level: 0.8, wet: 0.3, pan: -0.35 },
@@ -439,7 +436,8 @@ const LINES: Record<Line, { level: number; wet: number; pan?: number }> = {
   followed: { level: 0.8, wet: 0.3, pan: 0.35 },
   "back-for-more": { level: 0.8, wet: 0.3, pan: 0.35 },
   // and something that thinks it's all very funny
-  damage: { level: 0.85, wet: 0.15 },
+  // (said under its breath, a way off — not shouted in your ear)
+  damage: { level: 0.32, wet: 0.35 },
   // (what anyone says when the face comes at them, before it laughs)
   what: { level: 0.85, wet: 0.12 },
   safe: { level: 0.75, wet: 0.18 },

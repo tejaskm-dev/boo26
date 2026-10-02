@@ -156,8 +156,8 @@ export default function ThePoint() {
           buzz(70);
           cue("hit", true);
           troll("jump", TROLL.jump);
-          // and, a beat after the bang, someone says what we're all thinking
-          say("damage", 0.4);
+          // and, once the bang's settled, someone says what we're all thinking
+          say("damage", 0.65);
           // and everything that was hiding in the ink comes out of it
           const r = splash.current?.getBoundingClientRect();
           if (r) {
