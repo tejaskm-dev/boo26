@@ -374,11 +374,9 @@ let lastBig = -10;
 
 /**
  * Plays one, if it's its turn. `force` is for the moments the page is built
- * around (a scare, waking it) — they always happen. `after` puts it off to
- * that many seconds from now, on the sound's own clock — to land on the end
- * of a line, say.
+ * around (a scare, waking it) — they always happen.
  */
-export function cue(name: Cue, force = false, after = 0) {
+export function cue(name: Cue, force = false) {
   if (!on || !ctx || !master || ctx.state !== "running") return;
   const now = ctx.currentTime;
   if (!force) {
@@ -388,7 +386,7 @@ export function cue(name: Cue, force = false, after = 0) {
   }
   last[name] = now;
   if (BIG.has(name)) lastBig = now;
-  play(ctx, name, now + Math.max(0.01, after));
+  play(ctx, name, now + 0.01);
 }
 
 // --- the voice -------------------------------------------------------------------
@@ -408,7 +406,8 @@ const LINES: Record<Line, { level: number; wet: number; pan?: number }> = {
   hear: { level: 0.8, wet: 0.3, pan: -0.35 },
   // and something that thinks it's all very funny
   damage: { level: 0.85, wet: 0.15 },
-  what: { level: 0.85, wet: 0.1 },
+  // (what anyone says when the face comes at them, before it laughs)
+  what: { level: 0.85, wet: 0.12 },
   safe: { level: 0.75, wet: 0.18 },
   nerd: { level: 0.7, wet: 0.12 },
   leaving: { level: 0.7, wet: 0.15 },
