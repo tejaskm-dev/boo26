@@ -7,6 +7,7 @@ import Classified from "./Classified";
 import Cut from "./Cut";
 import Critters from "./Critters";
 import InkField from "./InkField";
+import MoonFlag from "./MoonFlag";
 import Rumour from "./Rumour";
 import Tremble from "./Tremble";
 import { CUTS, SECRETS, SOON } from "@/lib/soon";
@@ -43,7 +44,7 @@ export default function Heard() {
       field="bone"
       className="pb-[clamp(4rem,11vh,7.5rem)] pt-[clamp(5.5rem,17vh,13rem)] md:pt-[clamp(5.5rem,24vh,13rem)]"
     >
-      <Cut lines={CUTS.open} back={CUTS.openBack} />
+      <Cut lines={CUTS.open} back={CUTS.openBack} presents />
       <Awake />
 
       {/* the cat is hauling itself over the boundary above — and it knows */}
@@ -76,8 +77,10 @@ export default function Heard() {
           <InkField ns="heard-flank" view={FLANK.view} shape={FLANK.d} className="inset-0 hidden lg:block" />
           <InkField ns="heard-band" view={BAND.view} shape={BAND.d} className="inset-0 lg:hidden" />
 
-          <span aria-hidden="true" data-secret={SECRETS.moon} className="absolute right-[6%] top-[7%] block lg:right-[9%] lg:top-[4%]">
-            <Sprite name="moon" scale={0.42} drift={22} idle={7} />
+          {/* the moon, and someone's planted a flag on it — a very small one */}
+          <span aria-hidden="true" data-secret={SECRETS.moon} className="soon-moon soon-loop absolute right-[6%] top-[7%] block lg:right-[9%] lg:top-[4%]">
+            <Sprite name="moon" scale={0.42} />
+            <MoonFlag />
           </span>
 
           <Rumour />

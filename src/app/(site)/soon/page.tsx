@@ -17,6 +17,8 @@ import Dread from "@/components/soon/Dread";
 import ScrollHealth from "@/components/soon/ScrollHealth";
 import Awake from "@/components/soon/Awake";
 import Waiting from "@/components/soon/Waiting";
+import MuLearn from "@/components/soon/MuLearn";
+import Banner from "@/components/soon/Banner";
 import { EyeGlow } from "@/components/soon/InkEyes";
 import { SOON } from "@/lib/soon";
 import { LEGAL } from "@/lib/site";
@@ -58,12 +60,13 @@ export default function SoonPage() {
         <ThePoint />
         <NotYet />
       </main>
-      <Footer content={{ ...SOON.footer, legal: LEGAL_SOON }} />
+      <Footer content={{ ...SOON.footer, legal: LEGAL_SOON }} mark={<MuLearn className="w-[clamp(4.8rem,6vw,5.8rem)]" />} />
       <Eggs />
       <JumpScareHost />
       <HoverNotes />
       <SoundToggle />
       <Waiting />
+      <Banner />
       <SoundStage />
       <Peeker />
       <Dread />

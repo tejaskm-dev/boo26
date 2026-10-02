@@ -187,6 +187,18 @@ export default function Eggs() {
     };
     listen("keydown", onKey);
 
+    // type the club's name and its banner goes over (Banner.tsx) — µ is Option-M on a Mac
+    let typed = "";
+    const onType = (e: KeyboardEvent) => {
+      if (e.key.length !== 1 || (e.target as Element | null)?.closest?.("input,textarea,select,[contenteditable]")) return;
+      typed = (typed + e.key.toLowerCase()).slice(-7);
+      if (typed.endsWith("mulearn") || typed.endsWith("µlearn")) {
+        typed = "";
+        window.dispatchEvent(new Event("soon:banner"));
+      }
+    };
+    listen("keydown", onType);
+
     // the very bottom of the page: the cat has had enough
     const sign = document.querySelector("footer p.hand:last-of-type");
     if (sign) {

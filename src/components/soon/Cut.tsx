@@ -4,7 +4,9 @@ import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { prefersReducedMotion } from "@/lib/motion";
+import { MU } from "@/lib/soon";
 import InkEyes from "./InkEyes";
+import MuLearn from "./MuLearn";
 import { hold } from "./hold";
 import { cue } from "./sound";
 
@@ -19,6 +21,8 @@ const DARK_EYES: { at: string; tilt: number }[] = [
 
 /** how long each line has before the next comes up, in ms */
 const STEP = 950;
+/** how long the studio card has before the first line, in ms */
+const PRESENTS = 1500;
 
 /** which letters of a line run, how far, and when */
 function drips(line: string, i: number) {
@@ -59,7 +63,16 @@ function words(line: string) {
  * it either way and it resets, ready to play again. With motion turned down
  * there's no cut.
  */
-export default function Cut({ lines, back = [] }: { lines: readonly string[]; back?: readonly string[] }) {
+export default function Cut({
+  lines,
+  back = [],
+  presents = false,
+}: {
+  lines: readonly string[];
+  back?: readonly string[];
+  /** open on the studio card — "µLearn ASIET presents" — the way a trailer does */
+  presents?: boolean;
+}) {
   const room = useRef<HTMLDivElement>(null);
   const veil = useRef<HTMLDivElement>(null);
   const eyes = useRef<HTMLDivElement>(null);
@@ -74,6 +87,9 @@ export default function Cut({ lines, back = [] }: { lines: readonly string[]; ba
     gsap.registerPlugin(ScrollTrigger);
     const down = [...cardEl.querySelectorAll<HTMLElement>("[data-row]")];
     const up = [...cardEl.querySelectorAll<HTMLElement>("[data-row-back]")];
+    const studio = cardEl.querySelector<HTMLElement>("[data-presents]");
+    // on the way down, the studio card comes first
+    const lead = studio ? PRESENTS : 0;
     let timers: number[] = [];
     let playing: "down" | "up" | null = null;
     let breathed = false;
@@ -88,14 +104,22 @@ export default function Cut({ lines, back = [] }: { lines: readonly string[]; ba
       playing = way;
       cardEl.dataset.way = way;
       const rows = way === "down" ? down : up;
+      const wait = way === "down" ? lead : 0;
+      if (studio && way === "down") {
+        // the studio's logo comes up out of the dark, opens its eyes, and steps back for the first line
+        studio.dataset.on = "true";
+        cue("toll");
+        timers.push(window.setTimeout(() => (studio.dataset.muOpen = "true"), 550));
+        timers.push(window.setTimeout(() => (studio.dataset.past = "true"), wait));
+      }
       rows.forEach((row, i) => {
         timers.push(
           window.setTimeout(() => {
             if (!row.isConnected) return;
             row.dataset.on = "true";
             if (i > 0) rows[i - 1].dataset.past = "true";
-            if (i === 0) cue("toll");
-          }, i * STEP),
+            if (i === 0 && !(studio && way === "down")) cue("toll");
+          }, wait + i * STEP),
         );
       });
     };
@@ -106,6 +130,11 @@ export default function Cut({ lines, back = [] }: { lines: readonly string[]; ba
       for (const row of [...down, ...up]) {
         row.dataset.on = "false";
         row.dataset.past = "false";
+      }
+      if (studio) {
+        studio.dataset.on = "false";
+        studio.dataset.past = "false";
+        studio.dataset.muOpen = "false";
       }
     };
 
@@ -138,7 +167,7 @@ export default function Cut({ lines, back = [] }: { lines: readonly string[]; ba
         // down at a third of the way in, and on the way back up (where it
         // says something else) at a third of the way from the bottom
         const holdFor = (way: "down" | "up") => {
-          const ok = hold(way === "up" ? `cut-up:${lines.join("|")}` : `cut:${lines.join("|")}`, way === "up" ? up.length * STEP + 600 : lines.length * STEP + 700, {
+          const ok = hold(way === "up" ? `cut-up:${lines.join("|")}` : `cut:${lines.join("|")}`, way === "up" ? up.length * STEP + 600 : lead + lines.length * STEP + 700, {
             to: self.start + range * (way === "up" ? 0.64 : 0.36),
             glide: 0.7,
             way,
@@ -184,6 +213,12 @@ export default function Cut({ lines, back = [] }: { lines: readonly string[]; ba
           ))}
         </div>
         <div ref={card} className="soon-cut-card" data-way="down">
+          {presents ? (
+            <div data-presents data-on="false" data-past="false" className="soon-presents">
+              <MuLearn alive={false} className="w-[min(64vw,24rem)]" />
+              <span className="label soon-presents-word">{MU.presents}</span>
+            </div>
+          ) : null}
           {[
             ...lines.map((line, k) => ({ line, attr: "data-row", last: k === lines.length - 1 })),
             ...back.map((line, k) => ({ line, attr: "data-row-back", last: k === back.length - 1 })),
