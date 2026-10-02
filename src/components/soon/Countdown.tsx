@@ -30,7 +30,7 @@ const BEAT = 950;
  * "jump scare in 3… 2… 1…" — a whole screen, held still while it counts.
  * The edges darken a step each number, more eyes open in the dark, a heart
  * underneath gets quicker; then nothing. "relax." And while you're relaxing,
- * `onCarry` takes you down to the real one.
+ * `onCarry` takes you on — down to "lean in", and the one that's real.
  *
  * Its own component so a tick of the count redraws the count and nothing
  * else. Come back up to it later and it isn't counting any more — and it
@@ -93,7 +93,7 @@ export default function Countdown({ onCarry }: { onCarry: () => void }) {
             heart(0);
           }, calm),
         );
-        // held while it counts — then carried down to the real one. The
+        // held while it counts — then carried on, to the one that's real. The
         // screen's sticky for a while, so a fling that ran on a little is
         // held right where it is; only a long overshoot is eased back.
         const over = window.scrollY - (el.getBoundingClientRect().top + window.scrollY);

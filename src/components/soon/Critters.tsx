@@ -6,6 +6,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { getLenis } from "@/lib/lenis";
 import { prefersReducedMotion } from "@/lib/motion";
 import { isNavActive } from "@/lib/navState";
+import { curtainUp } from "@/lib/curtain";
 import { SPRITE } from "@/lib/sprites";
 import { onTierDrop, rich } from "@/lib/tier";
 import { TROLL } from "@/lib/soon";
@@ -229,7 +230,7 @@ export default function Critters({
     let visible = false;
     let blank = false;
     const draw = (_t: number, dms: number) => {
-      if (!visible || document.hidden || root.dataset.idle === "true" || isNavActive() || root.dataset.wipe || root.dataset.wiping) return;
+      if (!visible || document.hidden || root.dataset.idle === "true" || isNavActive() || root.dataset.wipe || root.dataset.wiping || curtainUp()) return;
       const dt = Math.min(0.05, (dms || 16.7) / 1000);
       const now = performance.now();
       const y0 = scrollY();

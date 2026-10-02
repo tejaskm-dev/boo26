@@ -44,12 +44,22 @@ export default function Marquee({
       repeat: -1,
     });
 
+    // off screen it waits where it is: nobody sees a band stop, but a band
+    // running behind everything else was a restyle every frame for nothing
+    let seen = true;
+    const io = new IntersectionObserver(([e]) => {
+      seen = e.isIntersecting;
+      if (seen) tween.resume();
+      else tween.pause();
+    });
+    io.observe(el);
+
     // the band leans into the scroll: faster with it, briefly backwards
     // against a hard flick, then settles back to its idle drift
     const lenis = getLenis();
     let raf = 0;
     const onScroll = ({ velocity }: { velocity: number }) => {
-      if (raf) return;
+      if (raf || !seen) return;
       raf = requestAnimationFrame(() => {
         raf = 0;
         const v = Math.max(-2.6, Math.min(2.6, velocity / 26));
@@ -59,6 +69,7 @@ export default function Marquee({
     lenis?.on("scroll", onScroll);
 
     return () => {
+      io.disconnect();
       lenis?.off("scroll", onScroll);
       if (raf) cancelAnimationFrame(raf);
       tween.kill();

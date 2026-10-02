@@ -61,10 +61,15 @@ export default function CatEyes({ art, track = false, excited = false, className
     };
     window.addEventListener("resize", stale, { passive: true });
     window.addEventListener("scroll", stale, { passive: true });
+    // and only while they're on screen: followed off it, every move of the
+    // mouse was a redraw of eyes nobody could see
+    let seen = false;
+    const io = new IntersectionObserver(([e]) => (seen = e.isIntersecting));
+    io.observe(el);
 
     // viewBox units per CSS pixel, so travel stays constant on screen
     const stop = subscribePointer((nx, ny) => {
-      if (isNavActive()) return;
+      if (!seen || isNavActive()) return;
       rect ??= el.getBoundingClientRect();
       if (!rect.width) return;
       const cx = rect.left + rect.width / 2;
@@ -86,6 +91,7 @@ export default function CatEyes({ art, track = false, excited = false, className
 
     return () => {
       stop();
+      io.disconnect();
       window.removeEventListener("resize", stale);
       window.removeEventListener("scroll", stale);
       setters.forEach((s) => {

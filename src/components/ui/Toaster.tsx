@@ -61,7 +61,7 @@ export default function Toaster() {
 
   return (
     <>
-      <div className="pointer-events-none fixed inset-x-0 bottom-[calc(clamp(1rem,3.5vh,2rem)+env(safe-area-inset-bottom))] z-[80] flex justify-center px-[var(--edge)]">
+      <div data-toaster className="pointer-events-none fixed inset-x-0 bottom-[calc(clamp(1rem,3.5vh,2rem)+env(safe-area-inset-bottom))] z-[80] flex justify-center px-[var(--edge)]">
         <div
           ref={pill}
           aria-hidden="true"

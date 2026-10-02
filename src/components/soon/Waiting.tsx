@@ -38,7 +38,6 @@ const SCENES: Record<string, Scene> = {
     end: "bottom bottom",
     line: (el) => (el.querySelector<HTMLElement>("[data-cat]")?.dataset.cat === "awake" ? WAIT.idle.woke : WAIT.idle.room),
   },
-  freeze: { start: "top top", end: "bottom bottom", line: () => WAIT.idle.freeze },
   // the last shot: once the ask is up (or you're on your way back up), it leaves you to it
   drop: { start: "top top", end: "bottom bottom", line: (_, p, up) => (!up && p < 0.36 ? WAIT.idle.drop : null) },
 };
@@ -213,7 +212,10 @@ export default function Waiting() {
       tried = false;
       eyes("open");
       draw(0, true);
-      fill = line.animate([{ strokeDashoffset: `${length}` }, { strokeDashoffset: "0" }], { duration: ms, easing: "linear", fill: "forwards" });
+      // (in steps a twenty-fifth of a second apart: a line this slow looks no
+      // different, and it's repainted a third as often — it can't be moved
+      // on the compositor, and it runs the whole time you're held)
+      fill = line.animate([{ strokeDashoffset: `${length}` }, { strokeDashoffset: "0" }], { duration: ms, easing: `steps(${Math.max(1, Math.round(ms / 40))}, end)`, fill: "forwards" });
       say(first ? WAIT.first : null, false, Math.min(2200, ms - 200));
       first = false;
       listen(true);

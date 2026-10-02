@@ -6,8 +6,7 @@
  *
  * Every loop here is transform or opacity. They run only while their section
  * is on screen ([data-awake], set by an observer — see Awake.tsx), stop while
- * the page is left idle (html[data-idle], IdleGuard), and stop when FREEZE
- * says so ([data-frozen]). Reduced motion ends every one on its first frame
+ * the page is left idle (html[data-idle], IdleGuard). Reduced motion ends every one on its first frame
  * (globals.css), so each is written to rest in a sensible pose there.
  * ------------------------------------------------------------------ */
 
@@ -468,26 +467,37 @@ html[data-js="true"] .soon-room[data-torch] .soon-shade {
   78% { translate: 0.6px 1.2px; }
 }
 
-/* One square, lit in the middle, fading to dark at its edge — and an outline
-   of the same dark all the way round it, far past the screen. Moving the
-   torch moves this one layer, so nothing is ever repainted. */
+/* The dark, with the torch's light a hole in the middle of it: lit at the
+   centre, fading to dark at the beam's edge, dark from there out. Moving
+   the torch moves this one layer, so nothing is ever repainted — and it's
+   only as big as it has to be to cover the screen wherever the torch is
+   (it was a square with an outline 250vmax thick: a layer fifty screens
+   big, and dragging it about was the room's lag). */
 .soon-beam {
   --beam: clamp(15rem, 64vmin, 32rem);
   position: absolute;
   left: 0;
   top: 0;
-  width: var(--beam);
-  height: var(--beam);
-  margin: calc(var(--beam) / -2) 0 0 calc(var(--beam) / -2);
+  width: 260vw;
+  height: 260vh;
+  margin: -130vh 0 0 -130vw;
   background: radial-gradient(
-    closest-side,
+    circle calc(var(--beam) / 2) at 50% 50%,
     rgba(243, 240, 231, 0.1),
     rgba(243, 240, 231, 0.02) 38%,
     rgba(8, 8, 8, 0.62) 74%,
     rgba(8, 8, 8, 0.96) 100%
   );
-  outline: 250vmax solid rgba(8, 8, 8, 0.96);
   will-change: transform;
+}
+
+.soon-beam-light {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--beam);
+  height: var(--beam);
+  margin: calc(var(--beam) / -2) 0 0 calc(var(--beam) / -2);
 }
 
 .soon-dust {
@@ -639,29 +649,6 @@ html[data-js="true"] .soon-room[data-torch] .soon-shade {
 }
 
 /* ------------------------------------------------------- the point */
-.soon-letter {
-  display: inline-block;
-}
-
-[data-laughing="true"] .soon-letter {
-  animation: soon-laugh 0.46s ease-in-out infinite alternate;
-  animation-delay: calc(var(--i) * -110ms);
-}
-
-@keyframes soon-laugh {
-  from { translate: 0 0; rotate: 0deg; }
-  to { translate: 0 -0.14em; rotate: -5deg; }
-}
-
-.soon-float {
-  animation: soon-float 3.4s ease-in-out infinite alternate;
-}
-
-@keyframes soon-float {
-  from { translate: 0 0; }
-  to { translate: 0 -9px; }
-}
-
 /* the bar that cuts WHAT THE— off: about a capital high and a word and a
    half long, in the heading's own ems (it's a label inside it, so it's
    sized here rather than by utilities the label's own type would win over) */
@@ -772,53 +759,6 @@ html[data-js="true"] .soon-room[data-torch] .soon-shade {
   from { scale: 1.45; opacity: 0; }
 }
 
-/* JUMP won't stop hopping — one letter after another, squash and stretch */
-[data-hopping="true"] .soon-hop {
-  display: inline-block;
-  transform-origin: 50% 100%;
-  animation: soon-hop 1.7s var(--ease-organic) infinite;
-  animation-delay: calc(var(--i) * 0.09s);
-}
-
-.soon-hop {
-  display: inline-block;
-}
-
-@keyframes soon-hop {
-  0%, 46%, 100% { translate: 0 0; scale: 1 1; }
-  8% { translate: 0 0; scale: 1.08 0.9; }
-  20% { translate: 0 -0.2em; scale: 0.94 1.08; }
-  32% { translate: 0 0; scale: 1.1 0.88; }
-  40% { scale: 0.98 1.03; }
-}
-
-/* the ha's round LAUGH, one after another */
-.soon-ha {
-  opacity: 0;
-  scale: 0.4;
-  pointer-events: none;
-}
-
-[data-laughing="true"] .soon-ha {
-  animation: soon-ha 2.8s var(--ease-out-soft) infinite;
-  animation-delay: calc(var(--i) * 0.4s);
-}
-
-@keyframes soon-ha {
-  0% { opacity: 0; scale: 0.4; translate: 0 0; }
-  10% { opacity: 1; scale: 1.12; }
-  18% { scale: 1; }
-  68% { opacity: 1; }
-  100% { opacity: 0; scale: 1; translate: 0 -14px; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .soon-ha {
-    opacity: 1;
-    scale: 1;
-  }
-}
-
 /* WHAT THE— and the !! it gets, and the cat it scares */
 .soon-slam-pop {
   opacity: 0;
@@ -867,11 +807,6 @@ html[data-js="true"] .soon-room[data-torch] .soon-shade {
     translate 0.9s cubic-bezier(0.2, 1.5, 0.4, 1) 0.95s;
 }
 
-/* FREEZE stops the grain too */
-.grain[data-frozen="true"] {
-  animation-play-state: paused;
-}
-
 /* ------------------------------------------------------- the last shot
    (NotYet) Held on screen for a while, like the room. */
 .soon-drop-runway {
@@ -914,6 +849,24 @@ html[data-js="true"] .soon-room[data-torch] .soon-shade {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
+  will-change: opacity;
+}
+
+/* on a phone the black comes and goes on its own clock once the scroll says
+   so (Cut.tsx): a fade the compositor runs however busy the page is —
+   scrubbed from script, a busy phone left it half up, and late */
+.soon-cut[data-fade="clock"] {
+  transition:
+    opacity 0.5s ease,
+    visibility 0s linear 0.5s;
+}
+
+.soon-cut[data-fade="clock"][data-shown="true"] {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 0.32s ease,
+    visibility 0s;
 }
 
 /* film: grain that crawls, and a projector that can't hold its light */
@@ -1029,10 +982,12 @@ html[data-js="true"] .soon-room[data-torch] .soon-shade {
   color: var(--color-bone);
   font-size: clamp(1.9rem, 6.2vw, 4.8rem);
   line-height: 1;
+  /* (not the colour: the last line turns lime as it comes up, while its
+     letters are still falling in — eased, that repainted every one of them
+     every frame) */
   transition:
     opacity 0.6s ease,
-    scale 0.8s var(--ease-out-soft),
-    color 0.5s ease;
+    scale 0.8s var(--ease-out-soft);
 }
 
 .soon-goo-w {
@@ -1049,18 +1004,51 @@ html[data-js="true"] .soon-room[data-torch] .soon-shade {
 
 .soon-goo[data-on="true"] .soon-goo-l {
   opacity: 1;
-  animation: soon-goo 0.75s cubic-bezier(0.2, 0.9, 0.3, 1.15) both;
+  /* backwards, not both: once a letter's landed it lets its animation go,
+     and with it its own layer — a card's worth of them, held for nothing */
+  animation: soon-goo 0.75s cubic-bezier(0.2, 0.9, 0.3, 1.15) backwards;
   animation-delay: calc(var(--i) * 0.045s);
 }
 
 /* transforms and opacity only: a blur on every letter as it fell was a
    repaint of every letter, every frame, all the way down */
+/* five tilts, written out: a custom property in the keyframes keeps the
+   animation off the compositor, and on a phone a card's worth of letters
+   falling on the main thread was dropped frames */
 @keyframes soon-goo {
-  0% { opacity: 0; translate: 0 -0.8em; scale: 0.82 1.35; rotate: var(--r); }
-  55% { opacity: 1; translate: 0 0.06em; scale: 1.12 0.84; rotate: calc(var(--r) * -0.4); }
+  0% { opacity: 0; translate: 0 -0.8em; scale: 0.82 1.35; rotate: 0deg; }
+  55% { opacity: 1; translate: 0 0.06em; scale: 1.12 0.84; rotate: 0deg; }
   78% { translate: 0 -0.03em; scale: 0.96 1.05; rotate: 0deg; }
   100% { opacity: 1; translate: 0 0; scale: 1 1; rotate: 0deg; }
 }
+@keyframes soon-goo-1 {
+  0% { opacity: 0; translate: 0 -0.8em; scale: 0.82 1.35; rotate: -4deg; }
+  55% { opacity: 1; translate: 0 0.06em; scale: 1.12 0.84; rotate: 1.6deg; }
+  78% { translate: 0 -0.03em; scale: 0.96 1.05; rotate: 0deg; }
+  100% { opacity: 1; translate: 0 0; scale: 1 1; rotate: 0deg; }
+}
+@keyframes soon-goo-2 {
+  0% { opacity: 0; translate: 0 -0.8em; scale: 0.82 1.35; rotate: -2deg; }
+  55% { opacity: 1; translate: 0 0.06em; scale: 1.12 0.84; rotate: 0.8deg; }
+  78% { translate: 0 -0.03em; scale: 0.96 1.05; rotate: 0deg; }
+  100% { opacity: 1; translate: 0 0; scale: 1 1; rotate: 0deg; }
+}
+@keyframes soon-goo-3 {
+  0% { opacity: 0; translate: 0 -0.8em; scale: 0.82 1.35; rotate: 2deg; }
+  55% { opacity: 1; translate: 0 0.06em; scale: 1.12 0.84; rotate: -0.8deg; }
+  78% { translate: 0 -0.03em; scale: 0.96 1.05; rotate: 0deg; }
+  100% { opacity: 1; translate: 0 0; scale: 1 1; rotate: 0deg; }
+}
+@keyframes soon-goo-4 {
+  0% { opacity: 0; translate: 0 -0.8em; scale: 0.82 1.35; rotate: 4deg; }
+  55% { opacity: 1; translate: 0 0.06em; scale: 1.12 0.84; rotate: -1.6deg; }
+  78% { translate: 0 -0.03em; scale: 0.96 1.05; rotate: 0deg; }
+  100% { opacity: 1; translate: 0 0; scale: 1 1; rotate: 0deg; }
+}
+.soon-goo[data-on="true"] .soon-goo-l[data-tilt="1"] { animation-name: soon-goo-1; }
+.soon-goo[data-on="true"] .soon-goo-l[data-tilt="2"] { animation-name: soon-goo-2; }
+.soon-goo[data-on="true"] .soon-goo-l[data-tilt="3"] { animation-name: soon-goo-3; }
+.soon-goo[data-on="true"] .soon-goo-l[data-tilt="4"] { animation-name: soon-goo-4; }
 
 /* the ones before it step back */
 .soon-goo[data-past="true"] {
@@ -1452,6 +1440,19 @@ section[data-awake="true"] .soon-glitch {
 }
 
 /* ------------------------------------------------------- the sound switch */
+/* the bottom corners are taken here (the sound switch, the eyes): on a
+   phone a toast rises above them, not over them */
+@media (max-width: 47.99rem) {
+  [data-toaster] {
+    bottom: calc(6.2rem + env(safe-area-inset-bottom));
+  }
+}
+
+/* and the very bottom of the page clears the sound switch */
+footer[data-field] {
+  padding-bottom: calc(clamp(1.5rem, 4vh, 2.5rem) + 4.25rem + env(safe-area-inset-bottom));
+}
+
 .soon-sound {
   position: fixed;
   left: var(--edge);
@@ -1791,6 +1792,14 @@ section[data-awake="true"] .soon-inkeyes:not([data-shut="true"]) svg {
     opacity 0.2s ease var(--d, 0s);
 }
 
+/* round a title card's frame they open a moment after the black comes up:
+   their layers are made with the black, not in the middle of them opening —
+   and so are the letters', so a line starting to fall in adds none */
+.soon-cut[data-on="true"] .soon-inkeyes svg,
+.soon-cut[data-on="true"] .soon-goo-l {
+  will-change: transform, opacity;
+}
+
 /* too close, and they're gone */
 .soon-inkeyes[data-shut="true"] svg {
   transform: scaleY(0.02);
@@ -1826,9 +1835,14 @@ section[data-awake="true"] .soon-loop {
   animation-play-state: running;
 }
 
-section[data-frozen="true"] .soon-loop,
 html[data-idle="true"] section .soon-loop,
 html[data-nav-active="true"] section .soon-loop {
+  animation-play-state: paused;
+}
+
+/* a heading at the top of a long section sleeps once it's well off screen,
+   though the section's still awake below it (InTheDark) */
+section [data-awake="false"] .soon-glitch {
   animation-play-state: paused;
 }
 

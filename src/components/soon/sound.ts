@@ -1,10 +1,16 @@
 "use client";
 
+import { OPEN_EVENT } from "@/lib/motion";
+import { rich } from "@/lib/tier";
+
 /**
  * The teaser's score, made in the browser — all but a few lines said out
  * loud (`say`), which are small recordings fetched only once the sound's on.
  *
- * Off until the visitor turns it on, and never remembered between visits.
+ * On by default — but a browser won't let a page make a sound before the
+ * visitor's first tap, click or key, so it starts then (`listenForFirstTap`).
+ * Turned off, it stays off for the visit; nothing's remembered between
+ * visits.
  *
  * It's built to move with the page rather than go off at it. Underneath
  * everything, all the time: a low drone, a choir that's mostly breath, wind
@@ -23,6 +29,12 @@
  * Everything is in D minor, leaning on its C# and G#, and goes through one
  * reverb, so it sounds like one room. All of it stops while the tab is
  * hidden.
+ *
+ * On a phone that can't take the extras (tier.ts) it's the same score made
+ * lighter: a bigger buffer for the sound to be made in, so it never runs
+ * dry and crackles; a shorter room; one voice to each note of the choir
+ * rather than three. And if the phone ever puts the sound to sleep (a call,
+ * the screen going off), the next tap wakes it.
  */
 
 export type Cue =
@@ -47,6 +59,8 @@ export type Cue =
 export type Scene = "none" | "heard" | "room" | "point" | "finale";
 
 let ctx: AudioContext | null = null;
+/** made lighter for a phone that's stretched (see the top) */
+let light = false;
 let master: GainNode | null = null;
 let verb: ConvolverNode | null = null;
 let bed: Bed | null = null;
@@ -151,7 +165,7 @@ function band(c: AudioContext, hz: number, q: number) {
 
 // --- the bed: always there, always moving ------------------------------------
 
-function startBed(c: AudioContext): Bed {
+function startBed(c: AudioContext, light: boolean): Bed {
   // the drone: a low D that never settles, a fifth over it
   const droneFilter = c.createBiquadFilter();
   droneFilter.type = "lowpass";
@@ -187,10 +201,11 @@ function startBed(c: AudioContext): Bed {
   vowelA.connect(choirGain);
   vowelB.connect(choirGain);
   for (const hz of [146.83, 174.61, 220, 329.63]) {
-    for (const dc of [-7, 0, 6]) {
+    // (three voices to a note, a little apart, for a choir; one, a little louder, on a phone that's stretched)
+    for (const dc of light ? [0] : [-7, 0, 6]) {
       const o = osc(c, "sawtooth", cents(hz, dc));
       const g = c.createGain();
-      g.gain.value = 0.02;
+      g.gain.value = light ? 0.034 : 0.02;
       o.connect(g);
       g.connect(vowelA);
       g.connect(vowelB);
@@ -230,12 +245,25 @@ function startBed(c: AudioContext): Bed {
 
 // --- turning it on ----------------------------------------------------------------
 
+/** what the visitor wants: on, unless they've turned it off */
+let wanted = true;
+export const soundWanted = () => wanted;
+
 export async function setSound(next: boolean) {
   if (typeof window === "undefined") return;
+  wanted = next;
   if (next) {
     const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!Ctor) return;
-    ctx ??= new Ctor();
+    if (!ctx) {
+      light = !rich();
+      try {
+        // a bigger buffer where it's stretched: later by a breath, but it never runs dry
+        ctx = new Ctor(light ? { latencyHint: "playback" } : undefined);
+      } catch {
+        ctx = new Ctor();
+      }
+    }
     await ctx.resume();
     if (!master) {
       const comp = ctx.createDynamicsCompressor();
@@ -249,17 +277,23 @@ export async function setSound(next: boolean) {
       master.gain.value = 0;
       master.connect(comp);
       verb = ctx.createConvolver();
-      verb.buffer = impulse(ctx);
+      verb.buffer = light ? impulse(ctx, 2, 2.2) : impulse(ctx);
       const ret = ctx.createGain();
       ret.gain.value = 0.7;
       verb.connect(ret).connect(master);
-      bed = startBed(ctx);
-      fetchLines(ctx);
+      bed = startBed(ctx, light);
+      void fetchLines(ctx);
       document.addEventListener("visibilitychange", () => {
         if (!ctx) return;
         if (document.hidden) void ctx.suspend();
         else if (on) void ctx.resume();
       });
+      // put to sleep by the phone (a call, the screen off) and not woken by
+      // coming back: the next tap does it
+      const wake = () => {
+        if (on && ctx && ctx.state !== "running" && !document.hidden) void ctx.resume();
+      };
+      for (const type of ["pointerup", "touchend", "keydown"] as const) window.addEventListener(type, wake, { capture: true, passive: true });
     }
     master.gain.setTargetAtTime(0.8, ctx.currentTime, 1.2);
     on = true;
@@ -274,6 +308,30 @@ export async function setSound(next: boolean) {
     }, 800);
   }
   for (const fn of listeners) fn(on);
+}
+
+/**
+ * Turns the sound on at the visitor's first tap, click or key — the first
+ * moment a browser lets a page make one — unless they've turned it off by
+ * then. A tap on the switch is the switch's own business. Keeps listening
+ * until it's actually on (a touch that was a scroll isn't a tap). Returns a
+ * way to stop.
+ */
+export function listenForFirstTap(): () => void {
+  if (typeof window === "undefined") return () => {};
+  const events = ["pointerup", "touchend", "keydown", "click"] as const;
+  const stop = () => events.forEach((type) => window.removeEventListener(type, go, true));
+  function go(e: Event) {
+    if (!wanted || on) return stop();
+    // (the switch is its own business; so is the way in, on the cover)
+    if ((e.target as Element | null)?.closest?.(".soon-sound, [data-page-wipe]")) return;
+    // (where the browser can say, only a real gesture: a touch that scrolled isn't one)
+    const nav = navigator as Navigator & { userActivation?: { isActive: boolean } };
+    if (nav.userActivation && !nav.userActivation.isActive) return;
+    void setSound(true).then(() => on && stop());
+  }
+  events.forEach((type) => window.addEventListener(type, go, { capture: true, passive: true }));
+  return stop;
 }
 
 /** which part of the page you're in; the bed leans into it over a couple of seconds */
@@ -398,6 +456,10 @@ export function cue(name: Cue, force = false) {
  * sound's turned on, so nobody who leaves it off ever downloads them.
  */
 export type Line =
+  // the way in, as the cover lifts: it knows what you came on (one's yours)
+  | "hi-computer"
+  | "hi-android"
+  | "hi-iphone"
   // the cards between acts (Cut.tsx), in the order they come up
   | "shh"
   | "hear"
@@ -414,7 +476,6 @@ export type Line =
   | "when-it-drops"
   | "know"
   // and the jokes
-  | "damage"
   | "what"
   | "safe"
   | "nerd"
@@ -423,6 +484,10 @@ export type Line =
 
 /** how loud each sits, how much of it goes into the room, and which side it's on */
 const LINES: Record<Line, { level: number; wet: number; pan?: number }> = {
+  // the first thing it says, at the shoulder it'll go on whispering at
+  "hi-computer": { level: 0.8, wet: 0.3, pan: -0.35 },
+  "hi-android": { level: 0.8, wet: 0.3, pan: -0.35 },
+  "hi-iphone": { level: 0.8, wet: 0.3, pan: -0.35 },
   // something in the dark, whispering — close, at one shoulder…
   shh: { level: 0.75, wet: 0.35, pan: -0.35 },
   hear: { level: 0.8, wet: 0.3, pan: -0.35 },
@@ -439,8 +504,6 @@ const LINES: Record<Line, { level: number; wet: number; pan?: number }> = {
   followed: { level: 0.8, wet: 0.3, pan: 0.35 },
   "back-for-more": { level: 0.8, wet: 0.3, pan: 0.35 },
   // and something that thinks it's all very funny
-  // (said under its breath, a way off — not shouted in your ear)
-  damage: { level: 0.32, wet: 0.35 },
   // (what anyone says when the face comes at them — bleeped before they get to the end of it)
   what: { level: 0.85, wet: 0.12 },
   safe: { level: 0.75, wet: 0.18 },
@@ -455,19 +518,42 @@ const spoken = new Set<Line>();
 let talkingUntil = 0;
 /** what's being said, or about to be: so it can all be stopped */
 const saying = new Set<{ src: AudioBufferSourceNode; fade: GainNode }>();
+/** a line that gives way to anything else said over it (the hello), while it lasts */
+let giving: { src: AudioBufferSourceNode; fade: GainNode; until: number } | null = null;
 
-function fetchLines(c: AudioContext) {
+/** which of the hellos is yours: what you came on */
+function hello(): Line {
+  const ua = navigator.userAgent;
+  return /iPhone|iPad|iPod/.test(ua) ? "hi-iphone" : /Android/.test(ua) ? "hi-android" : "hi-computer";
+}
+
+/** fetched all at once, but unpacked one at a time, in page order — so the score never stutters for them */
+async function fetchLines(c: AudioContext) {
   if (fetched) return;
   fetched = true;
-  for (const line of Object.keys(LINES) as Line[]) {
+  // (and of the hellos, only yours)
+  const mine = hello();
+  const lines = (Object.keys(LINES) as Line[]).filter((line) => !line.startsWith("hi-") || line === mine);
+  const data = lines.map((line) =>
     fetch(`/sounds/${line}.m4a`)
-      .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(`${r.status}`))))
-      .then((data) => c.decodeAudioData(data))
-      .then((clip) => clips.set(line, clip))
-      .catch(() => {
-        // that line just goes unsaid
-      });
+      .then((r) => (r.ok ? r.arrayBuffer() : null))
+      .catch(() => null),
+  );
+  for (let i = 0; i < lines.length; i++) {
+    const raw = await data[i];
+    if (!raw) continue;
+    try {
+      clips.set(lines[i], await c.decodeAudioData(raw));
+    } catch {
+      // that line just goes unsaid
+    }
   }
+}
+
+/** how long after it's played a sound is actually heard, in seconds (more where the buffer's bigger) */
+export function audioLag(): number {
+  if (!ctx) return 0;
+  return (ctx.baseLatency || 0) + ((ctx as AudioContext & { outputLatency?: number }).outputLatency || 0);
 }
 
 /** how long `say(line)` would take if it were said now, in seconds — 0 if it wouldn't be */
@@ -482,14 +568,30 @@ export function lineLength(line: Line): number {
  * sound on and the menu not up (shutting is fine: that's the page arriving
  * where it was sent). Returns how long from now until it's said, in seconds,
  * so a moment can land on the end of it — or 0, if it isn't going to be.
+ * A line that `gives` way is cut short (quickly faded) by anything said
+ * over it, rather than making that wait: the hello, which mustn't cost the
+ * first card its voice.
  */
-export function say(line: Line, delay = 0): number {
+export function say(line: Line, delay = 0, { gives = false }: { gives?: boolean } = {}): number {
   if (!on || !ctx || !master || ctx.state !== "running" || spoken.has(line)) return 0;
   const menu = document.documentElement.dataset.nav;
   if (menu === "opening" || menu === "open") return 0;
   const clip = clips.get(line);
   if (!clip) return 0;
   let t = ctx.currentTime + 0.01 + delay;
+  if (giving && t < giving.until) {
+    const { src, fade } = giving;
+    giving = null;
+    fade.gain.cancelScheduledValues(ctx.currentTime);
+    fade.gain.setTargetAtTime(0, ctx.currentTime, 0.06);
+    try {
+      src.stop(ctx.currentTime + 0.4);
+    } catch {
+      // already stopped
+    }
+    talkingUntil = 0;
+    t = Math.max(t, ctx.currentTime + 0.12);
+  }
   if (t < talkingUntil) {
     if (talkingUntil - t > 0.6) return 0;
     t = talkingUntil + 0.06;
@@ -505,7 +607,11 @@ export function say(line: Line, delay = 0): number {
   src.connect(side).connect(fade).connect(bus(ctx, level, wet));
   const it = { src, fade };
   saying.add(it);
-  src.onended = () => saying.delete(it);
+  if (gives) giving = { src, fade, until: t + clip.duration };
+  src.onended = () => {
+    saying.delete(it);
+    if (giving?.src === src) giving = null;
+  };
   src.start(t);
   // the bed steps back while it talks, and comes back after
   for (const [out, full] of bed?.outs ?? []) {
@@ -533,13 +639,44 @@ export function hush() {
     }
   }
   saying.clear();
+  giving = null;
   talkingUntil = 0;
   for (const [out, full] of bed?.outs ?? []) {
     out.gain.cancelScheduledValues(t);
     out.gain.setTargetAtTime(full, t, 0.3);
   }
 }
-if (typeof window !== "undefined") window.addEventListener("soon:away", hush);
+/**
+ * Let in with the sound: as the cover lifts off the hero, it knows what you
+ * came on, and says so. It waits for the page to open and for the line to
+ * arrive (a few seconds at most); past the hero by then, it isn't for there.
+ */
+function greet() {
+  const line = hello();
+  const from = performance.now();
+  const go = () => {
+    if (window.scrollY > window.innerHeight * 0.6) return;
+    if (lineLength(line) > 0) {
+      say(line, 0, { gives: true });
+      return;
+    }
+    if (performance.now() - from < 7000) window.setTimeout(go, 150);
+  };
+  // (a beat after the cover starts to go: the hero's there)
+  const open = () => window.setTimeout(go, 900);
+  if (document.documentElement.dataset.wipe) window.addEventListener(OPEN_EVENT, open, { once: true });
+  else open();
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("soon:away", hush);
+  // let in through the cover (PageWipe): with the sound, or without — in the click itself
+  window.addEventListener("boo:enter", (e) => {
+    const sound = !!(e as CustomEvent<{ sound: boolean }>).detail?.sound;
+    void setSound(sound);
+    if (sound) greet();
+  });
+}
 
 function play(c: AudioContext, name: Cue, t: number) {
   switch (name) {

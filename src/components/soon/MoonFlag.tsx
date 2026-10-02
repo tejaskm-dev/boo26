@@ -32,7 +32,7 @@ export default function MoonFlag({ className = "" }: { className?: string }) {
       aria-hidden="true"
     >
       <i className="soon-flag-pole" />
-      <span className="soon-flag-cloth">
+      <span className="soon-flag-cloth soon-loop">
         <MuLearn tone="ink" alive={false} className="w-[84%]" />
       </span>
     </span>

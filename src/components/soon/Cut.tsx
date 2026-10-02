@@ -4,6 +4,8 @@ import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { prefersReducedMotion } from "@/lib/motion";
+import { isTouch } from "@/lib/tier";
+import { curtain } from "@/lib/curtain";
 import { MU } from "@/lib/soon";
 import InkEyes from "./InkEyes";
 import MuLearn from "./MuLearn";
@@ -113,6 +115,8 @@ export default function Cut({
     let caughtUp = false;
     /** one of its holds has the page (easing it back, or holding it) */
     let mine = false;
+    /** where the last update had it (or which end it was left by): a step through it, or clean past it? */
+    let lastP = -1;
 
     /**
      * When it all happens, this time through, in ms: when each line comes
@@ -143,6 +147,8 @@ export default function Cut({
       if (playing) return;
       playing = way;
       cardEl.dataset.way = way;
+      // eyes open round the frame for as long as it plays
+      eyesEl.dataset.look = "true";
       const rows = way === "down" ? down : up;
       const said = way === "down" ? voices : backVoices;
       const { at } = planFor(way);
@@ -174,6 +180,7 @@ export default function Cut({
       timers = [];
       playing = null;
       plan = null;
+      eyesEl.dataset.look = "false";
       for (const row of [...down, ...up]) {
         row.dataset.on = "false";
         row.dataset.past = "false";
@@ -185,21 +192,58 @@ export default function Cut({
       }
     };
 
+    // The black. With a mouse or a trackpad it follows the scroll, darker
+    // the further in. On a phone the page scrolls on its own thread and the
+    // script hears about it late, so following it left the black half up and
+    // behind: there the scroll only says when — up just before the card's
+    // stretch of page reaches the screen, down as the next act's words are
+    // coming, with some give either way so going back and forth across the
+    // line can't make it flicker — and the fade is the browser's own
+    // (soon.css), on the compositor.
+    const touch = isTouch();
+    veilEl.dataset.fade = touch ? "clock" : "scroll";
+    let shown = false;
+    const show = (on: boolean) => {
+      if (on === shown) return;
+      shown = on;
+      veilEl.dataset.shown = on ? "true" : "false";
+      // its film (grain, flicker, the eyes' blinks) runs only while it's up
+      veilEl.dataset.on = on ? "true" : "false";
+      // and what's behind the black rests while it's up
+      curtain(on);
+    };
+    const dark = ScrollTrigger.create({
+      trigger: el,
+      start: "top 130%",
+      end: "bottom 60%",
+      onToggle: ({ isActive }) => !isActive && show(false),
+      onUpdate: (self) => {
+        if (!touch) return;
+        const vh = window.innerHeight;
+        const top = self.start + vh * 1.3;
+        const bottom = self.end + vh * 0.6;
+        const y = self.scroll();
+        show(shown ? y > top - vh * 1.12 && y < bottom - vh * 0.74 : y > top - vh * 1.06 && y < bottom - vh * 0.8);
+      },
+    });
     const st = ScrollTrigger.create({
       trigger: el,
       start: "top 85%",
       // gone before the next act's words come up
       end: "bottom 55%",
-      onToggle: ({ isActive }) => {
+      onToggle: (self) => {
+        const { isActive } = self;
+        if (!isActive) lastP = self.progress >= 0.5 ? 1 : 0;
+        if (touch) return;
         veilEl.style.visibility = isActive ? "visible" : "hidden";
-        // its film (grain, flicker, the eyes' blinks) runs only while it's up
         veilEl.dataset.on = isActive ? "true" : "false";
       },
       onUpdate: (self) => {
         const p = self.progress;
+        const was = lastP < 0 ? (self.direction < 0 ? 1 : 0) : lastP;
+        lastP = p;
         // dark in, hold, dark out
-        veilEl.style.opacity = String(Math.max(0, Math.min(1, p / 0.18, (1 - p) / 0.22)));
-        eyesEl.dataset.look = p > 0.26 && p < 0.78 ? "true" : "false";
+        if (!touch) veilEl.style.opacity = String(Math.max(0, Math.min(1, p / 0.18, (1 - p) / 0.22)));
         if (!breathed && p > 0.06) {
           breathed = true;
           cue("inhale");
@@ -213,10 +257,16 @@ export default function Cut({
         // the card's up: hold the page while it says its piece — on the way
         // down at a third of the way in, and on the way back up (where it
         // says something else) at a third of the way from the bottom
-        const holdFor = (way: "down" | "up") => {
+        // caught on it, it's held wherever it came to rest in the stretch
+        // where the black's all the way up (eased back to it only if it
+        // overshot); flung clean past it, it's brought back to it
+        const holdFor = (way: "down" | "up", past = false) => {
+          const at = way === "up" ? 0.64 : 0.36;
+          const stretch: [number, number] = way === "up" ? [0.38, 0.74] : [0.26, 0.62];
           const ok = hold(way === "up" ? `cut-up:${lines.join("|")}` : `cut:${lines.join("|")}`, planFor(way).end + (way === "up" ? 600 : 700), {
-            to: self.start + range * (way === "up" ? 0.64 : 0.36),
-            glide: 0.7,
+            ...(past
+              ? { to: self.start + range * at, glide: 0.7 }
+              : { range: [self.start + range * stretch[0], self.start + range * stretch[1]] as [number, number] }),
             way,
             onRelease: () => (mine = false),
           });
@@ -233,13 +283,18 @@ export default function Cut({
         // a fling that went clean past it in one frame (a slow phone, a busy
         // moment) still gets the card, either way: the hold brings it back
         // for it. A jump (a link) isn't held, and then it's simply left behind.
-        if (!playing && (goingUp ? !caughtUp && up.length > 0 && p <= 0.2 : !caught && p >= 0.8)) {
-          if (holdFor(goingUp ? "up" : "down")) play(goingUp ? "up" : "down");
+        // Only one that skipped it, though: a page that went through it while
+        // it played and wasn't caught (it had just turned round, or the menu
+        // put it there) has seen it, and isn't dragged back for it.
+        if (!playing && (goingUp ? !caughtUp && up.length > 0 && p <= 0.2 && was > 0.8 : !caught && p >= 0.8 && was < 0.2)) {
+          if (holdFor(goingUp ? "up" : "down", true)) play(goingUp ? "up" : "down");
           return;
         }
         if (!playing && p > 0.2 && p < 0.8) play(goingUp && up.length ? "up" : "down");
-        if (playing === "down" && p > 0.2 && !caught) holdFor("down");
-        if (playing === "up" && p < 0.8 && !caughtUp) holdFor("up");
+        // caught while it's playing, in the stretch it plays in — not on the
+        // way out of it, which would only ease the page back again
+        if (playing === "down" && p > 0.2 && p < 0.8 && !caught) holdFor("down");
+        if (playing === "up" && p > 0.2 && p < 0.8 && !caughtUp) holdFor("up");
         // left behind, either way: ready to play again
         if (p < 0.08 || p > 0.96) {
           reset();
@@ -248,7 +303,9 @@ export default function Cut({
       },
     });
     return () => {
+      if (shown) curtain(false);
       st.kill();
+      dark.kill();
       timers.forEach((t) => window.clearTimeout(t));
     };
   }, [lines, back, voices, backVoices]);
@@ -286,7 +343,7 @@ export default function Cut({
                         const k = w.at + n;
                         const d = goo.get(k);
                         return (
-                          <span key={k} className="soon-goo-l" style={{ "--i": k, "--r": `${((k * 37) % 9) - 4}deg` } as React.CSSProperties}>
+                          <span key={k} className="soon-goo-l" data-tilt={(k * 37) % 5} style={{ "--i": k } as React.CSSProperties}>
                             {ch}
                             {d ? (
                               <span className="soon-drip-at">

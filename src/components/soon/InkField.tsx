@@ -119,7 +119,7 @@ export default function InkField({
       shapes: [d],
       ns,
       isMobile: mobile,
-      paused: () => !on || el.closest("[data-frozen='true']") !== null,
+      paused: () => !on,
     });
     return () => {
       io.disconnect();

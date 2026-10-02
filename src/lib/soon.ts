@@ -31,7 +31,15 @@ export const SOON = {
   format: "SOMETHING IS WAKING UP",
 
   /** the loading screen: its corner, and the line across the bottom */
-  preloader: { corner: "SHH.", venue: EVENT.venue, line: "SOMETHING IS WAKING UP" },
+  preloader: {
+    corner: "SHH.",
+    venue: EVENT.venue,
+    line: "SOMETHING IS WAKING UP",
+    hint: "Wear headphones for a better experience",
+    /** the way in, once it's loaded: with the sound (that click is what lets a browser play it), or without */
+    enter: "Enter",
+    quiet: "enter quietly",
+  },
 
   hero: {
     facts: [{ text: EVENT.venue }],
@@ -103,12 +111,8 @@ export const SOON = {
     relax: "relax.",
     /** under "relax." — it's not true */
     promise: "no jump scares on this site. promise.",
-    words: { jump: "Jump.", freeze: "Freeze.", laugh: "Laugh.", lean: "lean in.", what: "What the—" },
-    /** under FREEZE, where something only sees you while you're moving */
-    still: "it can’t see you\nif you don’t move.",
+    words: { lean: "lean in.", what: "What the—" },
     leanUp: "you just did.",
-    /** scrawled round LAUGH. as it goes */
-    ha: ["ha", "haha", "HA!", "ha ha", "hehe", "HAHAHA"],
     /** under the bar that cuts WHAT THE— off */
     language: "language.",
     why: "Why",
@@ -185,7 +189,7 @@ export const BACK = {
   leak: "the schedule is a lie.",
   bar: "it’s behind you.",
   count: "you sure about that?",
-  words: { jump: "Still jumpy?", freeze: "Too late.", laugh: "Not funny.", lean: "lean out.", what: "Language!" },
+  words: { lean: "lean out.", what: "Language!" },
   heading: "It\nknows.",
 } as const;
 
@@ -225,9 +229,6 @@ export const SECRETS = {
   window: "tap it. go on.",
   camera: "smile.",
   sleeper: "light sleeper.",
-  jump: "is this a jump scare?",
-  freeze: "don’t. move.",
-  laugh: "it’s not that funny.",
   lean: "closer. closer.",
   what: "we heard that.",
   why: "that’s the whole brief.",
@@ -245,7 +246,6 @@ export const TROLL = {
   poke: "rude.",
   awake: "it’s awake.",
   fell: "you fell for it.",
-  seen: "it saw that.",
   safe: "bro thought he was safe 💀",
   anyway: "oh no. anyway.",
   hello: "hello there.",
@@ -254,7 +254,6 @@ export const TROLL = {
   lightMode: "light mode? this part’s gonna hurt.",
   darkMode: "they’re here.",
   brave: "brave.",
-  jump: "emotional damage.",
   cheating: "that’s cheating.",
   shared: "good. now act normal.",
   copied: "link copied. don’t tell everyone.",
@@ -289,7 +288,6 @@ export const WAIT = {
     room: "tiptoe",
     /** the room, once it's awake */
     woke: "run.",
-    freeze: "ok. you can move.",
     drop: "almost",
   },
 } as const;

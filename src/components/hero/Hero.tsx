@@ -56,7 +56,9 @@ export default function Hero({
         {/* portrait only — the format takes the top of the frame */}
         <p
           data-anim="rise"
-          className="label max-w-[15ch] leading-[1.9] text-ink/70 md:hidden"
+          className="label max-w-[15ch] text-ink/70 md:hidden"
+          // (on the element: the label's own line height, 1, outranks a class)
+          style={{ lineHeight: 1.9 }}
         >
           {format}
         </p>
