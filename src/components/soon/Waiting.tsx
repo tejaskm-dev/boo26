@@ -334,9 +334,11 @@ export default function Waiting() {
         <span ref={burst} className="soon-wait-burst" />
         <span className="soon-wait-eyes">
           <svg viewBox="0 0 134 68">
-            {EYES.map((d) => (
-              <path key={d} d={d} />
-            ))}
+            <g filter="url(#soon-eye-glow)">
+              {EYES.map((d) => (
+                <path key={d} d={d} />
+              ))}
+            </g>
           </svg>
         </span>
       </div>

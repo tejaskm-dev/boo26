@@ -153,16 +153,6 @@
   fill: var(--color-lime);
 }
 
-/* come back up and the cat in the pumpkin has gone somewhere */
-.soon-pumpkin {
-  transition: opacity 0.3s ease;
-}
-
-.soon-pumpkin[data-gone="true"] {
-  opacity: 0;
-  pointer-events: none;
-}
-
 /* the leaked page: it twitches every few seconds, as if someone's tugging it */
 .soon-leak-page {
   transform-origin: 50% 0;
@@ -170,6 +160,9 @@
   transition:
     rotate 0.45s var(--ease-out-soft),
     translate 0.45s var(--ease-out-soft);
+}
+
+section[data-awake="true"] .soon-leak-page {
   animation: soon-pssst 4.2s ease-in-out infinite;
 }
 
@@ -276,24 +269,6 @@
   0% { translate: 0 0; rotate: 0deg; }
   50% { translate: 0.025em -0.035em; rotate: 1.6deg; }
   100% { translate: -0.02em 0.025em; rotate: -1.3deg; }
-}
-
-/* the rumours in the fog: Critters sets how clearly each reads */
-.soon-whisper {
-  opacity: 0.16;
-  animation: soon-drift 11s ease-in-out infinite alternate;
-}
-
-/* nothing brings them up near you with motion turned down, so they're just there */
-@media (prefers-reduced-motion: reduce) {
-  .soon-whisper {
-    opacity: 0.8;
-  }
-}
-
-@keyframes soon-drift {
-  from { translate: -10px 4px; }
-  to { translate: 14px -8px; }
 }
 
 /* ------------------------------------------------------- the room
@@ -942,6 +917,13 @@ html[data-js="true"] .soon-room[data-torch] .soon-shade {
 }
 
 /* film: grain that crawls, and a projector that can't hold its light */
+/* the film runs only while the black is up: a card that's down costs nothing */
+.soon-cut:not([data-on="true"]) .soon-cut-grain,
+.soon-cut:not([data-on="true"]) .soon-cut-flicker,
+.soon-cut:not([data-on="true"]) .soon-loop {
+  animation-play-state: paused;
+}
+
 .soon-cut-grain {
   position: absolute;
   inset: -50%;
@@ -1025,11 +1007,13 @@ html[data-js="true"] .soon-room[data-torch] .soon-shade {
   animation-delay: calc(var(--i) * 0.045s);
 }
 
+/* transforms and opacity only: a blur on every letter as it fell was a
+   repaint of every letter, every frame, all the way down */
 @keyframes soon-goo {
-  0% { opacity: 0; translate: 0 -0.8em; scale: 0.82 1.35; rotate: var(--r); filter: blur(1.5px); }
-  55% { opacity: 1; translate: 0 0.06em; scale: 1.12 0.84; rotate: calc(var(--r) * -0.4); filter: blur(0); }
+  0% { opacity: 0; translate: 0 -0.8em; scale: 0.82 1.35; rotate: var(--r); }
+  55% { opacity: 1; translate: 0 0.06em; scale: 1.12 0.84; rotate: calc(var(--r) * -0.4); }
   78% { translate: 0 -0.03em; scale: 0.96 1.05; rotate: 0deg; }
-  100% { opacity: 1; translate: 0 0; scale: 1 1; rotate: 0deg; filter: blur(0); }
+  100% { opacity: 1; translate: 0 0; scale: 1 1; rotate: 0deg; }
 }
 
 /* the ones before it step back */
@@ -1155,7 +1139,10 @@ html[data-js="true"] .soon-room[data-torch] .soon-shade {
 }
 
 /* a hold stopping a fling dead: two frames, then the page is free to ease (hold.ts) */
-html.soon-halt {
+/* hidden first, for a browser that doesn't know clip — and for Lenis's own stop, too */
+html.soon-halt,
+html.lenis.lenis-stopped {
+  overflow: hidden;
   overflow: clip;
 }
 
@@ -1265,10 +1252,12 @@ html.soon-halt {
   pointer-events: none;
   background: radial-gradient(120% 95% at 50% 50%, rgba(8, 8, 8, 0) 55%, rgba(8, 8, 8, 0.85) 100%);
   opacity: 0;
+  /* its opacity follows the scroll: a layer of its own, so that's a fade, not a full-screen repaint */
+  will-change: opacity;
 }
 
 /* -------------------------------------------- text that won't hold still */
-.soon-glitch {
+section[data-awake="true"] .soon-glitch {
   animation: soon-glitch 7.3s steps(1, end) infinite;
 }
 
@@ -1595,7 +1584,6 @@ html.soon-halt {
   height: auto;
   overflow: visible;
   fill: var(--color-lime);
-  filter: drop-shadow(0 0 4px rgba(216, 255, 40, 0.55));
   transform-origin: 50% 62%;
 }
 
@@ -1731,13 +1719,13 @@ html.soon-halt {
   transition: translate 0.4s var(--ease-out-soft);
 }
 
+/* the glow is in the drawing itself (EyeGlow), so a blink moves it rather than re-blurring it */
 .soon-inkeyes svg {
   display: block;
   width: 100%;
   height: auto;
   overflow: visible;
   fill: var(--color-lime);
-  filter: drop-shadow(0 0 5px rgba(216, 255, 40, 0.55)) drop-shadow(0 0 14px rgba(216, 255, 40, 0.28));
   transform-origin: 50% 62%;
   transition: transform 0.18s ease;
   animation: soon-blink 6s infinite;
@@ -1795,5 +1783,111 @@ section[data-awake="true"] .soon-loop {
 section[data-frozen="true"] .soon-loop,
 html[data-idle="true"] section .soon-loop,
 html[data-nav-active="true"] section .soon-loop {
+  animation-play-state: paused;
+}
+
+/* ------------------------------------------------ the living fields (InkField)
+   The field that reshapes gets a layer of its own, so its repaints stay its
+   own; the shadow under it, blurred once, never repaints at all — and where
+   it leans with the cursor, it's a layer too, so leaning moves it rather than
+   redrawing it. */
+.soon-ink-live {
+  will-change: transform;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .soon-ink-shade {
+    will-change: transform;
+  }
+}
+
+/* ------------------------------------------------- the rumour (Rumour.tsx, 01)
+   A lime thread from one pair of eyes to the next, drawn only while the
+   rumour runs along it, in a layer of its own; the rumour itself is a bead
+   of lime, moved, never redrawn. Each pair's words come up a word at a
+   time as it arrives, and once it's been passed on it's old news. */
+.soon-rumour ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.soon-rumour-thread {
+  pointer-events: none;
+  will-change: transform;
+}
+
+.soon-rumour-thread path {
+  fill: none;
+  stroke: var(--color-lime);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  opacity: 0.62;
+}
+
+.soon-rumour-bead {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 9px;
+  height: 9px;
+  margin: -4.5px 0 0 -4.5px;
+  border-radius: 50%;
+  background: var(--color-lime);
+  box-shadow: 0 0 10px 2px rgba(216, 255, 40, 0.6);
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform;
+  transition: opacity 0.25s ease;
+}
+
+.soon-rumour-bead[data-on="true"] {
+  opacity: 1;
+}
+
+.soon-rumour-line {
+  color: var(--color-bone);
+  font-size: clamp(1.12rem, 1.55vw, 1.6rem);
+  line-height: 1.12;
+  pointer-events: auto;
+  transition: opacity 0.7s ease;
+}
+
+.soon-rumour-last {
+  color: var(--color-lime);
+  font-size: clamp(1.55rem, 2.4vw, 2.4rem);
+}
+
+.soon-rumour-w {
+  display: inline-block;
+  opacity: 0;
+  translate: 0 0.45em;
+  rotate: 3deg;
+  transition:
+    opacity 0.5s ease,
+    translate 0.7s cubic-bezier(0.2, 1.4, 0.4, 1),
+    rotate 0.7s cubic-bezier(0.2, 1.4, 0.4, 1);
+  transition-delay: calc(var(--i) * 70ms + 120ms);
+}
+
+.soon-rumour [data-said="true"] .soon-rumour-w {
+  opacity: 1;
+  translate: 0 0;
+  rotate: 0deg;
+}
+
+/* once it's been passed on, it's old news */
+.soon-rumour [data-said="true"]:not([data-latest="true"]) .soon-rumour-line {
+  opacity: 0.5;
+}
+
+/* each pair keeps its eyes shut until the rumour reaches it */
+.soon-rumour [data-link]:not([data-said="true"]) .soon-inkeyes svg {
+  transform: scaleY(0.02);
+  opacity: 0;
+}
+
+/* the hero's "skip ahead" arrow bobs only while the hero's on screen (Awake target="#top") */
+#top:not([data-awake="true"]) [class*="animate-[cue"] {
   animation-play-state: paused;
 }

@@ -222,7 +222,7 @@ export default function NotYet() {
     >
       <Cut lines={CUTS.drop} back={CUTS.dropBack} />
       <Awake />
-      <Critters bats={2} wisps={10} ghosts={0} sky={[0.06, 0.24]} ground={[0.2, 0.9]} className="z-[1]" />
+      <Critters bats={2} sky={[0.06, 0.24]} className="z-[1]" />
 
       {/* the last shot, held for a while */}
       <div ref={runway} data-wait="drop" className="soon-drop-runway relative">

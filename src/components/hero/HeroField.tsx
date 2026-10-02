@@ -8,6 +8,8 @@ import { HERO_FIELD, MOBILE_FIELD } from "@/lib/shapes";
 import { MD, prefersReducedMotion } from "@/lib/motion";
 import { startLiquidFlow } from "@/lib/liquid";
 import { isNavActive, subscribeNavActive } from "@/lib/navState";
+import { getLenis } from "@/lib/lenis";
+import { rich } from "@/lib/tier";
 
 /**
  * The hero's environment. Black fields traced off the supplied comps
@@ -299,8 +301,10 @@ function MobileField({ className = "" }: { className?: string }) {
     }, { rootMargin: "0px" });
     io.observe(heroSec);
 
+    // every lean redraws the whole field, blurs and all: so not while the
+    // page is scrolling, and not on a phone that can't keep up (src/lib/tier.ts)
     const stopPointer = subscribePointer((nx, ny) => {
-      if (!isIntersecting || isNavActive()) return;
+      if (!isIntersecting || isNavActive() || getLenis()?.isScrolling || !rich()) return;
       setters.forEach((l) => {
         l.x(-nx * l.d);
         l.y(-ny * l.d * 0.5);

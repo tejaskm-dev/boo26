@@ -6,6 +6,7 @@ import { subscribePointer } from "@/lib/pointer";
 import { startLiquidFlow } from "@/lib/liquid";
 import { MD, prefersReducedMotion } from "@/lib/motion";
 import { isNavActive } from "@/lib/navState";
+import { isTouch } from "@/lib/tier";
 
 /**
  * Rewrites a path as one moveto and cubic curves only — the form the liquid
@@ -50,11 +51,18 @@ function toCubic(d: string): string {
  * One of the site's living fields, for the teaser: an ink mass with a lime
  * hairline riding just off its edge and a soft shadow under it, slowly
  * deforming like something thick and wet (the hero's liquid engine), leaning
- * with the cursor or the phone's tilt. Whatever's inside it — the night, the
- * eyes, the moon — is passed as children and sits on top.
+ * with the cursor. Whatever's inside it — the night, the eyes, the moon — is
+ * passed as children and sits on top.
  *
  * It bleeds past its own box on purpose, the way the hero's fields run off
  * the frame, so its moving edge is never a straight one.
+ *
+ * Built to be cheap to keep alive. The shadow is blurred once, in a layer of
+ * its own, so the field reshaping above it never makes it blur again; the
+ * field reshapes in a layer of its own too, so nothing around it repaints
+ * with it. On a phone it doesn't lean with the tilt (every lean was a
+ * repaint) and reshapes less often, and not while you scroll
+ * (src/lib/liquid.ts).
  */
 export default function InkField({
   ns,
@@ -76,29 +84,36 @@ export default function InkField({
   children?: React.ReactNode;
 }) {
   const svg = useRef<SVGSVGElement>(null);
+  const shade = useRef<SVGSVGElement>(null);
   const d = toCubic(shape);
 
   useEffect(() => {
     const el = svg.current;
     if (!el || prefersReducedMotion()) return;
     const mobile = !window.matchMedia(MD).matches;
-    const layers = [...el.querySelectorAll<SVGGElement>("[data-depth]")].map((n) => ({
-      x: gsap.quickTo(n, "x", { duration: 1.3, ease: "power2.out" }),
-      y: gsap.quickTo(n, "y", { duration: 1.3, ease: "power2.out" }),
-      depth: Number(n.dataset.depth) || 10,
-    }));
     let on = false;
     const io = new IntersectionObserver(([e]) => {
       on = e.isIntersecting;
     });
     io.observe(el);
-    const stop = subscribePointer((nx, ny) => {
-      if (!on || isNavActive()) return;
-      for (const l of layers) {
-        l.x(-nx * l.depth);
-        l.y(-ny * l.depth * 0.62);
-      }
-    });
+    // leaning with the cursor: each layer at its own depth (the shadow least)
+    let stop = () => {};
+    if (!isTouch()) {
+      const depths: Element[] = [...el.querySelectorAll("[data-depth]")];
+      if (shade.current) depths.push(shade.current);
+      const layers = depths.map((n) => ({
+        x: gsap.quickTo(n, "x", { duration: 1.3, ease: "power2.out" }),
+        y: gsap.quickTo(n, "y", { duration: 1.3, ease: "power2.out" }),
+        depth: Number(n.getAttribute("data-depth")) || 10,
+      }));
+      stop = subscribePointer((nx, ny) => {
+        if (!on || isNavActive()) return;
+        for (const l of layers) {
+          l.x(-nx * l.depth);
+          l.y(-ny * l.depth * 0.62);
+        }
+      });
+    }
     const stopLiquid = startLiquidFlow({
       svg: el,
       shapes: [d],
@@ -116,31 +131,39 @@ export default function InkField({
   const fill = tone === "lime" ? "var(--color-lime)" : "var(--color-ink)";
   return (
     <div className={`pointer-events-none absolute ${className}`}>
+      {/* the shadow it casts on the cream: blurred once, in a layer of its own */}
+      {tone === "ink" ? (
+        <svg
+          ref={shade}
+          data-depth="6"
+          viewBox={view}
+          preserveAspectRatio="none"
+          className="soon-ink-shade absolute inset-0 h-full w-full overflow-visible"
+          aria-hidden="true"
+        >
+          <defs>
+            <filter id={`${ns}-shadow`} x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation={14} />
+            </filter>
+          </defs>
+          <path d={d} fill="rgba(8, 8, 8, 0.24)" transform="translate(0 16)" filter={`url(#${ns}-shadow)`} />
+        </svg>
+      ) : null}
       <svg
         ref={svg}
         viewBox={view}
         preserveAspectRatio="none"
-        className="absolute inset-0 h-full w-full overflow-visible"
+        className="soon-ink-live absolute inset-0 h-full w-full overflow-visible"
         aria-hidden="true"
       >
         <defs>
           <path id={`${ns}-flow-0`} d={d} />
-          <filter id={`${ns}-shadow`} x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation={14} />
-          </filter>
           <radialGradient id={`${ns}-wash`} cx="46%" cy="34%" r="62%">
             <stop offset="0%" stopColor="#ffffff" stopOpacity={tone === "lime" ? 0.25 : 0.075} />
             <stop offset="55%" stopColor="#ffffff" stopOpacity={tone === "lime" ? 0.06 : 0.022} />
             <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
           </radialGradient>
         </defs>
-
-        {/* the shadow it casts on the cream: static, so its blur is drawn once */}
-        {tone === "ink" ? (
-          <g data-depth="6">
-            <path d={d} fill="rgba(8, 8, 8, 0.24)" transform="translate(0 16)" filter={`url(#${ns}-shadow)`} />
-          </g>
-        ) : null}
 
         {hairline ? (
           <g data-depth="22">

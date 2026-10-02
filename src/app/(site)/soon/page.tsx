@@ -15,7 +15,9 @@ import SoundStage from "@/components/soon/SoundStage";
 import Peeker from "@/components/soon/Peeker";
 import Dread from "@/components/soon/Dread";
 import ScrollHealth from "@/components/soon/ScrollHealth";
+import Awake from "@/components/soon/Awake";
 import Waiting from "@/components/soon/Waiting";
+import { EyeGlow } from "@/components/soon/InkEyes";
 import { SOON } from "@/lib/soon";
 import { LEGAL } from "@/lib/site";
 import { siteLive } from "@/lib/live";
@@ -47,6 +49,7 @@ export default function SoonPage() {
 
   return (
     <>
+      <EyeGlow />
       <SoonChrome />
       <main className="relative overflow-x-clip">
         <Hero format={SOON.format} facts={SOON.hero.facts} cta={SOON.hero.cta} next={SOON.hero.next} />
@@ -65,6 +68,8 @@ export default function SoonPage() {
       <Peeker />
       <Dread />
       <ScrollHealth />
+      {/* the hero is the full site's: this marks it awake, so its loops rest off screen */}
+      <Awake target="#top" />
       {/* for anyone reading the source */}
       <div hidden dangerouslySetInnerHTML={{ __html: "<!-- stop reading the source. (keep going.) -->" }} />
     </>

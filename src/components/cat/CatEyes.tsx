@@ -95,11 +95,13 @@ export default function CatEyes({ art, track = false, excited = false, className
     };
   }, [art, track]);
 
-  // idle blinking
+  // idle blinking — only while the eyes are on screen: a blink redraws the
+  // whole drawing, and one nobody can see was a repaint for nothing
   useEffect(() => {
     if (prefersReducedMotion()) return;
     const targets = lids.current.filter(Boolean);
-    if (!targets.length) return;
+    const el = root.current;
+    if (!targets.length || !el) return;
 
     // The lid hangs from the top of the eye and drops, rather than pinching
     // shut around the centre — so both ry and cy move together. Driving the
@@ -121,8 +123,13 @@ export default function CatEyes({ art, track = false, excited = false, className
         tl.to(el, { attr: { ry, cy: geom[i].top + ry }, duration, ease }, at);
       });
 
-    let timer: ReturnType<typeof setTimeout>;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let seen = false;
     const blink = () => {
+      if (!seen) {
+        timer = undefined;
+        return;
+      }
       if (isNavActive()) {
         timer = setTimeout(blink, 1000);
         return;
@@ -137,8 +144,13 @@ export default function CatEyes({ art, track = false, excited = false, className
       }
       timer = setTimeout(blink, 2800 + Math.random() * 6200);
     };
-    timer = setTimeout(blink, 1800 + Math.random() * 2600);
+    const io = new IntersectionObserver(([e]) => {
+      seen = e.isIntersecting;
+      if (seen && !timer) timer = setTimeout(blink, 1800 + Math.random() * 2600);
+    });
+    io.observe(el);
     return () => {
+      io.disconnect();
       clearTimeout(timer);
       gsap.killTweensOf(targets);
     };

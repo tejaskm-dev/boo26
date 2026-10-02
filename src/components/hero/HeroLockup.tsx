@@ -9,6 +9,8 @@ import { LOCKUP_EYES } from "@/lib/eyes";
 import { subscribePointer } from "@/lib/pointer";
 import { prefersReducedMotion, useFinePointer } from "@/lib/motion";
 import { isNavActive, subscribeNavActive } from "@/lib/navState";
+import { getLenis } from "@/lib/lenis";
+import { rich } from "@/lib/tier";
 
 /**
  * The supplied lockup, oversized, with its cat wired up. The image is never
@@ -36,11 +38,13 @@ export default function HeroLockup({
     });
 
     if (!fine) {
-      // Mobile: pure GPU translate3d without rotation (rotation forces CPU redraw in iOS Safari)
+      // Mobile: pure GPU translate3d without rotation (rotation forces CPU redraw in iOS Safari).
+      // Not while the page is scrolling — the scroll has the frame then — and
+      // not on a phone that can't keep up (src/lib/tier.ts).
       const x = gsap.quickTo(el, "x", { duration: 0.8, ease: "power2.out" });
       const y = gsap.quickTo(el, "y", { duration: 0.8, ease: "power2.out" });
       const unsubPointer = subscribePointer((nx, ny) => {
-        if (isNavActive()) return;
+        if (isNavActive() || getLenis()?.isScrolling || !rich()) return;
         x(nx * 12);
         y(ny * 8);
       });

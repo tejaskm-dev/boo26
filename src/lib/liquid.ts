@@ -5,6 +5,7 @@ import { subscribePointer } from "@/lib/pointer";
 import { getLenis } from "@/lib/lenis";
 import { gsap } from "gsap";
 import { isNavActive } from "@/lib/navState";
+import { onTierDrop, rich } from "@/lib/tier";
 
 export interface PrecomputedPoint {
   baseX: number;
@@ -231,6 +232,15 @@ export function startLiquidFlow({ svg, shapes, ns, isMobile = false, paused }: L
   let effectiveTime = 0;
   let isIntersecting = true;
 
+  // A phone can't reshape a field this size every frame and scroll smoothly
+  // as well. There it reshapes at half the rate, and never while the page is
+  // moving — the scroll needs the frame then, and hides the stillness — and a
+  // phone that can't keep up (src/lib/tier.ts) leaves its fields as they are.
+  let still = isMobile && !rich();
+  const stopDrop = isMobile ? onTierDrop(() => (still = true)) : () => {};
+  let skip = false;
+  let carried = 0;
+
   const heroSection = svg.closest("section") || svg;
   let observer: IntersectionObserver | null = null;
   if ("IntersectionObserver" in window) {
@@ -262,8 +272,17 @@ export function startLiquidFlow({ svg, shapes, ns, isMobile = false, paused }: L
     ) {
       return;
     }
+    if (isMobile) {
+      if (still || getLenis()?.isScrolling) return;
+      skip = !skip;
+      if (skip) {
+        carried = deltaTime || 16.6;
+        return;
+      }
+    }
 
-    const dt = Math.min(0.064, (deltaTime || 16.6) / 1000);
+    const dt = Math.min(0.064, ((deltaTime || 16.6) + carried) / 1000);
+    carried = 0;
 
     // 2. Scroll velocity boost
     const lenis = getLenis();
@@ -316,6 +335,7 @@ export function startLiquidFlow({ svg, shapes, ns, isMobile = false, paused }: L
   return () => {
     gsap.ticker.remove(tick);
     unsubscribePointer();
+    stopDrop();
     if (observer) observer.disconnect();
   };
 }
