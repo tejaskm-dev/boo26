@@ -5,7 +5,7 @@ import Sprite from "@/components/ui/Sprite";
 import { prefersReducedMotion } from "@/lib/motion";
 import { MU } from "@/lib/soon";
 import MuLearn from "./MuLearn";
-import { cue } from "./sound";
+import { cue, say } from "./sound";
 import { answer } from "./troll";
 
 /**
@@ -29,6 +29,8 @@ export default function Banner() {
       last = now;
       setFlight((n) => n + 1);
       cue("musicbox");
+      // a laugh as it comes over, then the line, as the toast says it
+      say("banner");
       window.setTimeout(() => answer(MU.banner), 900);
     };
     window.addEventListener("soon:banner", send);

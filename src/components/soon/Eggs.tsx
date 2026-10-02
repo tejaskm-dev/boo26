@@ -8,6 +8,7 @@ import { setSoonWords } from "@/lib/toast";
 import { SOCIALS } from "@/lib/brand";
 import { TROLL } from "@/lib/soon";
 import { answer, buzz, shiver, troll } from "./troll";
+import { say } from "./sound";
 
 const IDLE = 22_000;
 const KONAMI = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"];
@@ -127,6 +128,7 @@ export default function Eggs() {
       window.clearTimeout(lights);
       lights = window.setTimeout(() => {
         delete el.dataset.on;
+        say("nerd");
         window.setTimeout(() => answer(TROLL.nerd), 380);
       }, 1700);
     };
@@ -207,6 +209,7 @@ export default function Eggs() {
           if (!e.isIntersecting) return;
           if (!troll("leaving", TROLL.leaving)) return;
           io.disconnect();
+          say("leaving");
           const goodbye = document.querySelector<HTMLElement>('footer [data-desk] img[src*="cat-goodbye"]')?.closest<HTMLElement>("span.block");
           if (goodbye && !prefersReducedMotion()) {
             goodbye.animate(

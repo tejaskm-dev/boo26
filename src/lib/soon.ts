@@ -168,7 +168,8 @@ export const SOON = {
       },
     ],
     details: { title: "Where", rows: [["Where", EVENT.venueLong]] as [string, string][] },
-    credit: { before: `By the ${EVENT.name} core team,\nunder the `, after: " banner" },
+    /** the voices are ElevenLabs' free plan, which asks for "elevenlabs.io" wherever they're used */
+    credit: { before: `By the ${EVENT.name} core team,\nunder the `, after: " banner\nvoices: elevenlabs.io" },
     desk: "nothing to see\nhere. yet.",
     sign: "go touch grass.",
   },

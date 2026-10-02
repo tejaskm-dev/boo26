@@ -8,7 +8,7 @@ import { MU } from "@/lib/soon";
 import InkEyes from "./InkEyes";
 import MuLearn from "./MuLearn";
 import { hold } from "./hold";
-import { cue } from "./sound";
+import { cue, say, type Line } from "./sound";
 
 /** where eyes open in the dark while the card is up */
 const DARK_EYES: { at: string; tilt: number }[] = [
@@ -67,14 +67,20 @@ function words(line: string) {
  * through it and it says something else (`back`) — held for that too. Leave
  * it either way and it resets, ready to play again. With motion turned down
  * there's no cut.
+ *
+ * With the sound on, a line can be said out loud as it comes up (`voices`,
+ * one for each of `lines`; once a visit, on the way down).
  */
 export default function Cut({
   lines,
   back = [],
+  voices = [],
   presents = false,
 }: {
   lines: readonly string[];
   back?: readonly string[];
+  /** what's said as each of `lines` comes up, if anything */
+  voices?: readonly (Line | null)[];
   /** open on the studio card — "µLearn ASIET presents" — the way a trailer does */
   presents?: boolean;
 }) {
@@ -124,8 +130,11 @@ export default function Cut({
             if (!row.isConnected) return;
             row.dataset.on = "true";
             if (i > 0) rows[i - 1].dataset.past = "true";
-            // after the studio card, the cold open comes in on a whisper
-            if (i === 0) cue(studio && way === "down" ? "whisper" : "toll");
+            const line = way === "down" ? voices[i] : null;
+            const said = line ? say(line) > 0 : false;
+            // after the studio card, the cold open comes in on a whisper (or
+            // is one, said out loud)
+            if (i === 0 && !said) cue(studio && way === "down" ? "whisper" : "toll");
           }, wait + i * STEP),
         );
       });
@@ -207,7 +216,7 @@ export default function Cut({
       st.kill();
       timers.forEach((t) => window.clearTimeout(t));
     };
-  }, [lines, back]);
+  }, [lines, back, voices]);
 
   return (
     <div ref={room} className="soon-cut-room" data-wait="cut" aria-hidden="true">

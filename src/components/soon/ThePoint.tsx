@@ -16,7 +16,7 @@ import { getLenis } from "@/lib/lenis";
 import { prefersReducedMotion } from "@/lib/motion";
 import { BACK, SECRETS, SOON, TROLL } from "@/lib/soon";
 import { buzz, shiver, troll } from "./troll";
-import { cue } from "./sound";
+import { cue, say } from "./sound";
 import { jumpscare } from "./JumpScare";
 import { hold } from "./hold";
 
@@ -156,6 +156,8 @@ export default function ThePoint() {
           buzz(70);
           cue("hit", true);
           troll("jump", TROLL.jump);
+          // and, a beat after the bang, someone says what we're all thinking
+          say("damage", 0.4);
           // and everything that was hiding in the ink comes out of it
           const r = splash.current?.getBoundingClientRect();
           if (r) {
@@ -297,7 +299,10 @@ export default function ThePoint() {
           if (isActive && direction > 0)
             leaning = window.setTimeout(() => {
               if (lean.current?.dataset.close !== "true") return;
-              if (jumpscare("face")) timers.push(window.setTimeout(() => troll("safe", TROLL.safe), 1900));
+              if (!jumpscare("face")) return;
+              // it laughs as it goes — and says it as the toast does
+              say("safe", 0.9);
+              timers.push(window.setTimeout(() => troll("safe", TROLL.safe), 1900));
             }, 900);
         },
       });
@@ -319,12 +324,20 @@ export default function ThePoint() {
         start: "top 36%",
         once: true,
         onEnter: () => {
-          what.current!.dataset.slammed = "true";
-          cue("beep", true);
+          // with the sound on, someone actually says it — and the bar comes
+          // down on them, bleep and all, just as they get to "the"
+          const said = say("what");
+          const slam = () => {
+            what.current!.dataset.slammed = "true";
+            timers.push(window.setTimeout(() => shiver(what.current, 7), 150));
+          };
+          // (a hair before the line's over, so there's no gap to hear)
+          cue("beep", true, said && said - 0.02);
+          if (said) timers.push(window.setTimeout(slam, said * 1000));
+          else slam();
           // a fling that ran on well past it is brought back to it
           const top = what.current!.getBoundingClientRect().top;
-          hold("what", 1500, top < window.innerHeight * 0.05 ? { to: top + window.scrollY - window.innerHeight * 0.36, glide: 0.35 } : {});
-          timers.push(window.setTimeout(() => shiver(what.current, 7), 150));
+          hold("what", 1500 + said * 1000, top < window.innerHeight * 0.05 ? { to: top + window.scrollY - window.innerHeight * 0.36, glide: 0.35 } : {});
         },
       });
       // and back up past it, it's "Language!" — bleeped, and held a moment

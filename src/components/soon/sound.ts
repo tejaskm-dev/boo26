@@ -1,7 +1,8 @@
 "use client";
 
 /**
- * The teaser's score, made in the browser — no audio files to download.
+ * The teaser's score, made in the browser — all but a few lines said out
+ * loud (`say`), which are small recordings fetched only once the sound's on.
  *
  * Off until the visitor turns it on, and never remembered between visits.
  *
@@ -64,6 +65,8 @@ type Bed = {
   choirGain: GainNode;
   windGain: GainNode;
   windFilter: BiquadFilterNode;
+  /** each part's way out, at its level: what steps back while something's talking */
+  outs: [GainNode, number][];
 };
 
 export const soundOn = () => on;
@@ -156,7 +159,8 @@ function startBed(c: AudioContext): Bed {
   droneFilter.Q.value = 0.8;
   const droneGain = c.createGain();
   droneGain.gain.value = 0.0001;
-  droneFilter.connect(droneGain).connect(bus(c, 1, 0.35));
+  const droneOut = bus(c, 1, 0.35);
+  droneFilter.connect(droneGain).connect(droneOut);
   for (const [hz, type, level] of [
     [36.71, "sawtooth", 0.12],
     [cents(36.71, 6), "sawtooth", 0.08],
@@ -199,7 +203,8 @@ function startBed(c: AudioContext): Bed {
   const breathGain = c.createGain();
   breathGain.gain.value = 0.65;
   breath.connect(breathDepth).connect(breathGain.gain);
-  choirGain.connect(breathGain).connect(bus(c, 0.5, 0.9));
+  const choirOut = bus(c, 0.5, 0.9);
+  choirGain.connect(breathGain).connect(choirOut);
   breath.start();
 
   // the wind: what the scroll moves
@@ -210,11 +215,17 @@ function startBed(c: AudioContext): Bed {
   const pan = c.createStereoPanner();
   const sway = osc(c, "sine", 0.09);
   sway.connect(pan.pan);
-  air.connect(windFilter).connect(windGain).connect(pan).connect(bus(c, 1, 0.5));
+  const windOut = bus(c, 1, 0.5);
+  air.connect(windFilter).connect(windGain).connect(pan).connect(windOut);
   air.start();
   sway.start();
 
-  return { droneFilter, droneGain, choirGain, windGain, windFilter };
+  const outs: [GainNode, number][] = [
+    [droneOut, 1],
+    [choirOut, 0.5],
+    [windOut, 1],
+  ];
+  return { droneFilter, droneGain, choirGain, windGain, windFilter, outs };
 }
 
 // --- turning it on ----------------------------------------------------------------
@@ -243,6 +254,7 @@ export async function setSound(next: boolean) {
       ret.gain.value = 0.7;
       verb.connect(ret).connect(master);
       bed = startBed(ctx);
+      fetchLines(ctx);
       document.addEventListener("visibilitychange", () => {
         if (!ctx) return;
         if (document.hidden) void ctx.suspend();
@@ -362,9 +374,11 @@ let lastBig = -10;
 
 /**
  * Plays one, if it's its turn. `force` is for the moments the page is built
- * around (a scare, waking it) — they always happen.
+ * around (a scare, waking it) — they always happen. `after` puts it off to
+ * that many seconds from now, on the sound's own clock — to land on the end
+ * of a line, say.
  */
-export function cue(name: Cue, force = false) {
+export function cue(name: Cue, force = false, after = 0) {
   if (!on || !ctx || !master || ctx.state !== "running") return;
   const now = ctx.currentTime;
   if (!force) {
@@ -374,7 +388,79 @@ export function cue(name: Cue, force = false) {
   }
   last[name] = now;
   if (BIG.has(name)) lastBig = now;
-  play(ctx, name, now + 0.01);
+  play(ctx, name, now + Math.max(0.01, after));
+}
+
+// --- the voice -------------------------------------------------------------------
+
+/**
+ * The lines said out loud — the only recordings in the score: ElevenLabs
+ * voices, trimmed, levelled and squeezed to small mono AAC (the takes as
+ * they came, kept or not, are in design/voice/). They're fetched once the
+ * sound's turned on, so nobody who leaves it off ever downloads them.
+ */
+export type Line = "shh" | "hear" | "damage" | "what" | "safe" | "nerd" | "leaving" | "banner";
+
+/** how loud each sits, how much of it goes into the room, and which side it's on */
+const LINES: Record<Line, { level: number; wet: number; pan?: number }> = {
+  // something in the dark, whispering — close, at one shoulder
+  shh: { level: 0.75, wet: 0.35, pan: -0.35 },
+  hear: { level: 0.8, wet: 0.3, pan: -0.35 },
+  // and something that thinks it's all very funny
+  damage: { level: 0.85, wet: 0.15 },
+  what: { level: 0.85, wet: 0.1 },
+  safe: { level: 0.75, wet: 0.18 },
+  nerd: { level: 0.7, wet: 0.12 },
+  leaving: { level: 0.7, wet: 0.15 },
+  banner: { level: 0.7, wet: 0.15 },
+};
+
+const clips = new Map<Line, AudioBuffer>();
+let fetched = false;
+const spoken = new Set<Line>();
+let talkingUntil = 0;
+
+function fetchLines(c: AudioContext) {
+  if (fetched) return;
+  fetched = true;
+  for (const line of Object.keys(LINES) as Line[]) {
+    fetch(`/sounds/${line}.m4a`)
+      .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(`${r.status}`))))
+      .then((data) => c.decodeAudioData(data))
+      .then((clip) => clips.set(line, clip))
+      .catch(() => {
+        // that line just goes unsaid
+      });
+  }
+}
+
+/**
+ * Says one of the lines, `delay` seconds from now: once a visit, never over
+ * another line, and only with the sound on. Returns how long from now until
+ * it's said, in seconds, so a moment can land on the end of it — or 0, if it
+ * isn't going to be.
+ */
+export function say(line: Line, delay = 0): number {
+  if (!on || !ctx || !master || ctx.state !== "running" || spoken.has(line)) return 0;
+  const clip = clips.get(line);
+  const t = ctx.currentTime + 0.01 + delay;
+  if (!clip || t < talkingUntil) return 0;
+  spoken.add(line);
+  talkingUntil = t + clip.duration;
+  const { level, wet, pan = 0 } = LINES[line];
+  const src = ctx.createBufferSource();
+  src.buffer = clip;
+  const side = ctx.createStereoPanner();
+  side.pan.value = pan;
+  src.connect(side).connect(bus(ctx, level, wet));
+  src.start(t);
+  // the bed steps back while it talks, and comes back after
+  for (const [out, full] of bed?.outs ?? []) {
+    out.gain.cancelScheduledValues(t);
+    out.gain.setTargetAtTime(full * 0.3, t, 0.05);
+    out.gain.setTargetAtTime(full, t + clip.duration, 0.45);
+  }
+  return t - ctx.currentTime + clip.duration;
 }
 
 function play(c: AudioContext, name: Cue, t: number) {
