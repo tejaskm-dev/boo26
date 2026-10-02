@@ -8,11 +8,12 @@ import BlobButton from "@/components/ui/BlobButton";
 import Marquee from "@/components/fx/Marquee";
 import HeroLockup from "@/components/hero/HeroLockup";
 import { prefersReducedMotion } from "@/lib/motion";
-import { BACK, CUTS, SECRETS, SOON, TROLL } from "@/lib/soon";
+import { BACK, CUTS, MU, SECRETS, SOON, TROLL } from "@/lib/soon";
 import Awake from "./Awake";
 import Critters from "./Critters";
 import Cut from "./Cut";
 import InkEyes from "./InkEyes";
+import MuLearn from "./MuLearn";
 import { cue } from "./sound";
 import { hold } from "./hold";
 import { useBacktrack } from "./backtrack";
@@ -21,8 +22,11 @@ import { answer, buzz, shiver } from "./troll";
 
 /** what a silenced rumour says instead — block glyphs read as a broken font, not a redaction */
 const HUSH = "SHH.";
-/** these stay readable: the band still has to say where */
-const KEEP = new Set(["ASIET, KALADY", "BOO! 2026"]);
+/** these stay readable: the band still has to say where, and whose */
+const KEEP = new Set(["ASIET, KALADY", "BOO! 2026", "µLEARN ASIET"]);
+/** with the sound on, the card into the end is said too — and the one on the way back up */
+const VOICES = ["made-it", "most-dont", "when-it-drops"] as const;
+const BACK_VOICES = ["back-for-more"] as const;
 
 /** the crowd in the dark, round the edges of the shot — each opens a little further into the scroll */
 const CROWD: { at: string; tilt: number }[] = [
@@ -220,7 +224,7 @@ export default function NotYet() {
       forms={[{ shape: "spillLeft", tone: "bone", at: "inset-x-0 top-0 w-full h-[13vh] md:h-[21vh]" }]}
       className="flex flex-col"
     >
-      <Cut lines={CUTS.drop} back={CUTS.dropBack} />
+      <Cut lines={CUTS.drop} back={CUTS.dropBack} voices={VOICES} backVoices={BACK_VOICES} />
       <Awake />
       <Critters bats={2} sky={[0.06, 0.24]} className="z-[1]" />
 
@@ -269,6 +273,12 @@ export default function NotYet() {
                 <p className="hand max-w-[12ch] whitespace-pre-line text-[clamp(1.05rem,1.6vw,1.45rem)] text-bone/60">{t.note}</p>
               </div>
               <p className="body-copy max-w-[40ch] text-center text-[clamp(0.9rem,1.2vw,1.05rem)] text-bone/55">{t.body}</p>
+              {/* the end credit: whose banner this is under (poke it) */}
+              <p className="soon-credit hand">
+                <span>{MU.under[0]}</span>
+                <MuLearn className="w-[clamp(7.4rem,30vw,11rem)]" />
+                <span>{MU.under[1]}</span>
+              </p>
             </div>
           </div>
 

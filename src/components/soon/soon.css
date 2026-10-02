@@ -976,6 +976,52 @@ html[data-js="true"] .soon-room[data-torch] .soon-shade {
   display: block;
 }
 
+/* the studio card, before the first cut's lines: µLearn ASIET presents.
+   Its own shot, the way a trailer opens — up out of the black, a slow push
+   in while its eyes open, then gone, all the way to black, before the
+   first line comes up in the same place. Only on the way down. */
+.soon-presents {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.55rem, 1.8vh, 1rem);
+  pointer-events: none;
+  opacity: 0;
+  translate: 0 0.7rem;
+  scale: 0.94;
+  transition:
+    opacity 1s ease,
+    translate 1.3s var(--ease-out-soft),
+    scale 2.2s var(--ease-out-soft);
+}
+
+.soon-presents[data-on="true"] {
+  opacity: 1;
+  translate: 0 0;
+  scale: 1;
+}
+
+/* and it goes — still moving in as it fades — before the first line */
+.soon-presents[data-on="true"][data-gone="true"] {
+  opacity: 0;
+  scale: 1.035;
+  transition:
+    opacity 0.6s ease-in,
+    scale 0.9s ease-in;
+}
+
+.soon-presents-word {
+  color: rgba(243, 240, 231, 0.72);
+  font-size: clamp(0.64rem, 1vw, 0.8rem);
+  letter-spacing: 0.55em;
+  /* the tracking hangs off the end: pull it back so it centres */
+  margin-right: -0.55em;
+}
+
 /* the lines: the BOO! brush, each letter dropping in like a blob of goo and
    landing soft — played on a clock once the scroll gets you to it */
 .soon-goo.brush {
@@ -1806,6 +1852,16 @@ html[data-nav-active="true"] section .soon-loop {
    rumour runs along it, in a layer of its own; the rumour itself is a bead
    of lime, moved, never redrawn. Each pair's words come up a word at a
    time as it arrives, and once it's been passed on it's old news. */
+/* the dark under it — the moon, its flag, the bats — still takes the
+   pointer; only the eyes and the words catch it */
+.soon-rumour {
+  pointer-events: none;
+}
+
+.soon-rumour .soon-inkeyes {
+  pointer-events: auto;
+}
+
 .soon-rumour ul {
   margin: 0;
   padding: 0;
@@ -1891,3 +1947,307 @@ html[data-nav-active="true"] section .soon-loop {
 #top:not([data-awake="true"]) [class*="animate-[cue"] {
   animation-play-state: paused;
 }
+
+/* ------------------------------------------------ µLearn ASIET (MuLearn.tsx)
+   The logo is a mask over a block of colour, so it's whatever colour it's
+   standing in — and the hero's eyes sit in the holes of its own letters,
+   shut until it's seen you. */
+.soon-mu {
+  position: relative;
+  display: inline-block;
+  aspect-ratio: 1945 / 524;
+  vertical-align: middle;
+  color: var(--color-bone);
+}
+
+.soon-mu[data-tone="ink"] {
+  color: var(--color-ink);
+}
+
+.soon-mu[data-tone="lime"] {
+  color: var(--color-lime);
+}
+
+.soon-mu[data-alive="true"] {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.soon-mu-ink {
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  -webkit-mask: url("/assets/mulearn.svg") center / 100% 100% no-repeat;
+  mask: url("/assets/mulearn.svg") center / 100% 100% no-repeat;
+}
+
+.soon-mu-hole {
+  position: absolute;
+  pointer-events: none;
+}
+
+/* centred by transform, not translate: the build drops a translate that
+   shares a rule with a transform */
+.soon-mu-eye {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  overflow: visible;
+  transform-origin: 50% 60%;
+  transform: translate(-50%, -50%) scaleY(0.06);
+  opacity: 0;
+  transition:
+    transform 0.55s cubic-bezier(0.2, 1.4, 0.4, 1),
+    opacity 0.2s ease;
+}
+
+/* each eye all but fills its hole */
+.soon-mu-eye-e {
+  width: 94%;
+  height: 92%;
+}
+
+.soon-mu-eye-a {
+  width: 86%;
+  height: 86%;
+}
+
+.soon-mu-lid {
+  fill: var(--color-lime);
+}
+
+.soon-mu-pupil {
+  fill: var(--color-ink);
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: scale 0.4s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+[data-pupil] {
+  transition: transform 0.45s var(--ease-out-soft);
+}
+
+/* ink letters on lime or cream: no eyeball, just the slits, peering out of the holes */
+.soon-mu[data-tone="ink"] .soon-mu-lid {
+  fill: none;
+}
+
+.soon-mu[data-tone="ink"] .soon-mu-pupil {
+  fill: var(--color-ink);
+}
+
+/* open: when it's seen you, or when whatever holds it says so */
+.soon-mu[data-open="true"] .soon-mu-eye,
+[data-mu-open="true"] .soon-mu-eye {
+  transform: translate(-50%, -50%);
+  opacity: 1;
+}
+
+.soon-mu[data-open="true"] .soon-mu-eye {
+  animation: soon-blink 5.2s infinite;
+}
+
+.soon-mu[data-open="true"] .soon-mu-eye-a {
+  animation-delay: -0.08s;
+}
+
+/* close: all eyes, and the slits open wide */
+.soon-mu[data-open="true"][data-near="true"] .soon-mu-pupil {
+  scale: 2.4 0.9;
+}
+
+/* poked */
+.soon-mu[data-open="true"][data-squint="true"] .soon-mu-eye {
+  transform: translate(-50%, -50%) scale(1.1, 0.16);
+  transition-duration: 0.12s;
+}
+
+/* a phone has no cursor to follow: it glances about on its own */
+@media (hover: none) and (pointer: coarse) {
+  .soon-mu[data-alive="true"][data-open="true"] .soon-mu-pupil {
+    animation: soon-mu-glance 7.5s var(--ease-out-soft) infinite;
+  }
+}
+
+@keyframes soon-mu-glance {
+  0%, 30%, 100% { translate: 0 0; }
+  36%, 52% { translate: -20px 2px; }
+  58%, 74% { translate: 18px -2px; }
+}
+
+/* the µ, for what it means */
+.soon-mu-mu {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 19%;
+  height: 100%;
+}
+
+/* ---------------------------------------- the moon in 01, and its flag (MoonFlag)
+   They float together. The flag is about a fingernail — micro, as in µ —
+   until you point at it (or tap it), when it comes up close from its pole. */
+.soon-moon {
+  animation: soon-moon-float 7s ease-in-out infinite alternate;
+}
+
+@keyframes soon-moon-float {
+  from { translate: 0 0; rotate: 0deg; }
+  to { translate: -4px 7px; rotate: -2deg; }
+}
+
+.soon-flag {
+  position: absolute;
+  left: 12%;
+  top: -11%;
+  z-index: 1;
+  width: clamp(1.6rem, 2.4vw, 2.1rem);
+  aspect-ratio: 1 / 1.15;
+  transform-origin: 0 100%;
+  cursor: zoom-in;
+  -webkit-tap-highlight-color: transparent;
+  transition: scale 0.65s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+.soon-flag-pole {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 1.5px;
+  height: 100%;
+  border-radius: 1px;
+  background: rgba(243, 240, 231, 0.85);
+}
+
+.soon-flag-cloth {
+  position: absolute;
+  left: 1.5px;
+  top: 0;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 56%;
+  background: var(--color-lime);
+  clip-path: polygon(0 0, 100% 6%, 90% 50%, 100% 94%, 0 100%);
+  transform-origin: 0 50%;
+  animation: soon-flutter 1.4s ease-in-out infinite alternate;
+}
+
+@keyframes soon-flutter {
+  from { transform: skewY(4deg) scaleX(1); }
+  to { transform: skewY(-3deg) scaleX(0.94); }
+}
+
+.soon-flag[data-zoom="true"] {
+  scale: 4;
+  cursor: zoom-out;
+}
+
+/* a phone's moon is near the edge: it comes up a little less close */
+@media (max-width: 40rem) {
+  .soon-flag[data-zoom="true"] {
+    scale: 3.3;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .soon-flag:hover {
+    scale: 4;
+  }
+}
+
+/* the end credit in 04: under the µLearn banner */
+.soon-credit {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: clamp(0.3rem, 1.4vh, 0.9rem);
+  color: rgba(243, 240, 231, 0.55);
+  font-size: clamp(1.05rem, 1.5vw, 1.3rem);
+}
+
+/* -------------------------------------------------- the banner (Banner.tsx)
+   Two cat-bats towing µLearn's banner across the top of the screen, right to
+   left, bobbing, the cloth rippling behind them. Transforms only. */
+.soon-banner {
+  position: fixed;
+  left: 0;
+  top: clamp(4.5rem, 15vh, 9rem);
+  z-index: 76;
+  width: clamp(15rem, 44vw, 26rem);
+  aspect-ratio: 2 / 1;
+  pointer-events: none;
+  animation: soon-banner-fly 6.4s linear forwards;
+}
+
+@keyframes soon-banner-fly {
+  from { translate: 100vw 0; }
+  to { translate: -105% 0; }
+}
+
+.soon-banner-bob {
+  position: absolute;
+  inset: 0;
+  animation: soon-banner-bob 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes soon-banner-bob {
+  from { translate: 0 -0.5rem; rotate: -2deg; }
+  to { translate: 0 0.6rem; rotate: 1.5deg; }
+}
+
+.soon-banner-strings {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.soon-banner-strings path {
+  fill: none;
+  stroke: rgba(243, 240, 231, 0.85);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.soon-banner-cloth {
+  position: absolute;
+  left: 24%;
+  top: 36%;
+  display: grid;
+  place-items: center;
+  width: 74%;
+  aspect-ratio: 3.3;
+  padding-right: 6%;
+  background: var(--color-lime);
+  /* a swallowtail at the trailing end: it's a banner, not a sign */
+  clip-path: polygon(0 0, 100% 0, 91% 50%, 100% 100%, 0 100%);
+  transform-origin: 0 50%;
+  animation: soon-banner-wave 0.75s ease-in-out infinite alternate;
+}
+
+@keyframes soon-banner-wave {
+  from { transform: skewY(-3deg) scaleX(1); }
+  to { transform: skewY(2.5deg) scaleX(0.97); }
+}
+
+.soon-banner-bat {
+  position: absolute;
+  display: block;
+}
+
+.soon-banner-bat > span {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  animation: soon-flap 0.38s steps(1, end) infinite;
+}
+
+.soon-banner-bat > span:first-child {
+  position: relative;
+}
+
+.soon-banner-bat > span:nth-child(2) { animation-delay: -0.127s; }
+.soon-banner-bat > span:nth-child(3) { animation-delay: -0.253s; }

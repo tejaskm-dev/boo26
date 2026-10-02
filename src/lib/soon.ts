@@ -136,6 +136,7 @@ export const SOON = {
       "NOT YET",
       "ASK THE CAT",
       "BOO! 2026",
+      "µLEARN ASIET",
     ],
   },
 
@@ -167,7 +168,8 @@ export const SOON = {
       },
     ],
     details: { title: "Where", rows: [["Where", EVENT.venueLong]] as [string, string][] },
-    credit: { before: `By the ${EVENT.name} core team,\nunder the `, after: " banner" },
+    /** the voices are ElevenLabs' free plan, which asks for "elevenlabs.io" wherever they're used */
+    credit: { before: `By the ${EVENT.name} core team,\nunder the `, after: " banner\nvoices: elevenlabs.io" },
     desk: "nothing to see\nhere. yet.",
     sign: "go touch grass.",
   },
@@ -213,6 +215,10 @@ export const SECRETS = {
   moon: "it’s always this full here.",
   /** one for each link of the rumour */
   rumour: ["pinky promise.", "weirder than that.", "someone to scream with.", "not us.", "ask them nicely."],
+  /** the µ in µLearn's logo, wherever it is */
+  mu: "µ: one millionth. about how much we’ve told you.",
+  /** the tiny flag on the moon in 01 */
+  flag: "µ means tiny. you found it anyway.",
   where: "that part’s real.",
   leak: "don’t.",
   window: "tap it. go on.",
@@ -285,4 +291,19 @@ export const WAIT = {
     freeze: "ok. you can move.",
     drop: "almost",
   },
+} as const;
+
+/**
+ * µLearn ASIET, whose banner this is under (MuLearn.tsx): the studio card
+ * the trailer opens on, the credit it ends on, and what its eyes say when
+ * they're poked.
+ */
+export const MU = {
+  name: "µLearn ASIET",
+  /** under the logo, on the first title card */
+  presents: "presents",
+  /** the end credit, either side of the logo */
+  under: ["under the", "banner"],
+  /** said as the banner goes over (no µ: the toast is set in capitals) */
+  banner: "flying the banner. literally.",
 } as const;

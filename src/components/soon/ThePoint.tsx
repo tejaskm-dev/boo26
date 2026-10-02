@@ -16,7 +16,7 @@ import { getLenis } from "@/lib/lenis";
 import { prefersReducedMotion } from "@/lib/motion";
 import { BACK, SECRETS, SOON, TROLL } from "@/lib/soon";
 import { buzz, shiver, troll } from "./troll";
-import { cue } from "./sound";
+import { cue, say } from "./sound";
 import { jumpscare } from "./JumpScare";
 import { hold } from "./hold";
 
@@ -156,6 +156,8 @@ export default function ThePoint() {
           buzz(70);
           cue("hit", true);
           troll("jump", TROLL.jump);
+          // and, a beat after the bang, someone says what we're all thinking
+          say("damage", 0.4);
           // and everything that was hiding in the ink comes out of it
           const r = splash.current?.getBoundingClientRect();
           if (r) {
@@ -297,7 +299,13 @@ export default function ThePoint() {
           if (isActive && direction > 0)
             leaning = window.setTimeout(() => {
               if (lean.current?.dataset.close !== "true") return;
-              if (jumpscare("face")) timers.push(window.setTimeout(() => troll("safe", TROLL.safe), 1900));
+              if (!jumpscare("face")) return;
+              // what anyone would say — and then it laughs at you, and says
+              // it as the toast does
+              const said = say("what", 0.4);
+              const laugh = said ? said + 0.1 : 0.9;
+              say("safe", laugh);
+              timers.push(window.setTimeout(() => troll("safe", TROLL.safe), (laugh + 1) * 1000));
             }, 900);
         },
       });

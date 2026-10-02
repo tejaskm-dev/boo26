@@ -6,6 +6,8 @@ import { gsap } from "gsap";
 import { SPRITE, type SpriteName } from "@/lib/sprites";
 import { subscribePointer } from "@/lib/pointer";
 import { prefersReducedMotion } from "@/lib/motion";
+import { getLenis } from "@/lib/lenis";
+import { isTouch, rich } from "@/lib/tier";
 
 /**
  * Places one piece of the BOO! artwork.
@@ -83,12 +85,15 @@ export default function Sprite({
   }, [idle, near]);
 
   useEffect(() => {
-    if (!drift || !near || prefersReducedMotion()) return;
+    // a phone that can't keep up doesn't drift its sprites with the tilt (src/lib/tier.ts)
+    if (!drift || !near || prefersReducedMotion() || (isTouch() && !rich())) return;
     const el = wrap.current;
     if (!el) return;
     const x = gsap.quickTo(el, "x", { duration: 1.4, ease: "power2.out" });
     const y = gsap.quickTo(el, "y", { duration: 1.4, ease: "power2.out" });
     const unsubscribe = subscribePointer((nx, ny) => {
+      // and nothing drifts while the page scrolls: the scroll has the frame
+      if (getLenis()?.isScrolling) return;
       x(-nx * drift);
       y(-ny * drift * 0.55);
     });

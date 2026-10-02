@@ -22,6 +22,10 @@ import { subscribePointer } from "@/lib/pointer";
 import { CUTS, SECRETS, SOON, TROLL } from "@/lib/soon";
 import { answer, buzz, shiver, troll } from "./troll";
 
+/** with the sound on, the card into the room is whispered too — and the one on the way back out */
+const VOICES = ["lights-off", "eyes-open", "breathing"] as const;
+const BACK_VOICES = ["so-soon", "followed"] as const;
+
 /** the rest of the room's eyes, on the wallpaper, as % of the sleeper's square — they open when it does */
 const WATCHERS: { at: string; tilt: number; delay: number }[] = [
   { at: "left-[6%] top-[30%] w-[4%]", tilt: -8, delay: 0.1 },
@@ -509,7 +513,7 @@ export default function InTheDark() {
       forms={[{ shape: "shelf", tone: "bone", at: "inset-x-0 top-0 w-full h-[9vh] md:h-[13vh]" }]}
       className="pt-[clamp(5rem,14vh,11rem)] md:pt-[clamp(5rem,20vh,11rem)]"
     >
-      <Cut lines={CUTS.dark} back={CUTS.darkBack} />
+      <Cut lines={CUTS.dark} back={CUTS.darkBack} voices={VOICES} backVoices={BACK_VOICES} />
       <Awake />
 
       <div className="px-[var(--edge)]">

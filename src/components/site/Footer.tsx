@@ -41,7 +41,14 @@ export type FooterContent = {
  * so this component never imports the full site's, dates and all, into a
  * bundle the teaser shares.
  */
-export default function Footer({ content }: { content: FooterContent }) {
+export default function Footer({
+  content,
+  mark,
+}: {
+  content: FooterContent;
+  /** set beside BOO!'s wordmark, after a hairline — the teaser's µLearn logo */
+  mark?: React.ReactNode;
+}) {
   const [email, setEmail] = useState("");
   const root = useRef<HTMLElement>(null);
   const inner = useRef<HTMLDivElement>(null);
@@ -258,6 +265,12 @@ export default function Footer({ content }: { content: FooterContent }) {
                 className="object-contain"
               />
             </span>
+            {mark ? (
+              <span className="flex items-center gap-x-6">
+                <span aria-hidden="true" className="h-[1.4rem] w-px bg-bone/20" />
+                {mark}
+              </span>
+            ) : null}
             <p className="label whitespace-pre-line text-bone/40">
               {content.credit.before}
               <Micro>{BRAND.host}</Micro>
