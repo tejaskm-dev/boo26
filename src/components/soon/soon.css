@@ -1505,6 +1505,19 @@ section[data-awake="true"] .soon-glitch {
 }
 
 /* ------------------------------------------------------- the sound switch */
+/* the bottom corners are taken here (the sound switch, the eyes): on a
+   phone a toast rises above them, not over them */
+@media (max-width: 47.99rem) {
+  [data-toaster] {
+    bottom: calc(6.2rem + env(safe-area-inset-bottom));
+  }
+}
+
+/* and the very bottom of the page clears the sound switch */
+footer[data-field] {
+  padding-bottom: calc(clamp(1.5rem, 4vh, 2.5rem) + 4.25rem + env(safe-area-inset-bottom));
+}
+
 .soon-sound {
   position: fixed;
   left: var(--edge);

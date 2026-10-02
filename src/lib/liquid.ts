@@ -5,6 +5,7 @@ import { subscribePointer } from "@/lib/pointer";
 import { getLenis } from "@/lib/lenis";
 import { gsap } from "gsap";
 import { isNavActive } from "@/lib/navState";
+import { curtainUp } from "@/lib/curtain";
 import { onTierDrop, rich } from "@/lib/tier";
 
 export interface PrecomputedPoint {
@@ -232,13 +233,14 @@ export function startLiquidFlow({ svg, shapes, ns, isMobile = false, paused }: L
   let effectiveTime = 0;
   let isIntersecting = true;
 
-  // A phone can't reshape a field this size every frame and scroll smoothly
-  // as well. There it reshapes at half the rate, and never while the page is
-  // moving — the scroll needs the frame then, and hides the stillness — and a
-  // phone that can't keep up (src/lib/tier.ts) leaves its fields as they are.
-  let still = isMobile && !rich();
-  const stopDrop = isMobile ? onTierDrop(() => (still = true)) : () => {};
-  let skip = false;
+  // On a phone the field never reshapes while the page is moving — the
+  // scroll needs the frame then, and hides the stillness. Otherwise it's
+  // always alive, as smoothly as the phone can take: every frame on one with
+  // room to spare (src/lib/tier.ts), every third on one without — or that
+  // runs out of room on the way — so it's never left standing still.
+  let every = isMobile && !rich() ? 3 : 1;
+  const stopDrop = isMobile ? onTierDrop(() => (every = 3)) : () => {};
+  let skipped = 0;
   let carried = 0;
 
   const heroSection = svg.closest("section") || svg;
@@ -273,12 +275,12 @@ export function startLiquidFlow({ svg, shapes, ns, isMobile = false, paused }: L
       return;
     }
     if (isMobile) {
-      if (still || getLenis()?.isScrolling) return;
-      skip = !skip;
-      if (skip) {
-        carried = deltaTime || 16.6;
+      if (getLenis()?.isScrolling || curtainUp()) return;
+      if (++skipped < every) {
+        carried += deltaTime || 16.6;
         return;
       }
+      skipped = 0;
     }
 
     const dt = Math.min(0.064, ((deltaTime || 16.6) + carried) / 1000);

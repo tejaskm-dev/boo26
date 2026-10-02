@@ -5,6 +5,7 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { prefersReducedMotion } from "@/lib/motion";
 import { isTouch } from "@/lib/tier";
+import { curtain } from "@/lib/curtain";
 import { MU } from "@/lib/soon";
 import InkEyes from "./InkEyes";
 import MuLearn from "./MuLearn";
@@ -206,6 +207,8 @@ export default function Cut({
       veilEl.dataset.shown = on ? "true" : "false";
       // its film (grain, flicker, the eyes' blinks) runs only while it's up
       veilEl.dataset.on = on ? "true" : "false";
+      // and what's behind the black rests while it's up
+      curtain(on);
     };
     const dark = ScrollTrigger.create({
       trigger: el,
@@ -289,6 +292,7 @@ export default function Cut({
       },
     });
     return () => {
+      if (shown) curtain(false);
       st.kill();
       dark.kill();
       timers.forEach((t) => window.clearTimeout(t));

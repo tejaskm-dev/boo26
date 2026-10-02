@@ -369,7 +369,15 @@ export default function InTheDark() {
         gsap.set(covers, { scale });
         el.dataset.dive = dive > 0.4 ? "true" : "false";
         // and out the other side, into the light
-        if (out.current) out.current.style.opacity = String(Math.max(0, Math.min(1, (dive - 0.72) / 0.24)));
+        const light = Math.max(0, Math.min(1, (dive - 0.72) / 0.24));
+        if (out.current) out.current.style.opacity = String(light);
+        // (and the header, over it, wears what's under it: FieldTone)
+        const run = runway.current;
+        const tone = light > 0.5 ? "bone" : "ink";
+        if (run && run.dataset.field !== tone) {
+          run.dataset.field = tone;
+          window.dispatchEvent(new Event("field:change"));
+        }
       }
       if (dive > 0.05 && !dived) {
         dived = true;
@@ -534,7 +542,7 @@ export default function InTheDark() {
       <GhostIndex className="right-[6%] top-[4%] hidden text-[clamp(9rem,21vw,19rem)] text-bone lg:block">02</GhostIndex>
 
       {/* the room holds still for a screen's worth of scrolling */}
-      <div ref={runway} data-wait="room" className="soon-runway relative mt-[clamp(2rem,6vh,4rem)]">
+      <div ref={runway} data-wait="room" data-field="ink" className="soon-runway relative mt-[clamp(2rem,6vh,4rem)]">
         <div ref={room} className="soon-room sticky top-0 h-[100svh] min-h-[34rem] w-full overflow-hidden">
           {/* --- the room, as it is with the lights on ----------------------- */}
           <div className="soon-cover soon-loop">

@@ -441,7 +441,8 @@ export default function PageWipe({
                 <span className="label ml-2 mt-[0.4em] text-[0.8rem] text-ink/50">%</span>
               </p>
             </div>
-            <p data-bit className="label label-loose hidden max-w-[24ch] text-right leading-[1.9] text-ink/50 md:block">
+            {/* (its line height on the element: the label's own, 1, outranks the class) */}
+            <p data-bit className="label label-loose hidden max-w-[24ch] text-right text-ink/50 md:block" style={{ lineHeight: 1.9 }}>
               {line}
             </p>
           </div>

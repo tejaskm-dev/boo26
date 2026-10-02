@@ -35,6 +35,8 @@ type Form = {
   vbHeight: number;
 };
 type Band = {
+  /** read live: a stretch can change what it's wearing (the teaser's room, going into the light) */
+  el: HTMLElement;
   top: number;
   bottom: number;
   field: "ink" | "bone";
@@ -80,6 +82,7 @@ export default function FieldTone() {
           };
         });
         return {
+          el,
           top,
           bottom: top + el.offsetHeight,
           field: (el.dataset.field as "ink" | "bone") ?? "bone",
@@ -93,10 +96,14 @@ export default function FieldTone() {
     /** what is painted at this viewport point */
     const toneAt = (x: number, y: number, isRight = false): "ink" | "bone" => {
       const line = window.scrollY + y;
-      const band = bands.find((b) => line >= b.top && line < b.bottom);
+      // the innermost stretch here that says what it is (a stretch inside a section can differ from it)
+      let band: Band | undefined;
+      for (const b of bands) if (line >= b.top && line < b.bottom) band = b;
       if (!band) return "bone";
 
-      let tone = isRight && band.fieldRight ? band.fieldRight : band.field;
+      const field = (band.el.dataset.field as "ink" | "bone" | undefined) ?? band.field;
+      const fieldRight = (band.el.dataset.fieldRight as "ink" | "bone" | undefined) ?? band.fieldRight;
+      let tone = isRight && fieldRight ? fieldRight : field;
       if (band.forms.length === 0) return tone;
 
       for (const form of band.forms) {
@@ -143,10 +150,13 @@ export default function FieldTone() {
     const ro = new ResizeObserver(measure);
     ro.observe(document.body);
     window.addEventListener("scroll", onScroll, { passive: true });
+    // a stretch that changed what it's wearing, after this frame's look (see Band)
+    window.addEventListener("field:change", onScroll);
     gsap.ticker.add(tick, false, true);
     return () => {
       ro.disconnect();
       window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("field:change", onScroll);
       gsap.ticker.remove(tick);
     };
   }, []);
