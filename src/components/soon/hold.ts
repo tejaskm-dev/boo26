@@ -2,6 +2,7 @@
 
 import { getLenis } from "@/lib/lenis";
 import { prefersReducedMotion } from "@/lib/motion";
+import { isNavActive, subscribeNavActive } from "@/lib/navState";
 
 /**
  * Holds the page still for a moment a scene needs to be seen — a title card,
@@ -21,6 +22,13 @@ import { prefersReducedMotion } from "@/lib/motion";
  * way }` once it's still, `{ key, held: false, way }` as it lets go — which
  * is how the eyes in the corner (Waiting.tsx) know how long you're waiting,
  * and which way you were going.
+ *
+ * And the menu always wins. Opening it, or jumping the page anywhere (a
+ * link, the scrollbar's rail), lets go of any hold there and then — without
+ * starting the scroll again under the open menu, which does that itself as
+ * it shuts — and says so on window as "soon:away", so whatever was playing
+ * out on its own clock (and whatever was being said) can stop, and leave
+ * itself finished rather than half done. Nothing's held while it's open.
  *
  * Held means Lenis stopped (wheel and touch swallowed) and the scrolling
  * keys ignored. Whatever was already moving the page — a fling's momentum on
@@ -56,6 +64,16 @@ if (typeof window !== "undefined") {
 // hold can be answering the same scroll event, ahead of this listener)
 const jumped = () => Math.max(Math.abs(stepTo - stepFrom), Math.abs(window.scrollY - stepTo)) > window.innerHeight * 1.6;
 
+/** the visitor's taken the page somewhere else: let go, and say so */
+function away() {
+  current?.release();
+  window.dispatchEvent(new Event("soon:away"));
+}
+if (typeof window !== "undefined") {
+  window.addEventListener("scroll", () => Math.abs(stepTo - stepFrom) > window.innerHeight * 1.6 && away(), { passive: true });
+  subscribeNavActive((active) => active && away());
+}
+
 // fingers on the glass. A drag already under way when a hold starts can't be
 // cancelled, and some phones go on scrolling under it until it lifts — so
 // anything that moves the page itself waits for the finger to come off,
@@ -83,7 +101,7 @@ export type HoldOptions = {
 };
 
 export function hold(key: string, ms: number, opts: HoldOptions = {}): boolean {
-  if (done.has(key) || current || prefersReducedMotion()) return false;
+  if (done.has(key) || current || prefersReducedMotion() || isNavActive()) return false;
   const lenis = getLenis();
   const way = opts.way ?? "down";
   if (!lenis || (way === "down" ? lenis.direction < 0 : lenis.direction >= 0)) return false;
@@ -143,7 +161,8 @@ export function hold(key: string, ms: number, opts: HoldOptions = {}): boolean {
     document.removeEventListener("visibilitychange", onHide);
     window.removeEventListener("keydown", onKey);
     root.classList.remove("soon-halt");
-    lenis.start();
+    // (the menu's open: it starts the scroll again itself, as it shuts)
+    if (!isNavActive()) lenis.start();
     if (current === slot) current = null;
     window.dispatchEvent(new CustomEvent("soon:hold", { detail: { key, held: false, way } }));
     opts.onRelease?.();
@@ -177,6 +196,16 @@ export function hold(key: string, ms: number, opts: HoldOptions = {}): boolean {
   timers.push(window.setTimeout(release, ms + (opts.glide ?? 0.6) * 1000 + 6000));
   slot.release = release;
   return true;
+}
+
+/**
+ * Whether it's actually on screen. A moment the page went straight past (a
+ * link, the menu) still fires, but it isn't for there: it plays out quietly.
+ */
+export function inView(el: Element | null | undefined) {
+  if (!el) return false;
+  const r = el.getBoundingClientRect();
+  return r.bottom > 0 && r.top < window.innerHeight;
 }
 
 /** let go early — when the moment has finished before its time */

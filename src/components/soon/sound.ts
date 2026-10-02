@@ -399,7 +399,6 @@ export function cue(name: Cue, force = false) {
  */
 export type Line =
   // the cards between acts (Cut.tsx), in the order they come up
-  | "presents"
   | "shh"
   | "hear"
   | "wrong-way"
@@ -410,8 +409,10 @@ export type Line =
   | "followed"
   | "made-it"
   | "most-dont"
-  | "when-it-drops"
   | "back-for-more"
+  // the end's sentence: "When it drops," … "You'll know."
+  | "when-it-drops"
+  | "know"
   // and the jokes
   | "damage"
   | "what"
@@ -422,8 +423,6 @@ export type Line =
 
 /** how loud each sits, how much of it goes into the room, and which side it's on */
 const LINES: Record<Line, { level: number; wet: number; pan?: number }> = {
-  // the studio card, read the way a trailer's is
-  presents: { level: 0.8, wet: 0.25 },
   // something in the dark, whispering — close, at one shoulder…
   shh: { level: 0.75, wet: 0.35, pan: -0.35 },
   hear: { level: 0.8, wet: 0.3, pan: -0.35 },
@@ -433,14 +432,16 @@ const LINES: Record<Line, { level: number; wet: number; pan?: number }> = {
   "made-it": { level: 0.8, wet: 0.3, pan: -0.35 },
   "most-dont": { level: 0.8, wet: 0.3, pan: -0.35 },
   "when-it-drops": { level: 0.8, wet: 0.3, pan: -0.35 },
+  know: { level: 0.8, wet: 0.3, pan: -0.35 },
   // …and at the other one, once you've turned round
   "wrong-way": { level: 0.8, wet: 0.3, pan: 0.35 },
   "so-soon": { level: 0.8, wet: 0.3, pan: 0.35 },
   followed: { level: 0.8, wet: 0.3, pan: 0.35 },
   "back-for-more": { level: 0.8, wet: 0.3, pan: 0.35 },
   // and something that thinks it's all very funny
-  damage: { level: 0.85, wet: 0.15 },
-  // (what anyone says when the face comes at them, before it laughs)
+  // (said under its breath, a way off — not shouted in your ear)
+  damage: { level: 0.32, wet: 0.35 },
+  // (what anyone says when the face comes at them — bleeped before they get to the end of it)
   what: { level: 0.85, wet: 0.12 },
   safe: { level: 0.75, wet: 0.18 },
   nerd: { level: 0.7, wet: 0.12 },
@@ -452,6 +453,8 @@ const clips = new Map<Line, AudioBuffer>();
 let fetched = false;
 const spoken = new Set<Line>();
 let talkingUntil = 0;
+/** what's being said, or about to be: so it can all be stopped */
+const saying = new Set<{ src: AudioBufferSourceNode; fade: GainNode }>();
 
 function fetchLines(c: AudioContext) {
   if (fetched) return;
@@ -475,15 +478,22 @@ export function lineLength(line: Line): number {
 
 /**
  * Says one of the lines, `delay` seconds from now: once a visit, never over
- * another line, and only with the sound on. Returns how long from now until
- * it's said, in seconds, so a moment can land on the end of it — or 0, if it
- * isn't going to be.
+ * another line (one that's just finishing, it waits for), and only with the
+ * sound on and the menu not up (shutting is fine: that's the page arriving
+ * where it was sent). Returns how long from now until it's said, in seconds,
+ * so a moment can land on the end of it — or 0, if it isn't going to be.
  */
 export function say(line: Line, delay = 0): number {
   if (!on || !ctx || !master || ctx.state !== "running" || spoken.has(line)) return 0;
+  const menu = document.documentElement.dataset.nav;
+  if (menu === "opening" || menu === "open") return 0;
   const clip = clips.get(line);
-  const t = ctx.currentTime + 0.01 + delay;
-  if (!clip || t < talkingUntil) return 0;
+  if (!clip) return 0;
+  let t = ctx.currentTime + 0.01 + delay;
+  if (t < talkingUntil) {
+    if (talkingUntil - t > 0.6) return 0;
+    t = talkingUntil + 0.06;
+  }
   spoken.add(line);
   talkingUntil = t + clip.duration;
   const { level, wet, pan = 0 } = LINES[line];
@@ -491,7 +501,11 @@ export function say(line: Line, delay = 0): number {
   src.buffer = clip;
   const side = ctx.createStereoPanner();
   side.pan.value = pan;
-  src.connect(side).connect(bus(ctx, level, wet));
+  const fade = ctx.createGain();
+  src.connect(side).connect(fade).connect(bus(ctx, level, wet));
+  const it = { src, fade };
+  saying.add(it);
+  src.onended = () => saying.delete(it);
   src.start(t);
   // the bed steps back while it talks, and comes back after
   for (const [out, full] of bed?.outs ?? []) {
@@ -501,6 +515,31 @@ export function say(line: Line, delay = 0): number {
   }
   return t - ctx.currentTime + clip.duration;
 }
+
+/**
+ * Stops whatever's being said, and whatever's about to be — the visitor's
+ * taken the page somewhere else (the menu, a link), so it's not for there.
+ */
+export function hush() {
+  if (!ctx) return;
+  const t = ctx.currentTime;
+  for (const { src, fade } of saying) {
+    fade.gain.cancelScheduledValues(t);
+    fade.gain.setTargetAtTime(0, t, 0.03);
+    try {
+      src.stop(t + 0.15);
+    } catch {
+      // already stopped
+    }
+  }
+  saying.clear();
+  talkingUntil = 0;
+  for (const [out, full] of bed?.outs ?? []) {
+    out.gain.cancelScheduledValues(t);
+    out.gain.setTargetAtTime(full, t, 0.3);
+  }
+}
+if (typeof window !== "undefined") window.addEventListener("soon:away", hush);
 
 function play(c: AudioContext, name: Cue, t: number) {
   switch (name) {

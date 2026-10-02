@@ -28,8 +28,7 @@ const STEP = 950;
  */
 const PRESENTS_OUT = 1500;
 const PRESENTS = 2350;
-/** said out loud, when the studio's name starts, and the beat after each line before the next */
-const READ_AT = 150;
+/** said out loud, the beat after each line before the next, in ms */
 const BREATH = 160;
 
 /** which letters of a line run, how far, and when */
@@ -73,8 +72,7 @@ function words(line: string) {
  *
  * With the sound on, a line can be said out loud as it comes up (`voices`,
  * one for each of `lines`, and `backVoices` for `back`) — once a visit —
- * and then each gets as long as it takes to say, held for, and the studio
- * card stays up until it's read its name.
+ * and then each gets as long as it takes to say, and is held for.
  */
 export default function Cut({
   lines,
@@ -117,23 +115,19 @@ export default function Cut({
     let mine = false;
 
     /**
-     * When it all happens, this time through, in ms: when the studio card
-     * goes, when each line comes up, and when the last one's done. With
-     * nothing to say, a line every STEP; said out loud, each gets as long as
-     * it takes to say. Worked out once a play, so the hold and the lines
-     * agree.
+     * When it all happens, this time through, in ms: when each line comes
+     * up, and when the last one's done. With nothing to say, a line every
+     * STEP; said out loud, each gets as long as it takes to say. Worked out
+     * once a play, so the hold and the lines agree.
      */
-    type Plan = { way: "down" | "up"; out: number; at: number[]; end: number };
+    type Plan = { way: "down" | "up"; at: number[]; end: number };
     let plan: Plan | null = null;
     const planFor = (way: "down" | "up"): Plan => {
       if (plan?.way === way) return plan;
       const rows = way === "down" ? down : up;
       const said = way === "down" ? voices : backVoices;
-      // on the way down, the studio card comes first — up until it's read
-      // its name, if it's going to
-      const read = studio && way === "down" ? Math.round(lineLength("presents") * 1000) : 0;
-      const out = studio && way === "down" ? Math.max(PRESENTS_OUT, read && READ_AT + read + 100) : 0;
-      let t = studio && way === "down" ? out + PRESENTS - PRESENTS_OUT : 0;
+      // on the way down, the studio card comes first
+      let t = studio && way === "down" ? PRESENTS : 0;
       const at = rows.map((_, i) => {
         const now = t;
         const line = said[i];
@@ -141,7 +135,7 @@ export default function Cut({
         t += Math.max(STEP, long && long + BREATH);
         return now;
       });
-      plan = { way, out, at, end: t };
+      plan = { way, at, end: t };
       return plan;
     };
 
@@ -151,16 +145,14 @@ export default function Cut({
       cardEl.dataset.way = way;
       const rows = way === "down" ? down : up;
       const said = way === "down" ? voices : backVoices;
-      const { out, at } = planFor(way);
+      const { at } = planFor(way);
       if (studio && way === "down") {
-        // the studio's logo comes up out of the dark, opens its eyes, holds
-        // (while its name's read out, with the sound on), and goes — a beat
-        // of black — before the first line
+        // the studio's logo comes up out of the dark, opens its eyes, holds,
+        // and goes — a beat of black — before the first line
         studio.dataset.on = "true";
         cue("toll");
-        say("presents", READ_AT / 1000);
         timers.push(window.setTimeout(() => (studio.dataset.muOpen = "true"), 550));
-        timers.push(window.setTimeout(() => (studio.dataset.gone = "true"), out));
+        timers.push(window.setTimeout(() => (studio.dataset.gone = "true"), PRESENTS_OUT));
       }
       rows.forEach((row, i) => {
         timers.push(

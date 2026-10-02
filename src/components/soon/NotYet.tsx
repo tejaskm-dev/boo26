@@ -14,7 +14,7 @@ import Critters from "./Critters";
 import Cut from "./Cut";
 import InkEyes from "./InkEyes";
 import MuLearn from "./MuLearn";
-import { cue } from "./sound";
+import { cue, lineLength, say as speak } from "./sound";
 import { hold } from "./hold";
 import { useBacktrack } from "./backtrack";
 import { glitch, useGlitch } from "./glitch";
@@ -25,7 +25,7 @@ const HUSH = "SHH.";
 /** these stay readable: the band still has to say where, and whose */
 const KEEP = new Set(["ASIET, KALADY", "BOO! 2026", "µLEARN ASIET"]);
 /** with the sound on, the card into the end is said too — and the one on the way back up */
-const VOICES = ["made-it", "most-dont", "when-it-drops"] as const;
+const VOICES = ["made-it", "most-dont"] as const;
 const BACK_VOICES = ["back-for-more"] as const;
 
 /** the crowd in the dark, round the edges of the shot — each opens a little further into the scroll */
@@ -49,14 +49,17 @@ const CROWD: { at: string; tilt: number }[] = [
 /**
  * 04 — what's next, which is: not yet.
  *
- * The last shot, held while you scroll through it. It cuts in from black
- * ("When it drops,"), and in the dark, eyes open one after another all round
- * the edge of the frame — everyone's here. Then the cat from the top of the
- * page slams in, the BOO! lockup and all, and "You'll know." comes up under
- * it — and won't hold still: it tears now and then (glitch.ts), and for a
- * frame, once in a while, it says what it says when you come back up. Then
- * the one thing to do: pass it on. What gets passed on is the old
- * chain-message curse.
+ * The last shot. It cuts in from black (the card's "You made it. Most
+ * don't." is a sentence of its own), and from the top of it the shot plays
+ * out on its own, held for: "When it drops," comes up alone in the middle
+ * of the dark — said, with the sound on — while eyes open one after another
+ * all round the edge of the frame, everyone's here; once it's said, it
+ * slowly goes. Then the cat from the top of the page slams in, the BOO!
+ * lockup and all, and "You'll know." lands under it, said too — and won't
+ * hold still: it tears now and then (glitch.ts), and for a frame, once in a
+ * while, it says what it says when you come back up. Then the one thing to
+ * do: pass it on. What gets passed on is the old chain-message curse.
+ * Leave part-way (the menu, a link) and it's all there when you're back.
  *
  * The band runs the rumours, with a different couple hushed on every
  * visit and one that knows what you're holding. That's decided after the page
@@ -71,6 +74,7 @@ export default function NotYet() {
   const stage = useRef<HTMLDivElement>(null);
   const crowd = useRef<HTMLDivElement>(null);
   const lock = useRef<HTMLDivElement>(null);
+  const kicker = useRef<HTMLParagraphElement>(null);
   const title = useRef<HTMLHeadingElement>(null);
   const cta = useRef<HTMLDivElement>(null);
   const [knows, setKnows] = useState(false);
@@ -87,11 +91,11 @@ export default function NotYet() {
   // it won't hold still — and now and then, for a frame, it says the other thing
   useGlitch(title);
 
-  // the shot: eyes, then the slam, then the line, then the ask
+  // the shot: "When it drops," in the dark, said and gone — then the slam, "You'll know.", the ask
   useEffect(() => {
     const run = runway.current;
     const st = stage.current;
-    const wrappers = crowd.current ? [...crowd.current.children] as HTMLElement[] : [];
+    const wrappers = crowd.current ? ([...crowd.current.children] as HTMLElement[]) : [];
     if (!run || !st) return;
     if (prefersReducedMotion()) {
       wrappers.forEach((w) => (w.dataset.look = "true"));
@@ -99,14 +103,35 @@ export default function NotYet() {
     }
     gsap.registerPlugin(ScrollTrigger);
     const lines = title.current ? [...title.current.querySelectorAll<HTMLElement>("[data-line]")] : [];
+    let leave = () => {};
     const ctx = gsap.context(() => {
       gsap.set(lock.current, { scale: 2.6, rotation: -10, autoAlpha: 0 });
+      gsap.set(kicker.current, { y: 14, autoAlpha: 0 });
       gsap.set(lines, { yPercent: 115, rotation: 4, autoAlpha: 0 });
       gsap.set(cta.current, { y: 30, autoAlpha: 0 });
+      /** playing out on its own clock, held for — and what's still to come of it */
+      let begun = false;
+      let steps: gsap.core.Tween[] = [];
       let slammed = false;
       let said = false;
       let asked = false;
+      const look = (open: (i: number) => boolean) =>
+        wrappers.forEach((w, i) => {
+          const v = open(i) ? "true" : "false";
+          if (w.dataset.look !== v) w.dataset.look = v;
+        });
+      // "When it drops," — on its own, in the middle of the dark — said…
+      const kick = () => {
+        if (kicker.current) gsap.to(kicker.current, { y: 0, autoAlpha: 1, duration: 0.8, ease: "power2.out" });
+        speak("when-it-drops");
+      };
+      // …and once it's been said, slowly gone
+      const unkick = (slowly = true) => {
+        if (kicker.current) gsap.to(kicker.current, { y: -8, autoAlpha: 0, duration: slowly ? 1.1 : 0.25, ease: "power1.inOut", overwrite: true });
+      };
       const slam = () => {
+        if (slammed) return;
+        slammed = true;
         gsap.to(lock.current, { scale: 1, rotation: 0, autoAlpha: 1, duration: 0.42, ease: "power4.in" });
         gsap.delayedCall(0.42, () => {
           shiver(st, 12);
@@ -115,9 +140,11 @@ export default function NotYet() {
           st.dataset.slammed = "true";
         });
       };
+      // "You'll know." — said as it lands
       const say = () => {
         if (said) return;
         said = true;
+        speak("know");
         gsap.to(lines, {
           yPercent: 0,
           rotation: 0,
@@ -132,8 +159,53 @@ export default function NotYet() {
       const ask = () => {
         if (asked) return;
         asked = true;
+        steps = [];
         gsap.to(cta.current, { y: 0, autoAlpha: 1, duration: 0.8, ease: "power3.out" });
       };
+      /**
+       * From the top of the shot it plays out on its own clock, held for:
+       * "When it drops," comes up in the dark and is said, as the eyes open
+       * all round; once it's said, it slowly goes; then the cat slams in,
+       * and "You'll know." lands under it, said; then the ask.
+       */
+      const begin = () => {
+        const when = lineLength("when-it-drops");
+        const gone = 0.5 + (when ? when + 0.3 : 1.7);
+        const drop = gone + 1.15;
+        const know = drop + 0.75;
+        const done = know + 1.2;
+        if (!hold("drop", Math.round((done + 0.6) * 1000))) return;
+        begun = true;
+        steps = [
+          ...wrappers.map((w, i) => gsap.delayedCall(0.15 + (i / wrappers.length) * (gone - 0.2), () => (w.dataset.look = "true"))),
+          gsap.delayedCall(0.5, kick),
+          gsap.delayedCall(gone, unkick),
+          gsap.delayedCall(drop, slam),
+          gsap.delayedCall(know, say),
+          gsap.delayedCall(done, ask),
+        ];
+      };
+      // left part-way (the menu, a link): the rest is called off, and it's
+      // all there when you're back
+      leave = () => {
+        if (!steps.length) return;
+        steps.forEach((step) => step.kill());
+        steps = [];
+        look(() => true);
+        if (kicker.current) gsap.set(kicker.current, { autoAlpha: 0 });
+        if (!slammed) {
+          slammed = true;
+          gsap.set(lock.current, { scale: 1, rotation: 0, autoAlpha: 1 });
+          st.dataset.slammed = "true";
+        }
+        if (!said) {
+          said = true;
+          gsap.set(lines, { yPercent: 0, rotation: 0, autoAlpha: 1 });
+        }
+        asked = true;
+        gsap.set(cta.current, { y: 0, autoAlpha: 1 });
+      };
+      window.addEventListener("soon:away", leave);
       // back up into it from below, it isn't saying what it said ("It
       // knows."): held on it, and it tears, slipping for a frame into what it
       // used to say. A fling up straight past is brought back for it.
@@ -152,26 +224,30 @@ export default function NotYet() {
         end: "bottom bottom",
         onLeaveBack: (self) => knew.current && knowing(self.start + (self.end - self.start) * 0.5),
         onUpdate: ({ progress: p, direction }) => {
-          // the crowd: one more pair each step into the shot
-          wrappers.forEach((w, i) => {
-            const open = p > 0.02 + (i / wrappers.length) * 0.36 ? "true" : "false";
-            if (w.dataset.look !== open) w.dataset.look = open;
-          });
-          // the slam: held for it, and what follows plays on its own clock
-          if (!slammed && p > 0.38) {
-            slammed = true;
-            hold("drop", 3200);
-            slam();
-            gsap.delayedCall(0.9, say);
-            gsap.delayedCall(1.7, ask);
+          if (!begun) {
+            // the crowd: one more pair each step into the shot
+            look((i) => p > 0.02 + (i / wrappers.length) * 0.36);
+            // and from the top of it, the shot plays out on its own
+            if (!slammed && direction > 0 && p > 0.02 && p < 0.38) begin();
           }
-          if (!said && p > 0.52) say();
-          if (!asked && p > 0.64) ask();
+          if (!begun) {
+            // flung on past the top of it (or it couldn't be held): the end of it, at least
+            if (!slammed && p > 0.38) {
+              slam();
+              gsap.delayedCall(0.9, say);
+              gsap.delayedCall(1.7, ask);
+            }
+            if (!said && p > 0.52) say();
+            if (!asked && p > 0.64) ask();
+          }
           if (direction < 0 && knew.current && p < 0.9) knowing();
         },
       });
     }, st);
-    return () => ctx.revert();
+    return () => {
+      window.removeEventListener("soon:away", leave);
+      ctx.revert();
+    };
   }, []);
 
   useEffect(() => {
@@ -243,6 +319,16 @@ export default function NotYet() {
           <SectionLabel index="04" className="absolute left-[var(--edge)] top-[clamp(5.5rem,14vh,8rem)] text-bone">
             {t.label}
           </SectionLabel>
+
+          {/* the start of the sentence the heading finishes, on its own in the dark before any of it
+              (not with motion turned down, or on the way back up, where it says something else) */}
+          {knows ? null : (
+            <div className="pointer-events-none absolute inset-0 z-[2] grid place-items-center px-[var(--edge)] motion-reduce:hidden">
+              <p ref={kicker} className="brush invisible -rotate-[2deg] text-center text-[clamp(2.6rem,8vw,6rem)] leading-[0.9] text-bone opacity-0">
+                {t.kicker}
+              </p>
+            </div>
+          )}
 
           <div className="relative z-[2] flex w-full flex-col items-center">
             {/* the cat from the top of the page, back for the end */}
