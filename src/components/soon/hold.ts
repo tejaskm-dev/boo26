@@ -88,6 +88,15 @@ const speed = () => (performance.now() - stepAt < 100 ? (Math.abs(stepTo - stepF
 
 /** the visitor's taken the page somewhere else: let go, and say so */
 function away() {
+  // A hold's ease still going (forced through, with Lenis stopped) would
+  // carry on under the menu, and the menu's own move would be refused while
+  // it did: it stops here. (Lenis was stopped already, so stopping it again
+  // does nothing: starting it and stopping it again is what ends the ease.)
+  const lenis = getLenis();
+  if (current && lenis?.isLocked) {
+    lenis.start();
+    lenis.stop();
+  }
   current?.release();
   window.dispatchEvent(new Event("soon:away"));
 }
@@ -125,6 +134,8 @@ export type HoldOptions = {
   range?: [number, number];
   /** how long the ease takes, in seconds */
   glide?: number;
+  /** and its curve: an ease out, unless it says (a slow creep wants to start slow too) */
+  easing?: (x: number) => number;
   /** once it's still */
   onHeld?: () => void;
   /** as it lets go */
@@ -246,7 +257,7 @@ export function hold(key: string, ms: number, opts: HoldOptions = {}): boolean {
     const to = opts.to;
     const glide = () => {
       if (released) return;
-      lenis.scrollTo(to, { offset: opts.offset ?? 0, duration: opts.glide ?? 0.6, easing: ease, force: true, lock: true, onComplete: still });
+      lenis.scrollTo(to, { offset: opts.offset ?? 0, duration: opts.glide ?? 0.6, easing: opts.easing ?? ease, force: true, lock: true, onComplete: still });
       // if the ease never reports back, hold from where we are
       timers.push(window.setTimeout(still, (opts.glide ?? 0.6) * 1000 + 400));
     };

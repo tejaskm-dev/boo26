@@ -15,7 +15,7 @@ import { prefersReducedMotion } from "@/lib/motion";
 import { isNavActive } from "@/lib/navState";
 import { BACK, SECRETS, SOON, TROLL } from "@/lib/soon";
 import { shiver, troll } from "./troll";
-import { audioLag, cue, say } from "./sound";
+import { audioLag, cue, heart, say } from "./sound";
 import { jumpscare } from "./JumpScare";
 import { hold, inView, letGo } from "./hold";
 
@@ -79,8 +79,10 @@ export default function ThePoint() {
         .timeline({
           scrollTrigger: { trigger: lean.current, start: "top 85%", end: "bottom 15%", scrub: 0.7, invalidateOnRefresh: true },
         })
-        .fromTo(closeL.current, { xPercent: -105 }, { xPercent: () => -gap(), ease: "power2.out", duration: 0.42 }, 0)
-        .fromTo(closeR.current, { xPercent: 105 }, { xPercent: () => gap(), ease: "power2.out", duration: 0.42 }, 0)
+        // (evenly: it's still closing as the words reach the middle, which
+        // is where the page leans in by itself — the build-up is the dark)
+        .fromTo(closeL.current, { xPercent: -105 }, { xPercent: () => -gap(), ease: "sine.inOut", duration: 0.42 }, 0)
+        .fromTo(closeR.current, { xPercent: 105 }, { xPercent: () => gap(), ease: "sine.inOut", duration: 0.42 }, 0)
         .to({}, { duration: 0.16 })
         .to(closeL.current, { xPercent: -105, ease: "power2.in", duration: 0.42 })
         .to(closeR.current, { xPercent: 105, ease: "power2.in", duration: 0.42 }, "<");
@@ -89,17 +91,66 @@ export default function ThePoint() {
         const r = lean.current!.getBoundingClientRect();
         return r.top + window.scrollY + r.height * 0.41 - window.innerHeight * 0.5;
       };
-      // the countdown's carry: "relax." — and straight on, down to "lean in"
-      // (which catches you on the way in, and does the rest)
+      /**
+       * The build-up, once a visit, on the way down: held, the page leans in
+       * by itself — slowly, the dark closing in with it, the eyes in it
+       * opening — over a heart that quickens as it goes. It stops; nothing,
+       * for a beat; and then. (Held there already, a moment after turning
+       * round: it's quicker, and no less of a shock.)
+       */
+      let crept = false;
+      let carrying = false;
+      let quicken = 0;
+      const creep = () => {
+        if (crept || !lean.current) return;
+        crept = true;
+        const face = () => {
+          if (lean.current?.dataset.close !== "true") return;
+          if (!jumpscare("face")) return;
+          // and you say it: carried down to WHAT THE—, behind the face
+          timers.push(window.setTimeout(sayIt, 350));
+        };
+        const leaned = hold("lean", 2500, {
+          to: leanAt(),
+          glide: 2.6,
+          easing: (x: number) => -(Math.cos(Math.PI * x) - 1) / 2,
+          onHeld: () => {
+            window.clearTimeout(quicken);
+            heart(0);
+            leaning = window.setTimeout(face, 700);
+          },
+        });
+        if (!leaned) {
+          // not held (it had just turned round): there already, the quick
+          // way; not there yet, it waits for them to get there
+          if (lean.current.dataset.close === "true") leaning = window.setTimeout(face, 900);
+          else crept = false;
+          return;
+        }
+        cue("inhale", true);
+        heart(1.15);
+        quicken = window.setTimeout(() => heart(1.7), 1300);
+      };
+      // the countdown's carry: "relax." — and on, to just short of "lean in",
+      // which does the rest
       carryTo.current = () => {
         const lenis = getLenis();
         if (!lenis) return;
-        lenis.scrollTo(leanAt(), {
-          duration: 1.7,
+        carrying = true;
+        const landed = () => {
+          if (!carrying) return;
+          carrying = false;
+          creep();
+        };
+        lenis.scrollTo(leanAt() - window.innerHeight * 0.42, {
+          duration: 1.6,
           easing: (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2),
           force: true,
           lock: true,
+          onComplete: landed,
         });
+        // in case the glide never reports back
+        timers.push(window.setTimeout(landed, 2300));
       };
       ScrollTrigger.create({
         trigger: lean.current,
@@ -115,18 +166,15 @@ export default function ThePoint() {
           lean.current!.dataset.close = isActive ? "true" : "false";
           lean.current!.dataset.look = isActive ? "true" : "false";
           // the oldest trick there is: get them to lean in to read something
-          // small — and then. Once a visit, for anyone who stays a moment, on
-          // the way down: held here again on the way back up, it would take
-          // the scare that's waiting for them in the room.
-          window.clearTimeout(leaning);
-          if (isActive && lean.current) hold("lean", 2500, { to: leanAt(), glide: 0.5 });
-          if (isActive && direction > 0)
-            leaning = window.setTimeout(() => {
-              if (lean.current?.dataset.close !== "true") return;
-              if (!jumpscare("face")) return;
-              // and you say it: carried down to WHAT THE—, behind the face
-              timers.push(window.setTimeout(sayIt, 350));
-            }, 900);
+          // small — and then. Once a visit, on the way down (the countdown's
+          // carry sets it off as it lands): held here again on the way back
+          // up, it would take the scare that's waiting for them in the room.
+          if (!isActive) {
+            window.clearTimeout(leaning);
+            window.clearTimeout(quicken);
+            heart(0);
+          }
+          if (isActive && direction > 0 && !carrying) creep();
         },
       });
 
@@ -230,6 +278,9 @@ export default function ThePoint() {
         );
       };
       const leave = () => {
+        window.clearTimeout(leaning);
+        window.clearTimeout(quicken);
+        if (crept) heart(0);
         if (!saying.length) return;
         saying.forEach((id) => window.clearTimeout(id));
         saying = [];
@@ -267,6 +318,8 @@ export default function ThePoint() {
       return () => {
         window.removeEventListener("soon:away", leave);
         saying.forEach((id) => window.clearTimeout(id));
+        window.clearTimeout(leaning);
+        window.clearTimeout(quicken);
       };
     }, section);
 
