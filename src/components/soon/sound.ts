@@ -430,6 +430,7 @@ const LINES: Record<Line, { level: number; wet: number; pan?: number }> = {
   "lights-off": { level: 0.8, wet: 0.3, pan: -0.35 },
   "eyes-open": { level: 0.8, wet: 0.3, pan: -0.35 },
   breathing: { level: 0.8, wet: 0.3, pan: -0.35 },
+  "made-it": { level: 0.8, wet: 0.3, pan: -0.35 },
   "most-dont": { level: 0.8, wet: 0.3, pan: -0.35 },
   "when-it-drops": { level: 0.8, wet: 0.3, pan: -0.35 },
   // …and at the other one, once you've turned round
@@ -438,7 +439,6 @@ const LINES: Record<Line, { level: number; wet: number; pan?: number }> = {
   followed: { level: 0.8, wet: 0.3, pan: 0.35 },
   "back-for-more": { level: 0.8, wet: 0.3, pan: 0.35 },
   // and something that thinks it's all very funny
-  "made-it": { level: 0.8, wet: 0.15 },
   damage: { level: 0.85, wet: 0.15 },
   // (what anyone says when the face comes at them, before it laughs)
   what: { level: 0.85, wet: 0.12 },
