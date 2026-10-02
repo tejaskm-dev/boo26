@@ -26,8 +26,9 @@ const BAND = {
   d: "M-40 60C30 30 70 84 140 66C210 48 236 8 306 22C360 34 384 70 440 52L440 520C380 540 350 500 280 512C210 524 190 556 120 540C60 526 30 490 -40 504Z",
 };
 
-/** with the sound on, the cold open's lines are whispered too: "SHH." and "DID YOU HEAR THAT?" */
+/** with the sound on, the cold open's lines are whispered too — and the one on the way back up */
 const VOICES = ["shh", "hear"] as const;
+const BACK_VOICES = ["wrong-way"] as const;
 
 /**
  * 01 — the rumour. Laid out like The Night: the heading oversized and off
@@ -47,7 +48,7 @@ export default function Heard() {
       field="bone"
       className="pb-[clamp(4rem,11vh,7.5rem)] pt-[clamp(5.5rem,17vh,13rem)] md:pt-[clamp(5.5rem,24vh,13rem)]"
     >
-      <Cut lines={CUTS.open} back={CUTS.openBack} voices={VOICES} presents />
+      <Cut lines={CUTS.open} back={CUTS.openBack} voices={VOICES} backVoices={BACK_VOICES} presents />
       <Awake />
 
       {/* the cat is hauling itself over the boundary above — and it knows */}

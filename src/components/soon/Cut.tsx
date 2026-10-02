@@ -8,7 +8,7 @@ import { MU } from "@/lib/soon";
 import InkEyes from "./InkEyes";
 import MuLearn from "./MuLearn";
 import { hold } from "./hold";
-import { cue, say, type Line } from "./sound";
+import { cue, lineLength, say, type Line } from "./sound";
 
 /** where eyes open in the dark while the card is up */
 const DARK_EYES: { at: string; tilt: number }[] = [
@@ -28,6 +28,9 @@ const STEP = 950;
  */
 const PRESENTS_OUT = 1500;
 const PRESENTS = 2350;
+/** said out loud, when the studio's name starts, and the beat after each line before the next */
+const READ_AT = 150;
+const BREATH = 160;
 
 /** which letters of a line run, how far, and when */
 function drips(line: string, i: number) {
@@ -69,18 +72,23 @@ function words(line: string) {
  * there's no cut.
  *
  * With the sound on, a line can be said out loud as it comes up (`voices`,
- * one for each of `lines`; once a visit, on the way down).
+ * one for each of `lines`, and `backVoices` for `back`) — once a visit —
+ * and then each gets as long as it takes to say, held for, and the studio
+ * card stays up until it's read its name.
  */
 export default function Cut({
   lines,
   back = [],
   voices = [],
+  backVoices = [],
   presents = false,
 }: {
   lines: readonly string[];
   back?: readonly string[];
   /** what's said as each of `lines` comes up, if anything */
   voices?: readonly (Line | null)[];
+  /** and as each of `back` does */
+  backVoices?: readonly (Line | null)[];
   /** open on the studio card — "µLearn ASIET presents" — the way a trailer does */
   presents?: boolean;
 }) {
@@ -99,8 +107,6 @@ export default function Cut({
     const down = [...cardEl.querySelectorAll<HTMLElement>("[data-row]")];
     const up = [...cardEl.querySelectorAll<HTMLElement>("[data-row-back]")];
     const studio = veilEl.querySelector<HTMLElement>("[data-presents]");
-    // on the way down, the studio card comes first
-    const lead = studio ? PRESENTS : 0;
     let timers: number[] = [];
     let playing: "down" | "up" | null = null;
     let breathed = false;
@@ -110,19 +116,51 @@ export default function Cut({
     /** one of its holds has the page (easing it back, or holding it) */
     let mine = false;
 
+    /**
+     * When it all happens, this time through, in ms: when the studio card
+     * goes, when each line comes up, and when the last one's done. With
+     * nothing to say, a line every STEP; said out loud, each gets as long as
+     * it takes to say. Worked out once a play, so the hold and the lines
+     * agree.
+     */
+    type Plan = { way: "down" | "up"; out: number; at: number[]; end: number };
+    let plan: Plan | null = null;
+    const planFor = (way: "down" | "up"): Plan => {
+      if (plan?.way === way) return plan;
+      const rows = way === "down" ? down : up;
+      const said = way === "down" ? voices : backVoices;
+      // on the way down, the studio card comes first — up until it's read
+      // its name, if it's going to
+      const read = studio && way === "down" ? Math.round(lineLength("presents") * 1000) : 0;
+      const out = studio && way === "down" ? Math.max(PRESENTS_OUT, read && READ_AT + read + 100) : 0;
+      let t = studio && way === "down" ? out + PRESENTS - PRESENTS_OUT : 0;
+      const at = rows.map((_, i) => {
+        const now = t;
+        const line = said[i];
+        const long = line ? Math.round(lineLength(line) * 1000) : 0;
+        t += Math.max(STEP, long && long + BREATH);
+        return now;
+      });
+      plan = { way, out, at, end: t };
+      return plan;
+    };
+
     const play = (way: "down" | "up") => {
       if (playing) return;
       playing = way;
       cardEl.dataset.way = way;
       const rows = way === "down" ? down : up;
-      const wait = way === "down" ? lead : 0;
+      const said = way === "down" ? voices : backVoices;
+      const { out, at } = planFor(way);
       if (studio && way === "down") {
-        // the studio's logo comes up out of the dark, opens its eyes, holds,
-        // and goes — a beat of black — before the first line
+        // the studio's logo comes up out of the dark, opens its eyes, holds
+        // (while its name's read out, with the sound on), and goes — a beat
+        // of black — before the first line
         studio.dataset.on = "true";
         cue("toll");
+        say("presents", READ_AT / 1000);
         timers.push(window.setTimeout(() => (studio.dataset.muOpen = "true"), 550));
-        timers.push(window.setTimeout(() => (studio.dataset.gone = "true"), PRESENTS_OUT));
+        timers.push(window.setTimeout(() => (studio.dataset.gone = "true"), out));
       }
       rows.forEach((row, i) => {
         timers.push(
@@ -130,12 +168,12 @@ export default function Cut({
             if (!row.isConnected) return;
             row.dataset.on = "true";
             if (i > 0) rows[i - 1].dataset.past = "true";
-            const line = way === "down" ? voices[i] : null;
-            const said = line ? say(line) > 0 : false;
+            const line = said[i];
+            const spoken = line ? say(line) > 0 : false;
             // after the studio card, the cold open comes in on a whisper (or
             // is one, said out loud)
-            if (i === 0 && !said) cue(studio && way === "down" ? "whisper" : "toll");
-          }, wait + i * STEP),
+            if (i === 0 && !spoken) cue(studio && way === "down" ? "whisper" : "toll");
+          }, at[i]),
         );
       });
     };
@@ -143,6 +181,7 @@ export default function Cut({
       timers.forEach((t) => window.clearTimeout(t));
       timers = [];
       playing = null;
+      plan = null;
       for (const row of [...down, ...up]) {
         row.dataset.on = "false";
         row.dataset.past = "false";
@@ -183,13 +222,17 @@ export default function Cut({
         // down at a third of the way in, and on the way back up (where it
         // says something else) at a third of the way from the bottom
         const holdFor = (way: "down" | "up") => {
-          const ok = hold(way === "up" ? `cut-up:${lines.join("|")}` : `cut:${lines.join("|")}`, way === "up" ? up.length * STEP + 600 : lead + lines.length * STEP + 700, {
+          const ok = hold(way === "up" ? `cut-up:${lines.join("|")}` : `cut:${lines.join("|")}`, planFor(way).end + (way === "up" ? 600 : 700), {
             to: self.start + range * (way === "up" ? 0.64 : 0.36),
             glide: 0.7,
             way,
             onRelease: () => (mine = false),
           });
-          if (!ok) return false;
+          if (!ok) {
+            // (not playing yet: worked out again when it does)
+            if (!playing) plan = null;
+            return false;
+          }
           mine = true;
           if (way === "up") caughtUp = true;
           else caught = true;
@@ -216,7 +259,7 @@ export default function Cut({
       st.kill();
       timers.forEach((t) => window.clearTimeout(t));
     };
-  }, [lines, back, voices]);
+  }, [lines, back, voices, backVoices]);
 
   return (
     <div ref={room} className="soon-cut-room" data-wait="cut" aria-hidden="true">

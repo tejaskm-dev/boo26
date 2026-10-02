@@ -397,14 +397,48 @@ export function cue(name: Cue, force = false) {
  * they came, kept or not, are in design/voice/). They're fetched once the
  * sound's turned on, so nobody who leaves it off ever downloads them.
  */
-export type Line = "shh" | "hear" | "damage" | "what" | "safe" | "nerd" | "leaving" | "banner";
+export type Line =
+  // the cards between acts (Cut.tsx), in the order they come up
+  | "presents"
+  | "shh"
+  | "hear"
+  | "wrong-way"
+  | "lights-off"
+  | "eyes-open"
+  | "breathing"
+  | "so-soon"
+  | "followed"
+  | "made-it"
+  | "most-dont"
+  | "when-it-drops"
+  | "back-for-more"
+  // and the jokes
+  | "damage"
+  | "what"
+  | "safe"
+  | "nerd"
+  | "leaving"
+  | "banner";
 
 /** how loud each sits, how much of it goes into the room, and which side it's on */
 const LINES: Record<Line, { level: number; wet: number; pan?: number }> = {
-  // something in the dark, whispering — close, at one shoulder
+  // the studio card, read the way a trailer's is
+  presents: { level: 0.8, wet: 0.25 },
+  // something in the dark, whispering — close, at one shoulder…
   shh: { level: 0.75, wet: 0.35, pan: -0.35 },
   hear: { level: 0.8, wet: 0.3, pan: -0.35 },
+  "lights-off": { level: 0.8, wet: 0.3, pan: -0.35 },
+  "eyes-open": { level: 0.8, wet: 0.3, pan: -0.35 },
+  breathing: { level: 0.8, wet: 0.3, pan: -0.35 },
+  "most-dont": { level: 0.8, wet: 0.3, pan: -0.35 },
+  "when-it-drops": { level: 0.8, wet: 0.3, pan: -0.35 },
+  // …and at the other one, once you've turned round
+  "wrong-way": { level: 0.8, wet: 0.3, pan: 0.35 },
+  "so-soon": { level: 0.8, wet: 0.3, pan: 0.35 },
+  followed: { level: 0.8, wet: 0.3, pan: 0.35 },
+  "back-for-more": { level: 0.8, wet: 0.3, pan: 0.35 },
   // and something that thinks it's all very funny
+  "made-it": { level: 0.8, wet: 0.15 },
   damage: { level: 0.85, wet: 0.15 },
   // (what anyone says when the face comes at them, before it laughs)
   what: { level: 0.85, wet: 0.12 },
@@ -431,6 +465,12 @@ function fetchLines(c: AudioContext) {
         // that line just goes unsaid
       });
   }
+}
+
+/** how long `say(line)` would take if it were said now, in seconds — 0 if it wouldn't be */
+export function lineLength(line: Line): number {
+  if (!on || !ctx || ctx.state !== "running" || spoken.has(line)) return 0;
+  return clips.get(line)?.duration ?? 0;
 }
 
 /**

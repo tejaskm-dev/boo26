@@ -24,6 +24,9 @@ import { answer, buzz, shiver } from "./troll";
 const HUSH = "SHH.";
 /** these stay readable: the band still has to say where, and whose */
 const KEEP = new Set(["ASIET, KALADY", "BOO! 2026", "µLEARN ASIET"]);
+/** with the sound on, the card into the end is said too — and the one on the way back up */
+const VOICES = ["made-it", "most-dont", "when-it-drops"] as const;
+const BACK_VOICES = ["back-for-more"] as const;
 
 /** the crowd in the dark, round the edges of the shot — each opens a little further into the scroll */
 const CROWD: { at: string; tilt: number }[] = [
@@ -221,7 +224,7 @@ export default function NotYet() {
       forms={[{ shape: "spillLeft", tone: "bone", at: "inset-x-0 top-0 w-full h-[13vh] md:h-[21vh]" }]}
       className="flex flex-col"
     >
-      <Cut lines={CUTS.drop} back={CUTS.dropBack} />
+      <Cut lines={CUTS.drop} back={CUTS.dropBack} voices={VOICES} backVoices={BACK_VOICES} />
       <Awake />
       <Critters bats={2} sky={[0.06, 0.24]} className="z-[1]" />
 
