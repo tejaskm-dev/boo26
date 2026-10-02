@@ -36,6 +36,11 @@ export default function HeroLockup({
         gsap.killTweensOf(el);
       }
     });
+    // it leans with the pointer only while it's on screen: off it, every
+    // move of the mouse was the lockup tilting where nobody could see
+    let seen = false;
+    const io = new IntersectionObserver(([e]) => (seen = e.isIntersecting));
+    io.observe(el);
 
     if (!fine) {
       // Mobile: pure GPU translate3d without rotation (rotation forces CPU redraw in iOS Safari).
@@ -44,13 +49,14 @@ export default function HeroLockup({
       const x = gsap.quickTo(el, "x", { duration: 0.8, ease: "power2.out" });
       const y = gsap.quickTo(el, "y", { duration: 0.8, ease: "power2.out" });
       const unsubPointer = subscribePointer((nx, ny) => {
-        if (isNavActive() || getLenis()?.isScrolling || !rich()) return;
+        if (!seen || isNavActive() || getLenis()?.isScrolling || !rich()) return;
         x(nx * 12);
         y(ny * 8);
       });
       return () => {
         unsubNav();
         unsubPointer();
+        io.disconnect();
       };
     }
 
@@ -60,7 +66,7 @@ export default function HeroLockup({
     const r = gsap.quickTo(el, "rotation", { duration: 1.6, ease: "power2.out" });
 
     const unsubPointer = subscribePointer((nx, ny) => {
-      if (isNavActive()) return;
+      if (!seen || isNavActive()) return;
       x(nx * 30);
       y(ny * 18);
       r(nx * 1.1);
@@ -68,6 +74,7 @@ export default function HeroLockup({
     return () => {
       unsubNav();
       unsubPointer();
+      io.disconnect();
     };
   }, [fine]);
 

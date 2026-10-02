@@ -92,6 +92,21 @@ export default function InTheDark() {
     return () => io.disconnect();
   }, [woke, changed]);
 
+  // The heading glitches only while it's on screen, or nearly: the room below
+  // it is a long scroll, and the section stays awake the whole way down.
+  useEffect(() => {
+    const el = headline.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        el.dataset.awake = e.isIntersecting ? "true" : "false";
+      },
+      { rootMargin: "20% 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
   useEffect(() => {
     const el = room.current;
     const run = runway.current;
@@ -150,8 +165,12 @@ export default function InTheDark() {
     };
 
     // --- the torch ---------------------------------------------------------
-    const bx = gsap.quickTo(beamEl, "x", { duration: 0.32, ease: "power3.out" });
-    const by = gsap.quickTo(beamEl, "y", { duration: 0.32, ease: "power3.out" });
+    // On a laptop the light is where the cursor is, with only the weight of a
+    // torch in the hand: a longer follow read as lag. Tilting a phone wants
+    // the smoothing.
+    const follow = fine ? 0.12 : 0.32;
+    const bx = gsap.quickTo(beamEl, "x", { duration: follow, ease: "power3.out" });
+    const by = gsap.quickTo(beamEl, "y", { duration: follow, ease: "power3.out" });
     const turn = camEl ? gsap.quickTo(camEl, "rotation", { duration: 0.9, ease: "power3.out" }) : null;
     const gx = gsap.quickTo(gazeEl, "x", { duration: 0.6, ease: "power3.out" });
     const gy = gsap.quickTo(gazeEl, "y", { duration: 0.6, ease: "power3.out" });
@@ -553,10 +572,13 @@ export default function InTheDark() {
           <div ref={shade} className="soon-shade" aria-hidden="true">
             <div className="soon-shake soon-loop">
               <div ref={beam} className="soon-beam">
-                <span className="soon-dust soon-loop left-[44%] top-[40%]" />
-                <span className="soon-dust soon-loop left-[58%] top-[55%] [animation-delay:-2.4s]" />
-                <span className="soon-dust soon-loop left-[36%] top-[60%] [animation-delay:-4.1s]" />
-                <span className="soon-dust soon-loop left-[52%] top-[33%] [animation-delay:-5.6s]" />
+                {/* the dust in the light, in the beam's own square */}
+                <span className="soon-beam-light">
+                  <span className="soon-dust soon-loop left-[44%] top-[40%]" />
+                  <span className="soon-dust soon-loop left-[58%] top-[55%] [animation-delay:-2.4s]" />
+                  <span className="soon-dust soon-loop left-[36%] top-[60%] [animation-delay:-4.1s]" />
+                  <span className="soon-dust soon-loop left-[52%] top-[33%] [animation-delay:-5.6s]" />
+                </span>
               </div>
             </div>
             <div className="soon-blackout" />
@@ -614,9 +636,9 @@ export default function InTheDark() {
             <div className="absolute inset-[14%_17%_24%_13%] overflow-hidden rounded-sm">
               <Sprite name="moon" scale={0.15} className="absolute right-[6%] top-[4%] opacity-90" />
               <span className="soon-bat soon-loop left-0 top-[28%] block w-[34%]" aria-hidden="true">
-                <span><Sprite name="bat-up" scale={0.18} className="w-full" /></span>
-                <span><Sprite name="bat-level" scale={0.18} className="w-full" /></span>
-                <span><Sprite name="bat-down" scale={0.18} className="w-full" /></span>
+                <span className="soon-loop"><Sprite name="bat-up" scale={0.18} className="w-full" /></span>
+                <span className="soon-loop"><Sprite name="bat-level" scale={0.18} className="w-full" /></span>
+                <span className="soon-loop"><Sprite name="bat-down" scale={0.18} className="w-full" /></span>
               </span>
             </div>
             <button type="button" tabIndex={-1} aria-label="The window" data-secret={SECRETS.window} onClick={() => strikeRef.current()} className="relative block cursor-pointer">
@@ -628,7 +650,8 @@ export default function InTheDark() {
           <span data-secret={SECRETS.camera} className={`${prop} right-[4%] top-[12%] z-[30] opacity-90 md:right-[3%] md:top-[15%]`}>
             <span className="relative block pl-[calc(130px*0.6*var(--sprite-scale)*0.62)] pt-[calc(113px*0.6*var(--sprite-scale)*0.55)]">
               <Sprite name="cctv-mount" scale={0.6} />
-              <span ref={cam} className="absolute left-0 top-0 block origin-[82%_88%]">
+              {/* (a layer of its own: turning it is a move, not a repaint) */}
+              <span ref={cam} className="absolute left-0 top-0 block origin-[82%_88%] will-change-transform">
                 <Sprite name="cctv" scale={0.6} />
                 <span className="soon-rec soon-loop absolute left-[67%] top-[11%] block h-[8%] w-[7%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-lime shadow-[0_0_12px_var(--color-lime)]" />
               </span>

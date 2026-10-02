@@ -467,26 +467,37 @@ html[data-js="true"] .soon-room[data-torch] .soon-shade {
   78% { translate: 0.6px 1.2px; }
 }
 
-/* One square, lit in the middle, fading to dark at its edge — and an outline
-   of the same dark all the way round it, far past the screen. Moving the
-   torch moves this one layer, so nothing is ever repainted. */
+/* The dark, with the torch's light a hole in the middle of it: lit at the
+   centre, fading to dark at the beam's edge, dark from there out. Moving
+   the torch moves this one layer, so nothing is ever repainted — and it's
+   only as big as it has to be to cover the screen wherever the torch is
+   (it was a square with an outline 250vmax thick: a layer fifty screens
+   big, and dragging it about was the room's lag). */
 .soon-beam {
   --beam: clamp(15rem, 64vmin, 32rem);
   position: absolute;
   left: 0;
   top: 0;
-  width: var(--beam);
-  height: var(--beam);
-  margin: calc(var(--beam) / -2) 0 0 calc(var(--beam) / -2);
+  width: 260vw;
+  height: 260vh;
+  margin: -130vh 0 0 -130vw;
   background: radial-gradient(
-    closest-side,
+    circle calc(var(--beam) / 2) at 50% 50%,
     rgba(243, 240, 231, 0.1),
     rgba(243, 240, 231, 0.02) 38%,
     rgba(8, 8, 8, 0.62) 74%,
     rgba(8, 8, 8, 0.96) 100%
   );
-  outline: 250vmax solid rgba(8, 8, 8, 0.96);
   will-change: transform;
+}
+
+.soon-beam-light {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--beam);
+  height: var(--beam);
+  margin: calc(var(--beam) / -2) 0 0 calc(var(--beam) / -2);
 }
 
 .soon-dust {
@@ -1824,9 +1835,14 @@ section[data-awake="true"] .soon-loop {
   animation-play-state: running;
 }
 
-section[data-frozen="true"] .soon-loop,
 html[data-idle="true"] section .soon-loop,
 html[data-nav-active="true"] section .soon-loop {
+  animation-play-state: paused;
+}
+
+/* a heading at the top of a long section sleeps once it's well off screen,
+   though the section's still awake below it (InTheDark) */
+section [data-awake="false"] .soon-glitch {
   animation-play-state: paused;
 }
 

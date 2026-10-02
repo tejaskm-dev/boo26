@@ -44,7 +44,11 @@ export default function BlobButton({
   const label = useRef<HTMLSpanElement>(null);
   const arrow = useRef<SVGSVGElement>(null);
 
-  // magnetic pull: the button leans toward the pointer while it is near
+  // magnetic pull: the button leans toward the pointer while it is near.
+  // Only while it's on screen, and only when there's something to do: every
+  // button on the page measuring itself and re-aiming on every move, near or
+  // not, seen or not, was a frame's worth of work wherever the pointer drives
+  // something else (the teaser's torch, most of all).
   useEffect(() => {
     const el = root.current;
     if (!el || prefersReducedMotion()) return;
@@ -54,18 +58,40 @@ export default function BlobButton({
     const y = gsap.quickTo(el, "y", { duration: 0.5, ease: "power3.out" });
     const label = gsap.quickTo(shape.current, "x", { duration: 0.6, ease: "power3.out" });
 
+    let seen = false;
+    let pulled = false;
+    const settle = () => {
+      if (!pulled) return;
+      pulled = false;
+      x(0);
+      y(0);
+      label(0);
+    };
+    const io = new IntersectionObserver(([e]) => {
+      seen = e.isIntersecting;
+      if (!seen) settle();
+    });
+    io.observe(el);
+
     const move = (e: PointerEvent) => {
+      if (!seen) return;
       const r = el.getBoundingClientRect();
       const dx = e.clientX - (r.left + r.width / 2);
       const dy = e.clientY - (r.top + r.height / 2);
       const reach = Math.max(r.width, r.height) * 0.9;
-      const near = Math.hypot(dx, dy) < reach;
-      x(near ? dx * 0.22 : 0);
-      y(near ? dy * 0.3 : 0);
-      label(near ? dx * 0.04 : 0);
+      // (and not one that's there but hidden: the preloader's, the shut menu's)
+      if (Math.hypot(dx, dy) >= reach || el.checkVisibility?.({ opacityProperty: true, visibilityProperty: true }) === false) {
+        settle();
+        return;
+      }
+      pulled = true;
+      x(dx * 0.22);
+      y(dy * 0.3);
+      label(dx * 0.04);
     };
     window.addEventListener("pointermove", move, { passive: true });
     return () => {
+      io.disconnect();
       window.removeEventListener("pointermove", move);
       x(0);
       y(0);
