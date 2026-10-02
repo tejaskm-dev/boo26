@@ -179,7 +179,10 @@ export default function InTheDark() {
     bx(beamX);
     by(beamY);
 
-    const aim = (x: number, y: number) => {
+    /** the light, there — and the cat, once it's up, watches it (unless it's
+     * only the scroll sweeping it about: then moving the eyes each frame was
+     * the glowing layer they're in drawn again and again, for no one) */
+    const aim = (x: number, y: number, watched = true) => {
       beamX = x;
       beamY = y;
       bx(x);
@@ -188,7 +191,7 @@ export default function InTheDark() {
         const a = (Math.atan2(beamY - (camY + stageTop()), beamX - camX) * 180) / Math.PI;
         turn(Math.max(-48, Math.min(22, ((a - 180 + 540) % 360) - 180)));
       }
-      if (awake) {
+      if (awake && watched) {
         // once it's up, it watches the light
         const top = stageTop();
         gx(Math.max(-1, Math.min(1, (x - faceX) / stageW)) * faceR * 0.12);
@@ -336,6 +339,19 @@ export default function InTheDark() {
       }
     };
 
+    // the sweep, eased toward where the scroll says, a frame at a time
+    let sweepTo: [number, number] | null = null;
+    let sweepX = beamX;
+    let sweepY = beamY;
+    const sweep = (_t: number, dms: number) => {
+      if (!sweepTo || !active || document.hidden) return;
+      const k = 1 - Math.exp(-Math.min(0.05, (dms || 16.7) / 1000) / 0.3);
+      sweepX += (sweepTo[0] - sweepX) * k;
+      sweepY += (sweepTo[1] - sweepY) * k;
+      if (Math.abs(sweepTo[0] - sweepX) < 0.5 && Math.abs(sweepTo[1] - sweepY) < 0.5) sweepTo = null;
+      aim(sweepX, sweepY, false);
+    };
+
     // --- as you go through the room ------------------------------------------
     let firstStrike = false;
     /** come back up toward it from well past it */
@@ -349,13 +365,15 @@ export default function InTheDark() {
       const p = (scrollY() - runTop) / Math.max(1, runH - stageH);
 
       // nothing moving the torch: it sweeps the room with the scroll, and
-      // crosses its face on the way
+      // crosses its face on the way — followed slowly (sweep), so a quick
+      // scroll back through the room drifts the light rather than flinging
+      // it across the screen and back
       if (!fine && !tilted && Date.now() >= manualUntil) {
-        aim(
+        sweepTo = [
           window.innerWidth * (0.5 + 0.34 * Math.sin(p * Math.PI * 3.1)),
           window.innerHeight * (0.5 + 0.22 * Math.cos(p * Math.PI * 2.4)),
-        );
-      }
+        ];
+      } else sweepTo = null;
       // the torch handle only while the room has the whole screen: as it
       // slides in or out, a swipe that starts on the handle has to scroll
       const docked = Math.abs(stageTop()) < window.innerHeight * 0.04 ? "true" : "false";
@@ -372,9 +390,12 @@ export default function InTheDark() {
         });
       }
       if (!firstStrike && p > 0.04) {
-        // the first thing that happens in here: you see what you're standing in front of
+        // the first thing that happens in here: you see what you're standing
+        // in front of (once you're standing still in front of it)
         firstStrike = true;
-        later(() => strikeRef.current(), 1400);
+        let tries = 0;
+        const first = () => (still() || ++tries > 12 ? active && strikeRef.current() : later(first, 400));
+        later(first, 1400);
       }
       if (!awake && p > 0.62) wake();
 
@@ -412,11 +433,21 @@ export default function InTheDark() {
     else window.addEventListener("scroll", onScroll, { passive: true });
 
     // --- the torch has a mind of its own ---------------------------------------
+    // ...but only acts up while you're standing in here: the room has the
+    // screen, the page is still, and it isn't diving. Its timers came due
+    // just as often while you were scrolling back out through it, and a
+    // flicker or a flash under a moving page read as the light jittering.
+    const still = () => {
+      const lenis = getLenis();
+      return !lenis?.isScrolling && Math.abs(stageTop()) < window.innerHeight * 0.04 && lastScale < 1.1;
+    };
     let flicker = 0;
     let glimpses = 0;
-    const scheduleFlicker = () => {
+    const scheduleFlicker = (ms = 11000 + Math.random() * 7000) => {
       window.clearTimeout(flicker);
       flicker = window.setTimeout(() => {
+        // (due while you're moving: in a moment, then)
+        if (active && !document.hidden && !still()) return scheduleFlicker(2500);
         if (active && !document.hidden && el.dataset.torch === "on") {
           el.dataset.flicker = "true";
           later(() => delete el.dataset.flicker, 700);
@@ -434,7 +465,7 @@ export default function InTheDark() {
           }
         }
         scheduleFlicker();
-      }, 11000 + Math.random() * 7000);
+      }, ms);
     };
 
     // Lightning, through the window: for a moment the dark lifts and you see
@@ -452,12 +483,13 @@ export default function InTheDark() {
       );
     };
     strikeRef.current = strike;
-    const scheduleStrike = () => {
+    const scheduleStrike = (ms = 13000 + Math.random() * 7000) => {
       window.clearTimeout(thunder);
       thunder = window.setTimeout(() => {
+        if (active && !document.hidden && !still()) return scheduleStrike(2500);
         if (active && !document.hidden) strike();
         scheduleStrike();
-      }, 13000 + Math.random() * 7000);
+      }, ms);
     };
 
     let first = true;
@@ -506,11 +538,13 @@ export default function InTheDark() {
     window.addEventListener("resize", measure);
     ScrollTrigger.addEventListener("refresh", measure);
     gsap.ticker.add(tick);
+    if (!fine) gsap.ticker.add(sweep);
 
     return () => {
       stopBack();
       leaving.kill();
       gsap.ticker.remove(tick);
+      gsap.ticker.remove(sweep);
       unsub();
       io.disconnect();
       ro.disconnect();
