@@ -1,30 +1,29 @@
 import type { SpriteName } from "./sprites";
+import type { HeroFact } from "@/components/hero/Hero";
+import type { FooterContent } from "@/components/site/Footer";
+import { BRAND, SOCIALS } from "./brand";
 
+/**
+ * The full site's words. Everything dated lives here, and the pieces the
+ * coming-soon teaser shares with the full site (the hero, the menu, the
+ * footer, the loading screen) are handed it as props by the full site's own
+ * pages — so none of it is ever bundled into the teaser. What doesn't date
+ * anything (name, venue, host, the channels) is in brand.ts.
+ */
 export const EVENT = {
-  name: "BOO!",
-  year: "2026",
+  ...BRAND,
   date: "24–25 OCT 2026",
   dateLong: "24–25 October 2026",
-  venue: "ASIET, KALADY",
-  venueLong: "Adi Shankara Institute of Engineering and Technology, Kalady, Kerala",
   format: "HALLOWEEN-NIGHT CREATIVE TECHNOLOGY HACKATHON",
   duration: "20 HOURS",
   team: "2 PER TEAM",
-  /* The µ is U+00B5, the micro sign: it is in the Latin subset the fonts load
-     and the Greek mu is not. Anywhere the type is uppercased it has to go
-     through <Micro>, or it renders as a plain M. */
-  host: "µLearn ASIET",
   /* 02 PM on the day, which is when the timeline's first stop opens the doors.
      Kerala is UTC+5:30 and the offset is written out so the countdown means
      the same thing from anywhere. */
   startsAt: "2026-10-24T14:00:00+05:30",
-  /* Every register CTA lands here. Until registration opens, /register and
-     everything under it is the coming-soon page (src/lib/register/mode.ts). */
-  registerHref: "/register",
-  /* A temporary address until BOO! has its own. Change it here and the
-     legal pages follow. */
-  email: "boo26team@gmail.com",
 } as const;
+
+export { SOCIALS };
 
 /**
  * The running bands. Facts only — the point of a band is that the answer to
@@ -50,17 +49,26 @@ export const NAV: NavItem[] = [
   { label: "FAQ", index: "07", href: "#faq" },
 ];
 
-/**
- * BOO!'s own channels. None are live yet, so none has an href: without one,
- * each shows the coming-soon toast instead of linking anywhere. Add the URL
- * here when a channel goes live.
- */
-export const SOCIALS: { label: string; icon: string; href?: string }[] = [
-  { label: "Discord", icon: "discord" },
-  { label: "Instagram", icon: "instagram" },
-  { label: "LinkedIn", icon: "linkedin" },
-  { label: "YouTube", icon: "youtube" },
-];
+/** The hero's words — see src/components/hero/Hero.tsx. */
+export const HERO: {
+  format: string;
+  facts: HeroFact[];
+  cta: { label: string; href: string };
+  next: { href: string; label: string };
+} = {
+  format: EVENT.format,
+  facts: [
+    { text: EVENT.date },
+    { text: EVENT.duration, phoneOnly: true },
+    { text: EVENT.venue },
+    { text: EVENT.team, phoneOnly: true },
+  ],
+  cta: { label: "Register now", href: EVENT.registerHref },
+  next: { href: "#night", label: "Skip to The Night" },
+};
+
+/** The loading screen's corners — see src/components/fx/PageWipe.tsx. */
+export const PRELOADER = { corner: EVENT.date, venue: EVENT.venue, line: EVENT.format };
 
 /** 01 — THE NIGHT */
 export const FACTS = [
@@ -262,7 +270,7 @@ export const LEGAL = [
 ] as const;
 
 /** the date on all three, until one of them changes on its own */
-export const LEGAL_UPDATED = "23 Sep 2026";
+export const LEGAL_UPDATED = "30 Sep 2026";
 
 /** Handwritten margin notes, kept in one place so they stay rationed. */
 export const NOTES = {
@@ -283,3 +291,28 @@ export const NOTES = {
   desk: "Start with\nthe reaction.\nWork\nbackwards.",
   sign: "Good people\nscarier ideas.",
 } as const;
+
+/** Everything the footer says — see src/components/site/Footer.tsx. */
+export const FOOTER: FooterContent = {
+  kicker: "Build\nbreak\nhaunt\nrepeat.",
+  statement: "See you at",
+  sub: "Come make\nsomeone react.",
+  updates: {
+    title: "Don\u2019t miss updates",
+    note: "Event updates, announcements and a few spooky surprises. No spam, promise.",
+  },
+  nav: FOOTER_NAV,
+  details: {
+    title: "Event details",
+    rows: [
+      ["Where", EVENT.venueLong],
+      ["When", EVENT.dateLong],
+      ["Runs for", "20 hours, from 2 PM"],
+      ["Teams", "2 per team"],
+    ],
+  },
+  credit: { before: `A hackathon by the ${EVENT.name} core team\nunder the `, after: " banner" },
+  legal: LEGAL,
+  desk: NOTES.desk,
+  sign: NOTES.footer,
+};

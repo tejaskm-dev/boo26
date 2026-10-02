@@ -1,3 +1,5 @@
+import { siteLive } from "@/lib/live";
+
 /**
  * The switch for /register: the sign-up, or the coming-soon page.
  *
@@ -9,8 +11,13 @@
  * touching any code — in .env.local here, or in the host's environment
  * variables for a deploy. The value is read where the pages are built, so a
  * change to it needs a new build (on Vercel, a redeploy).
+ *
+ * While the coming-soon teaser is up (LIVE_STATUS, src/lib/live.ts) it's
+ * closed whatever this says: the sign-up, the rules and the judging all name
+ * the date, and the teaser can't.
  */
 export function registrationOpen(): boolean {
+  if (!siteLive()) return false;
   const set = process.env.BOO_REGISTRATION_OPEN?.trim().toLowerCase();
   if (set === "false" || set === "0" || set === "off" || set === "no") return false;
   return true;

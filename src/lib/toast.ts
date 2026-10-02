@@ -12,13 +12,20 @@ export function toast(message: string, label?: string) {
   for (const fn of listeners) fn(next);
 }
 
+/** What "not live yet" says. The teaser swaps "Coming soon" for its own words. */
+let soonWords: (what?: string) => string = () => "Coming soon";
+
+export function setSoonWords(fn: ((what?: string) => string) | null) {
+  soonWords = fn ?? (() => "Coming soon");
+}
+
 /**
  * For anything announced but not live yet — the community channels, the
  * guidelines, the newsletter. Says so in place instead of sending the visitor
  * to a placeholder URL.
  */
 export function comingSoon(what?: string) {
-  toast("Coming soon", what);
+  toast(soonWords(what), what);
 }
 
 export function subscribeToast(fn: ToastListener): () => void {

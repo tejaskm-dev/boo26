@@ -1,6 +1,6 @@
 {
   "_readme": "Names the cells that scripts/slice-sprite.py finds. Run with --contact to renumber, then read design/sprite-contact-*.png. 'cell' is an index into that numbering; 'box' is an escape hatch for hairline pieces that erosion deletes before they can become a cell.",
-  "cat-treasure": {
+  "cat-parchment": {
     "sheet": "16DC7774",
     "cell": 0
   },
@@ -84,7 +84,7 @@
     "sheet": "66CFA744",
     "cell": 1
   },
-  "treasure-map": {
+  "parchment": {
     "sheet": "66CFA744",
     "cell": 2
   },
@@ -97,7 +97,7 @@
     "cell": 4,
     "clean": true
   },
-  "treasure-x": {
+  "x-mark": {
     "sheet": "66CFA744",
     "cell": 5
   },

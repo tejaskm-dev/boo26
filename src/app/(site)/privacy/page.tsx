@@ -106,8 +106,8 @@ const PRIVACY: LegalDoc = {
       title: "The newsletter box",
       body: (
         <P>
-          The email box in the footer isn&rsquo;t connected to anything yet. Submitting it only shows &ldquo;Coming
-          soon&rdquo; — the address you typed isn&rsquo;t sent or saved. We&rsquo;ll update this policy before sign-ups open.
+          The email box in the footer isn&rsquo;t connected to anything yet. Submitting it only says it isn&rsquo;t
+          live yet — the address you typed isn&rsquo;t sent or saved. We&rsquo;ll update this policy before sign-ups open.
         </P>
       ),
     },
@@ -128,7 +128,7 @@ const PRIVACY: LegalDoc = {
             <Item>We&rsquo;ll never sell it, and never use it for anything unrelated to {EVENT.name}.</Item>
             <Item>
               The core team can see it. If ASIET or {EVENT.host} need something to run the event — a list of who&rsquo;s on
-              campus overnight, say — we&rsquo;ll share only that.
+              campus, say — we&rsquo;ll share only that.
             </Item>
             <Item>
               If the registration portal runs on another service, that service&rsquo;s own privacy policy applies to it too,

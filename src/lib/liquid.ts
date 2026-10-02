@@ -137,6 +137,8 @@ export interface LiquidSetupOptions {
   shapes: readonly string[];
   ns: string;
   isMobile?: boolean;
+  /** when this says so, the field holds still (the teaser's FREEZE) */
+  paused?: () => boolean;
 }
 
 /**
@@ -146,7 +148,7 @@ export interface LiquidSetupOptions {
  * transcendentals (atan2/hypot) and heap allocations. Synchronized with GSAP's
  * high-performance display-locked ticker with zero layout stalls.
  */
-export function startLiquidFlow({ svg, shapes, ns, isMobile = false }: LiquidSetupOptions): () => void {
+export function startLiquidFlow({ svg, shapes, ns, isMobile = false, paused }: LiquidSetupOptions): () => void {
   if (!svg || typeof window === "undefined" || !shapes.length) return () => {};
   if (prefersReducedMotion()) return () => {};
 
@@ -255,7 +257,8 @@ export function startLiquidFlow({ svg, shapes, ns, isMobile = false }: LiquidSet
       isNavActive() ||
       !isIntersecting ||
       root.dataset.wipe ||
-      root.dataset.wiping
+      root.dataset.wiping ||
+      paused?.()
     ) {
       return;
     }

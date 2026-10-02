@@ -19,8 +19,21 @@ import { BAND } from "@/lib/site";
  *
  * Only the wordmark rides in the corner. The home page's menu and register
  * button would point back at this page, or at anchors that aren't on it.
+ *
+ * The words are props so the coming-soon teaser can say it its own way —
+ * "not yet", and a band with no date on it — with the same composition.
  */
-export default function ComingSoon() {
+export default function ComingSoon({
+  kicker = "Registration\nisn\u2019t open yet.",
+  heading = "Coming\nsoon",
+  note = "Keep your\nidea warm.",
+  band = BAND,
+}: {
+  kicker?: string;
+  heading?: string;
+  note?: string;
+  band?: readonly string[];
+} = {}) {
   return (
     <>
       <header className="pointer-events-none fixed inset-x-0 top-0 z-50 flex items-start justify-between px-[var(--edge)] py-[clamp(1rem,2.2vw,1.9rem)]">
@@ -34,7 +47,7 @@ export default function ComingSoon() {
       >
         <div data-intro className="relative flex flex-1 flex-col justify-center px-[var(--edge)]">
           <p data-anim="rise" className="label label-loose whitespace-pre-line text-bone/45">
-            Registration{"\n"}isn&rsquo;t open yet.
+            {kicker}
           </p>
 
           <div className="relative mt-[clamp(1.5rem,4vh,3rem)]">
@@ -42,7 +55,7 @@ export default function ComingSoon() {
               as="h1"
               className="brush -rotate-[1.5deg] select-none text-center text-[clamp(4.4rem,15vw,12rem)] leading-[0.84] text-lime"
             >
-              {"Coming\nsoon"}
+              {heading}
             </Words>
 
             {/* Crouched on top of the heading, about to pounce. Lifted by its
@@ -64,7 +77,7 @@ export default function ComingSoon() {
               Back to BOO!
             </BlobButton>
             <p className="hand max-w-[12ch] whitespace-pre-line text-[clamp(1.05rem,1.6vw,1.5rem)] text-bone/60">
-              {"Keep your\nidea warm."}
+              {note}
             </p>
           </div>
 
@@ -73,7 +86,7 @@ export default function ComingSoon() {
 
         {/* the facts, running, exactly as they close the home page */}
         <div className="mt-[clamp(2.5rem,7vh,4.5rem)] border-y border-bone/12 py-[clamp(0.85rem,2.2vh,1.5rem)]">
-          <Marquee items={BAND} speed={42} className="display text-[clamp(1.6rem,4.4vw,3.4rem)] leading-none text-bone/70" />
+          <Marquee items={band} speed={42} className="display text-[clamp(1.6rem,4.4vw,3.4rem)] leading-none text-bone/70" />
         </div>
       </Section>
     </>
