@@ -4,7 +4,10 @@
  * The teaser's score, made in the browser — all but a few lines said out
  * loud (`say`), which are small recordings fetched only once the sound's on.
  *
- * Off until the visitor turns it on, and never remembered between visits.
+ * On by default — but a browser won't let a page make a sound before the
+ * visitor's first tap, click or key, so it starts then (`listenForFirstTap`).
+ * Turned off, it stays off for the visit; nothing's remembered between
+ * visits.
  *
  * It's built to move with the page rather than go off at it. Underneath
  * everything, all the time: a low drone, a choir that's mostly breath, wind
@@ -230,8 +233,13 @@ function startBed(c: AudioContext): Bed {
 
 // --- turning it on ----------------------------------------------------------------
 
+/** what the visitor wants: on, unless they've turned it off */
+let wanted = true;
+export const soundWanted = () => wanted;
+
 export async function setSound(next: boolean) {
   if (typeof window === "undefined") return;
+  wanted = next;
   if (next) {
     const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!Ctor) return;
@@ -274,6 +282,29 @@ export async function setSound(next: boolean) {
     }, 800);
   }
   for (const fn of listeners) fn(on);
+}
+
+/**
+ * Turns the sound on at the visitor's first tap, click or key — the first
+ * moment a browser lets a page make one — unless they've turned it off by
+ * then. A tap on the switch is the switch's own business. Keeps listening
+ * until it's actually on (a touch that was a scroll isn't a tap). Returns a
+ * way to stop.
+ */
+export function listenForFirstTap(): () => void {
+  if (typeof window === "undefined") return () => {};
+  const events = ["pointerup", "touchend", "keydown", "click"] as const;
+  const stop = () => events.forEach((type) => window.removeEventListener(type, go, true));
+  function go(e: Event) {
+    if (!wanted || on) return stop();
+    if ((e.target as Element | null)?.closest?.(".soon-sound")) return;
+    // (where the browser can say, only a real gesture: a touch that scrolled isn't one)
+    const nav = navigator as Navigator & { userActivation?: { isActive: boolean } };
+    if (nav.userActivation && !nav.userActivation.isActive) return;
+    void setSound(true).then(() => on && stop());
+  }
+  events.forEach((type) => window.addEventListener(type, go, { capture: true, passive: true }));
+  return stop;
 }
 
 /** which part of the page you're in; the bed leans into it over a couple of seconds */

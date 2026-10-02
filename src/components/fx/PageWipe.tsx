@@ -149,6 +149,7 @@ export default function PageWipe({
   corner,
   venue,
   line,
+  hint,
 }: {
   /** top left, beside the lime diamond — the date, on the full site */
   corner: string;
@@ -156,6 +157,8 @@ export default function PageWipe({
   venue: string;
   /** bottom right, on wide screens — handed in by the layout, never imported, so no date rides along in the teaser's bundle */
   line: string;
+  /** under the wordmark, if there's anything to say there (the teaser: headphones) */
+  hint?: string;
 }) {
   const root = useRef<HTMLDivElement>(null);
   const ink = useRef<HTMLDivElement>(null);
@@ -388,22 +391,13 @@ export default function PageWipe({
             </p>
           </div>
 
-          {/* the wordmark, filling with ink from the bottom as the page loads */}
-          <div
-            ref={mark}
-            className="relative mx-auto w-[clamp(12rem,36vw,26rem)]"
-            style={{ aspectRatio: "1475 / 657" }}
-          >
-            <Image
-              src="/assets/wordmark.webp"
-              alt=""
-              fill
-              loading="eager"
-              fetchPriority="high"
-              sizes="(max-width: 767px) 60vw, 26rem"
-              className="object-contain opacity-[0.12]"
-            />
-            <div className="preloader-fill absolute inset-0">
+          <div className="flex flex-col items-center gap-[clamp(1rem,2.6vh,1.6rem)]">
+            {/* the wordmark, filling with ink from the bottom as the page loads */}
+            <div
+              ref={mark}
+              className="relative mx-auto w-[clamp(12rem,36vw,26rem)]"
+              style={{ aspectRatio: "1475 / 657" }}
+            >
               <Image
                 src="/assets/wordmark.webp"
                 alt=""
@@ -411,9 +405,31 @@ export default function PageWipe({
                 loading="eager"
                 fetchPriority="high"
                 sizes="(max-width: 767px) 60vw, 26rem"
-                className="object-contain"
+                className="object-contain opacity-[0.12]"
               />
+              <div className="preloader-fill absolute inset-0">
+                <Image
+                  src="/assets/wordmark.webp"
+                  alt=""
+                  fill
+                  loading="eager"
+                  fetchPriority="high"
+                  sizes="(max-width: 767px) 60vw, 26rem"
+                  className="object-contain"
+                />
+              </div>
             </div>
+            {hint ? (
+              // (the label's own line height is 1, for single lines: this one may wrap, so it sets its own)
+              <p data-bit className="label max-w-[36ch] text-balance text-center text-ink/55" style={{ lineHeight: 1.9 }}>
+                {/* a pair of headphones, drawn in a line */}
+                <svg viewBox="0 0 24 24" aria-hidden="true" className="mr-[0.7em] inline-block h-[1.45em] w-[1.45em] align-[-0.38em]" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 15v-3a8 8 0 0 1 16 0v3" />
+                  <path d="M4 15a2 2 0 0 1 2-2h1v7H6a2 2 0 0 1-2-2zM20 15a2 2 0 0 0-2-2h-1v7h1a2 2 0 0 0 2-2z" />
+                </svg>
+                {hint}
+              </p>
+            ) : null}
           </div>
 
           <div className="flex items-end justify-between gap-6">

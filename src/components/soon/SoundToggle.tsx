@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { prefersReducedMotion, whenOpen } from "@/lib/motion";
-import { setSound, subscribeSound } from "./sound";
+import { isTouch } from "@/lib/tier";
+import { listenForFirstTap, setSound, soundWanted, subscribeSound } from "./sound";
 
 /*
  * The site's own button, the melted slab "Come closer" is made of
@@ -17,24 +18,33 @@ const HOVER =
 
 /**
  * The sound switch, in the bottom corner — the site's lime slab, saying
- * SOUND OFF or SOUND ON, with a little wave of bars that lies flat while it's
- * off and won't keep still while it's on. For a few seconds after the page
- * opens, a note above it says it's worth turning on.
+ * SOUND ON or SOUND OFF, with a little wave of bars that lies flat until
+ * there's sound and won't keep still while there is.
+ *
+ * The sound's on by default, but a browser won't play any before the
+ * visitor's first tap or click — so until then the switch says SOUND ON with
+ * its bars still, and a note above it says so ("tap anywhere for sound") for
+ * a few seconds after the page opens. That first tap anywhere starts it; a
+ * tap on the switch before then starts it too (it already says on), and
+ * once it's playing, the switch turns it off.
  */
 export default function SoundToggle() {
   const [on, setOn] = useState(false);
-  const [hint, setHint] = useState(false);
+  /** the note: how you'd start it here (a tap, or a click), while it's showing */
+  const [hint, setHint] = useState<"tap" | "click" | null>(null);
   const root = useRef<HTMLButtonElement>(null);
   const shape = useRef<SVGPathElement>(null);
   const glow = useRef<HTMLSpanElement>(null);
 
   useEffect(() => subscribeSound(setOn), []);
+  // on, from the first tap anywhere
+  useEffect(() => listenForFirstTap(), []);
 
   useEffect(() => {
     let off = 0;
     const stop = whenOpen(() => {
-      setHint(true);
-      off = window.setTimeout(() => setHint(false), 6500);
+      setHint(isTouch() ? "tap" : "click");
+      off = window.setTimeout(() => setHint(null), 6500);
     });
     return () => {
       stop();
@@ -79,14 +89,15 @@ export default function SoundToggle() {
 
   return (
     <div className="soon-sound">
-      <p className={`soon-sound-hint hand ${hint && !on ? "is-shown" : ""}`} aria-hidden="true">
-        better with sound ↓
+      <p className={`soon-sound-hint hand ${hint && !on && soundWanted() ? "is-shown" : ""}`} aria-hidden="true">
+        {hint ?? "tap"} anywhere for sound
       </p>
       <button
         ref={root}
         type="button"
         onClick={() => {
-          setHint(false);
+          setHint(null);
+          // nothing playing yet (or turned off): start it; playing: stop it
           void setSound(!on);
         }}
         aria-pressed={on}
@@ -109,7 +120,7 @@ export default function SoundToggle() {
             <i />
             <i />
           </span>
-          {on ? "Sound on" : "Sound off"}
+          {on || soundWanted() ? "Sound on" : "Sound off"}
         </span>
       </button>
     </div>

@@ -31,7 +31,7 @@ export const SOON = {
   format: "SOMETHING IS WAKING UP",
 
   /** the loading screen: its corner, and the line across the bottom */
-  preloader: { corner: "SHH.", venue: EVENT.venue, line: "SOMETHING IS WAKING UP" },
+  preloader: { corner: "SHH.", venue: EVENT.venue, line: "SOMETHING IS WAKING UP", hint: "Wear headphones for a better experience" },
 
   hero: {
     facts: [{ text: EVENT.venue }],
