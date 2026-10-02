@@ -8,7 +8,7 @@ import { prefersReducedMotion, useReducedMotion } from "@/lib/motion";
 import { BACK, SOON } from "@/lib/soon";
 import InkEyes from "./InkEyes";
 import { useBacktrack } from "./backtrack";
-import { hold } from "./hold";
+import { hold, inView } from "./hold";
 import { cue, heart } from "./sound";
 import { buzz } from "./troll";
 
@@ -68,15 +68,18 @@ export default function Countdown({ onCarry }: { onCarry: () => void }) {
       start: "top top",
       once: true,
       onEnter: () => {
+        // gone straight past (the menu, a link): it counts, but not out loud
+        const seen = inView(el);
         setCounting(true);
-        buzz(14);
+        if (seen) buzz(14);
         // a heart under the count, quicker each number — then nothing at all
-        heart(1.1);
+        if (seen) heart(1.1);
         t.fakeout.forEach((_, i) => {
           if (!i) return;
           timers.push(
             window.setTimeout(() => {
               setStep(i);
+              if (!seen) return;
               buzz(14);
               heart(1.1 + i * 0.55);
               if (i === t.fakeout.length - 1) timers.push(window.setTimeout(() => cue("inhale", true), 300));

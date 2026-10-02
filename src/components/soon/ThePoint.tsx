@@ -14,11 +14,12 @@ import InkField from "./InkField";
 import { HERO_FIELD } from "@/lib/shapes";
 import { getLenis } from "@/lib/lenis";
 import { prefersReducedMotion } from "@/lib/motion";
+import { isNavActive } from "@/lib/navState";
 import { BACK, SECRETS, SOON, TROLL } from "@/lib/soon";
 import { buzz, shiver, troll } from "./troll";
 import { cue, say } from "./sound";
 import { jumpscare } from "./JumpScare";
-import { hold } from "./hold";
+import { hold, inView, letGo } from "./hold";
 
 /** the ink JUMP lands on */
 const SPLASH = {
@@ -153,6 +154,8 @@ export default function ThePoint() {
               jump.current!.dataset.hopping = "true";
             }, [], 0.55);
           shiver(jump.current, 10);
+          // (gone straight past it — the menu, a link — it happens, but quietly)
+          if (!inView(jump.current)) return;
           buzz(70);
           cue("hit", true);
           troll("jump", TROLL.jump);
@@ -300,19 +303,15 @@ export default function ThePoint() {
             leaning = window.setTimeout(() => {
               if (lean.current?.dataset.close !== "true") return;
               if (!jumpscare("face")) return;
-              // what anyone would say — and then it laughs at you, and says
-              // it as the toast does
-              const said = say("what", 0.4);
-              const laugh = said ? said + 0.1 : 0.9;
-              say("safe", laugh);
-              timers.push(window.setTimeout(() => troll("safe", TROLL.safe), (laugh + 1) * 1000));
+              // and you say it: carried down to WHAT THE—, behind the face
+              timers.push(window.setTimeout(sayIt, 350));
             }, 900);
         },
       });
 
       // WHAT THE— types itself out as you scroll, and gets cut off
       const letters = what.current!.querySelectorAll("[data-letter]");
-      gsap.fromTo(
+      const typing = gsap.fromTo(
         letters,
         { autoAlpha: 0 },
         {
@@ -322,17 +321,32 @@ export default function ThePoint() {
           scrollTrigger: { trigger: what.current, start: "top 82%", end: "top 38%", scrub: 0.3 },
         },
       );
+      let cut = false;
+      const cutOff = () => {
+        if (cut) return;
+        cut = true;
+        what.current!.dataset.slammed = "true";
+        cue("beep", true);
+        timers.push(window.setTimeout(() => shiver(what.current, 7), 150));
+      };
+      /** the face scare brought you here, and it's being said for you */
+      let carried = false;
       ScrollTrigger.create({
         trigger: what.current,
         start: "top 36%",
         once: true,
         onEnter: () => {
-          what.current!.dataset.slammed = "true";
-          cue("beep", true);
+          if (carried) return;
+          // gone straight past it (the menu, a link): cut off, but not out loud
+          if (!inView(what.current)) {
+            cut = true;
+            what.current!.dataset.slammed = "true";
+            return;
+          }
+          cutOff();
           // a fling that ran on well past it is brought back to it
           const top = what.current!.getBoundingClientRect().top;
           hold("what", 1500, top < window.innerHeight * 0.05 ? { to: top + window.scrollY - window.innerHeight * 0.36, glide: 0.35 } : {});
-          timers.push(window.setTimeout(() => shiver(what.current, 7), 150));
         },
       });
       // and back up past it, it's "Language!" — bleeped, and held a moment
@@ -340,6 +354,67 @@ export default function ThePoint() {
         const r = what.current!.getBoundingClientRect();
         return r.top + window.scrollY + r.height / 2 - window.innerHeight / 2;
       };
+      /**
+       * The face scare at "lean in" makes you say it. Behind the face, the
+       * page is carried down to WHAT THE—, and as the face goes, it types
+       * itself out a letter at a time as it's said (with the sound on), and
+       * the bar comes down on "the", bleep and all. Then it laughs at you.
+       * If it can't carry you, it's just said — bleeped — and laughed at.
+       * Opening the menu (or jumping off somewhere) part-way calls the rest
+       * off, and leaves WHAT THE— as it ends, bar and all.
+       */
+      let saying: number[] = [];
+      const sayIt = () => {
+        // (the menu's opened since the face went up: it's not for there)
+        if (isNavActive()) return;
+        letGo("lean");
+        if (!hold("what", 3000, { to: whatAt(), glide: 0.7 })) {
+          const r = lean.current!.getBoundingClientRect();
+          if (r.bottom < 0 || r.top > window.innerHeight) return;
+          const said = say("what");
+          cue("beep", true);
+          const laugh = said ? said + 0.4 : 0.9;
+          say("safe", laugh);
+          timers.push(window.setTimeout(() => troll("safe", TROLL.safe), (laugh + 1) * 1000));
+          return;
+        }
+        carried = true;
+        typing.scrollTrigger?.kill();
+        typing.kill();
+        gsap.set(letters, { autoAlpha: 0 });
+        // as the face goes (it's up for 1.35s, and this is 0.35s in)
+        saying.push(
+          window.setTimeout(() => {
+            const said = say("what");
+            // "What", then "the—", a letter at a time, as they're said
+            [...what.current!.querySelectorAll("h3 > span")].forEach((word, i) =>
+              gsap.to(word.querySelectorAll("[data-letter]"), { autoAlpha: 1, duration: 0.04, stagger: 0.065, delay: i ? 0.35 : 0.04 }),
+            );
+            const end = said ? said - 0.02 : 0.6;
+            saying.push(window.setTimeout(cutOff, end * 1000));
+            // and then it laughs at you, and says it as the toast does
+            const laughs = say("safe", end + 0.5);
+            saying.push(
+              window.setTimeout(() => {
+                saying = [];
+                troll("safe", TROLL.safe);
+              }, (end + (laughs ? 1.5 : 0.8)) * 1000),
+            );
+          }, 1100),
+        );
+      };
+      const leave = () => {
+        if (!saying.length) return;
+        saying.forEach((id) => window.clearTimeout(id));
+        saying = [];
+        gsap.killTweensOf(letters);
+        gsap.set(letters, { autoAlpha: 1 });
+        if (!cut) {
+          cut = true;
+          what.current!.dataset.slammed = "true";
+        }
+      };
+      window.addEventListener("soon:away", leave);
       const tellOff = () =>
         flipped.current.what &&
         hold("what:up", 1500, {
@@ -366,6 +441,8 @@ export default function ThePoint() {
       return () => {
         window.clearTimeout(moving);
         freeze.current?.removeEventListener("pointermove", onMouse);
+        window.removeEventListener("soon:away", leave);
+        saying.forEach((id) => window.clearTimeout(id));
       };
     }, section);
 

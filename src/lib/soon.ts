@@ -119,7 +119,7 @@ export const SOON = {
   /** 04 — what's next */
   notYet: {
     label: "Not yet",
-    /** the line before the big one */
+    /** the line before the big one — it and the heading are one sentence */
     kicker: "When it drops,",
     heading: "You’ll\nknow.",
     body: "Registration isn’t open, and we’re not saying when. This page will change. Keep an eye on it.",
@@ -201,7 +201,8 @@ export const CUTS = {
   dark: ["LIGHTS OFF.", "EYES OPEN.", "SOMETHING’S BREATHING."],
   darkBack: ["LEAVING SO SOON?", "IT FOLLOWED YOU."],
   /** into the end */
-  drop: ["YOU MADE IT.", "MOST DON’T.", "WHEN IT DROPS,"],
+  /** a sentence of its own: the next one ("When it drops, / You'll know.") is the end's */
+  drop: ["YOU MADE IT.", "MOST DON’T."],
   dropBack: ["BACK FOR MORE?"],
 } as const;
 

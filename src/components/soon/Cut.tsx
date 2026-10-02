@@ -72,15 +72,13 @@ function words(line: string) {
  *
  * With the sound on, a line can be said out loud as it comes up (`voices`,
  * one for each of `lines`, and `backVoices` for `back`) — once a visit —
- * and then each gets as long as it takes to say, and is held for. `beats`
- * leaves a longer silence before a line, sound or no sound.
+ * and then each gets as long as it takes to say, and is held for.
  */
 export default function Cut({
   lines,
   back = [],
   voices = [],
   backVoices = [],
-  beats = [],
   presents = false,
 }: {
   lines: readonly string[];
@@ -89,8 +87,6 @@ export default function Cut({
   voices?: readonly (Line | null)[];
   /** and as each of `back` does */
   backVoices?: readonly (Line | null)[];
-  /** extra silence before each of `lines`, in ms — for a line that has to land on its own */
-  beats?: readonly number[];
   /** open on the studio card — "µLearn ASIET presents" — the way a trailer does */
   presents?: boolean;
 }) {
@@ -121,9 +117,8 @@ export default function Cut({
     /**
      * When it all happens, this time through, in ms: when each line comes
      * up, and when the last one's done. With nothing to say, a line every
-     * STEP (and its beat, if it has one); said out loud, each gets as long
-     * as it takes to say. Worked out once a play, so the hold and the lines
-     * agree.
+     * STEP; said out loud, each gets as long as it takes to say. Worked out
+     * once a play, so the hold and the lines agree.
      */
     type Plan = { way: "down" | "up"; at: number[]; end: number };
     let plan: Plan | null = null;
@@ -134,7 +129,6 @@ export default function Cut({
       // on the way down, the studio card comes first
       let t = studio && way === "down" ? PRESENTS : 0;
       const at = rows.map((_, i) => {
-        if (way === "down") t += beats[i] ?? 0;
         const now = t;
         const line = said[i];
         const long = line ? Math.round(lineLength(line) * 1000) : 0;
@@ -257,7 +251,7 @@ export default function Cut({
       st.kill();
       timers.forEach((t) => window.clearTimeout(t));
     };
-  }, [lines, back, voices, backVoices, beats]);
+  }, [lines, back, voices, backVoices]);
 
   return (
     <div ref={room} className="soon-cut-room" data-wait="cut" aria-hidden="true">
