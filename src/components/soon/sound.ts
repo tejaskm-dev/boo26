@@ -1,5 +1,7 @@
 "use client";
 
+import { rich } from "@/lib/tier";
+
 /**
  * The teaser's score, made in the browser — all but a few lines said out
  * loud (`say`), which are small recordings fetched only once the sound's on.
@@ -26,6 +28,12 @@
  * Everything is in D minor, leaning on its C# and G#, and goes through one
  * reverb, so it sounds like one room. All of it stops while the tab is
  * hidden.
+ *
+ * On a phone that can't take the extras (tier.ts) it's the same score made
+ * lighter: a bigger buffer for the sound to be made in, so it never runs
+ * dry and crackles; a shorter room; one voice to each note of the choir
+ * rather than three. And if the phone ever puts the sound to sleep (a call,
+ * the screen going off), the next tap wakes it.
  */
 
 export type Cue =
@@ -50,6 +58,8 @@ export type Cue =
 export type Scene = "none" | "heard" | "room" | "point" | "finale";
 
 let ctx: AudioContext | null = null;
+/** made lighter for a phone that's stretched (see the top) */
+let light = false;
 let master: GainNode | null = null;
 let verb: ConvolverNode | null = null;
 let bed: Bed | null = null;
@@ -154,7 +164,7 @@ function band(c: AudioContext, hz: number, q: number) {
 
 // --- the bed: always there, always moving ------------------------------------
 
-function startBed(c: AudioContext): Bed {
+function startBed(c: AudioContext, light: boolean): Bed {
   // the drone: a low D that never settles, a fifth over it
   const droneFilter = c.createBiquadFilter();
   droneFilter.type = "lowpass";
@@ -190,10 +200,11 @@ function startBed(c: AudioContext): Bed {
   vowelA.connect(choirGain);
   vowelB.connect(choirGain);
   for (const hz of [146.83, 174.61, 220, 329.63]) {
-    for (const dc of [-7, 0, 6]) {
+    // (three voices to a note, a little apart, for a choir; one, a little louder, on a phone that's stretched)
+    for (const dc of light ? [0] : [-7, 0, 6]) {
       const o = osc(c, "sawtooth", cents(hz, dc));
       const g = c.createGain();
-      g.gain.value = 0.02;
+      g.gain.value = light ? 0.034 : 0.02;
       o.connect(g);
       g.connect(vowelA);
       g.connect(vowelB);
@@ -243,7 +254,15 @@ export async function setSound(next: boolean) {
   if (next) {
     const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!Ctor) return;
-    ctx ??= new Ctor();
+    if (!ctx) {
+      light = !rich();
+      try {
+        // a bigger buffer where it's stretched: later by a breath, but it never runs dry
+        ctx = new Ctor(light ? { latencyHint: "playback" } : undefined);
+      } catch {
+        ctx = new Ctor();
+      }
+    }
     await ctx.resume();
     if (!master) {
       const comp = ctx.createDynamicsCompressor();
@@ -257,17 +276,23 @@ export async function setSound(next: boolean) {
       master.gain.value = 0;
       master.connect(comp);
       verb = ctx.createConvolver();
-      verb.buffer = impulse(ctx);
+      verb.buffer = light ? impulse(ctx, 2, 2.2) : impulse(ctx);
       const ret = ctx.createGain();
       ret.gain.value = 0.7;
       verb.connect(ret).connect(master);
-      bed = startBed(ctx);
-      fetchLines(ctx);
+      bed = startBed(ctx, light);
+      void fetchLines(ctx);
       document.addEventListener("visibilitychange", () => {
         if (!ctx) return;
         if (document.hidden) void ctx.suspend();
         else if (on) void ctx.resume();
       });
+      // put to sleep by the phone (a call, the screen off) and not woken by
+      // coming back: the next tap does it
+      const wake = () => {
+        if (on && ctx && ctx.state !== "running" && !document.hidden) void ctx.resume();
+      };
+      for (const type of ["pointerup", "touchend", "keydown"] as const) window.addEventListener(type, wake, { capture: true, passive: true });
     }
     master.gain.setTargetAtTime(0.8, ctx.currentTime, 1.2);
     on = true;
@@ -487,18 +512,31 @@ let talkingUntil = 0;
 /** what's being said, or about to be: so it can all be stopped */
 const saying = new Set<{ src: AudioBufferSourceNode; fade: GainNode }>();
 
-function fetchLines(c: AudioContext) {
+/** fetched all at once, but unpacked one at a time, in page order — so the score never stutters for them */
+async function fetchLines(c: AudioContext) {
   if (fetched) return;
   fetched = true;
-  for (const line of Object.keys(LINES) as Line[]) {
+  const lines = Object.keys(LINES) as Line[];
+  const data = lines.map((line) =>
     fetch(`/sounds/${line}.m4a`)
-      .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(`${r.status}`))))
-      .then((data) => c.decodeAudioData(data))
-      .then((clip) => clips.set(line, clip))
-      .catch(() => {
-        // that line just goes unsaid
-      });
+      .then((r) => (r.ok ? r.arrayBuffer() : null))
+      .catch(() => null),
+  );
+  for (let i = 0; i < lines.length; i++) {
+    const raw = await data[i];
+    if (!raw) continue;
+    try {
+      clips.set(lines[i], await c.decodeAudioData(raw));
+    } catch {
+      // that line just goes unsaid
+    }
   }
+}
+
+/** how long after it's played a sound is actually heard, in seconds (more where the buffer's bigger) */
+export function audioLag(): number {
+  if (!ctx) return 0;
+  return (ctx.baseLatency || 0) + ((ctx as AudioContext & { outputLatency?: number }).outputLatency || 0);
 }
 
 /** how long `say(line)` would take if it were said now, in seconds — 0 if it wouldn't be */

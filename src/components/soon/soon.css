@@ -914,6 +914,24 @@ html[data-js="true"] .soon-room[data-torch] .soon-shade {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
+  will-change: opacity;
+}
+
+/* on a phone the black comes and goes on its own clock once the scroll says
+   so (Cut.tsx): a fade the compositor runs however busy the page is —
+   scrubbed from script, a busy phone left it half up, and late */
+.soon-cut[data-fade="clock"] {
+  transition:
+    opacity 0.5s ease,
+    visibility 0s linear 0.5s;
+}
+
+.soon-cut[data-fade="clock"][data-shown="true"] {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 0.32s ease,
+    visibility 0s;
 }
 
 /* film: grain that crawls, and a projector that can't hold its light */
@@ -1029,10 +1047,12 @@ html[data-js="true"] .soon-room[data-torch] .soon-shade {
   color: var(--color-bone);
   font-size: clamp(1.9rem, 6.2vw, 4.8rem);
   line-height: 1;
+  /* (not the colour: the last line turns lime as it comes up, while its
+     letters are still falling in — eased, that repainted every one of them
+     every frame) */
   transition:
     opacity 0.6s ease,
-    scale 0.8s var(--ease-out-soft),
-    color 0.5s ease;
+    scale 0.8s var(--ease-out-soft);
 }
 
 .soon-goo-w {
@@ -1049,18 +1069,51 @@ html[data-js="true"] .soon-room[data-torch] .soon-shade {
 
 .soon-goo[data-on="true"] .soon-goo-l {
   opacity: 1;
-  animation: soon-goo 0.75s cubic-bezier(0.2, 0.9, 0.3, 1.15) both;
+  /* backwards, not both: once a letter's landed it lets its animation go,
+     and with it its own layer — a card's worth of them, held for nothing */
+  animation: soon-goo 0.75s cubic-bezier(0.2, 0.9, 0.3, 1.15) backwards;
   animation-delay: calc(var(--i) * 0.045s);
 }
 
 /* transforms and opacity only: a blur on every letter as it fell was a
    repaint of every letter, every frame, all the way down */
+/* five tilts, written out: a custom property in the keyframes keeps the
+   animation off the compositor, and on a phone a card's worth of letters
+   falling on the main thread was dropped frames */
 @keyframes soon-goo {
-  0% { opacity: 0; translate: 0 -0.8em; scale: 0.82 1.35; rotate: var(--r); }
-  55% { opacity: 1; translate: 0 0.06em; scale: 1.12 0.84; rotate: calc(var(--r) * -0.4); }
+  0% { opacity: 0; translate: 0 -0.8em; scale: 0.82 1.35; rotate: 0deg; }
+  55% { opacity: 1; translate: 0 0.06em; scale: 1.12 0.84; rotate: 0deg; }
   78% { translate: 0 -0.03em; scale: 0.96 1.05; rotate: 0deg; }
   100% { opacity: 1; translate: 0 0; scale: 1 1; rotate: 0deg; }
 }
+@keyframes soon-goo-1 {
+  0% { opacity: 0; translate: 0 -0.8em; scale: 0.82 1.35; rotate: -4deg; }
+  55% { opacity: 1; translate: 0 0.06em; scale: 1.12 0.84; rotate: 1.6deg; }
+  78% { translate: 0 -0.03em; scale: 0.96 1.05; rotate: 0deg; }
+  100% { opacity: 1; translate: 0 0; scale: 1 1; rotate: 0deg; }
+}
+@keyframes soon-goo-2 {
+  0% { opacity: 0; translate: 0 -0.8em; scale: 0.82 1.35; rotate: -2deg; }
+  55% { opacity: 1; translate: 0 0.06em; scale: 1.12 0.84; rotate: 0.8deg; }
+  78% { translate: 0 -0.03em; scale: 0.96 1.05; rotate: 0deg; }
+  100% { opacity: 1; translate: 0 0; scale: 1 1; rotate: 0deg; }
+}
+@keyframes soon-goo-3 {
+  0% { opacity: 0; translate: 0 -0.8em; scale: 0.82 1.35; rotate: 2deg; }
+  55% { opacity: 1; translate: 0 0.06em; scale: 1.12 0.84; rotate: -0.8deg; }
+  78% { translate: 0 -0.03em; scale: 0.96 1.05; rotate: 0deg; }
+  100% { opacity: 1; translate: 0 0; scale: 1 1; rotate: 0deg; }
+}
+@keyframes soon-goo-4 {
+  0% { opacity: 0; translate: 0 -0.8em; scale: 0.82 1.35; rotate: 4deg; }
+  55% { opacity: 1; translate: 0 0.06em; scale: 1.12 0.84; rotate: -1.6deg; }
+  78% { translate: 0 -0.03em; scale: 0.96 1.05; rotate: 0deg; }
+  100% { opacity: 1; translate: 0 0; scale: 1 1; rotate: 0deg; }
+}
+.soon-goo[data-on="true"] .soon-goo-l[data-tilt="1"] { animation-name: soon-goo-1; }
+.soon-goo[data-on="true"] .soon-goo-l[data-tilt="2"] { animation-name: soon-goo-2; }
+.soon-goo[data-on="true"] .soon-goo-l[data-tilt="3"] { animation-name: soon-goo-3; }
+.soon-goo[data-on="true"] .soon-goo-l[data-tilt="4"] { animation-name: soon-goo-4; }
 
 /* the ones before it step back */
 .soon-goo[data-past="true"] {
@@ -1789,6 +1842,14 @@ section[data-awake="true"] .soon-inkeyes:not([data-shut="true"]) svg {
   transition:
     transform 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) var(--d, 0s),
     opacity 0.2s ease var(--d, 0s);
+}
+
+/* round a title card's frame they open a moment after the black comes up:
+   their layers are made with the black, not in the middle of them opening —
+   and so are the letters', so a line starting to fall in adds none */
+.soon-cut[data-on="true"] .soon-inkeyes svg,
+.soon-cut[data-on="true"] .soon-goo-l {
+  will-change: transform, opacity;
 }
 
 /* too close, and they're gone */

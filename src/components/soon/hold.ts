@@ -23,6 +23,9 @@ import { isNavActive, subscribeNavActive } from "@/lib/navState";
  * is how the eyes in the corner (Waiting.tsx) know how long you're waiting,
  * and which way you were going.
  *
+ * Nor while the visitor's flicking back and forth: within a moment of them
+ * turning round, nothing catches them (it can on the next pass).
+ *
  * And the menu always wins. Opening it, or jumping the page anywhere (a
  * link, the scrollbar's rail), lets go of any hold there and then — without
  * starting the scroll again under the open menu, which does that itself as
@@ -49,6 +52,10 @@ const done = new Set<string>();
 // can skip a native scroll event and report no movement at all.
 let stepFrom = 0;
 let stepTo = 0;
+// and when the visitor last changed direction (their scrolling, not a hold's
+// own easing): flicking back and forth isn't someone to catch
+let lastWay = 0;
+let turnedAt = -Infinity;
 if (typeof window !== "undefined") {
   stepFrom = stepTo = window.scrollY;
   window.addEventListener(
@@ -56,6 +63,11 @@ if (typeof window !== "undefined") {
     () => {
       stepFrom = stepTo;
       stepTo = window.scrollY;
+      const way = Math.sign(stepTo - stepFrom);
+      if (way && !current) {
+        if (lastWay && way !== lastWay) turnedAt = performance.now();
+        lastWay = way;
+      }
     },
     { passive: true },
   );
@@ -90,6 +102,12 @@ export type HoldOptions = {
   /** ease here first: a scroll position, or an element to bring to the top */
   to?: number | HTMLElement;
   offset?: number;
+  /**
+   * Or, instead of a spot: the stretch of page it's fine to be held anywhere
+   * in. Only if the page comes to rest outside it is it eased back — and
+   * only as far as the nearer end.
+   */
+  range?: [number, number];
   /** how long the ease takes, in seconds */
   glide?: number;
   /** once it's still */
@@ -102,6 +120,8 @@ export type HoldOptions = {
 
 export function hold(key: string, ms: number, opts: HoldOptions = {}): boolean {
   if (done.has(key) || current || prefersReducedMotion() || isNavActive()) return false;
+  // just turned round: they're scrubbing back and forth, not arriving
+  if (performance.now() - turnedAt < 450) return false;
   const lenis = getLenis();
   const way = opts.way ?? "down";
   if (!lenis || (way === "down" ? lenis.direction < 0 : lenis.direction >= 0)) return false;
@@ -142,11 +162,19 @@ export function hold(key: string, ms: number, opts: HoldOptions = {}): boolean {
     // On a phone the fling runs on the compositor, which only learns the
     // page has stopped once this frame is drawn — and the frame a scene
     // starts in is a busy one (a slam, a sound, a heading), so a fast
-    // fling can carry on a few hundred pixels before it does. Bring the
-    // page back to where it was caught, or the moment is held off screen.
+    // fling can carry on a few hundred pixels before it does. Where it came
+    // to rest is fine if the moment's still well on screen: a little past
+    // where it caught you (or anywhere in the stretch it was given). Only
+    // further than that is it eased back, and only as far as it has to be —
+    // easing it all the way back every time was the lock looking jittery.
     if (released || opts.to !== undefined) return;
     afterLift(() => {
-      if (!released && Math.abs(window.scrollY - at) > 24) lenis.scrollTo(at, { duration: 0.35, easing: ease, force: true, lock: true });
+      if (released) return;
+      const y = window.scrollY;
+      const slack = Math.min(window.innerHeight * 0.18, 160);
+      const [lo, hi] = opts.range ?? [at - slack, at + slack];
+      const rest = Math.min(hi, Math.max(lo, y));
+      if (Math.abs(rest - y) > 4) lenis.scrollTo(rest, { duration: 0.35, easing: ease, force: true, lock: true });
     });
   });
   const onKey = (e: KeyboardEvent) => {

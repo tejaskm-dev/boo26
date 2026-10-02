@@ -17,7 +17,7 @@ import { prefersReducedMotion } from "@/lib/motion";
 import { isNavActive } from "@/lib/navState";
 import { BACK, SECRETS, SOON, TROLL } from "@/lib/soon";
 import { buzz, shiver, troll } from "./troll";
-import { cue, say } from "./sound";
+import { audioLag, cue, say } from "./sound";
 import { jumpscare } from "./JumpScare";
 import { hold, inView, letGo } from "./hold";
 
@@ -322,11 +322,11 @@ export default function ThePoint() {
         },
       );
       let cut = false;
-      const cutOff = () => {
+      const cutOff = (bleep = true) => {
         if (cut) return;
         cut = true;
         what.current!.dataset.slammed = "true";
-        cue("beep", true);
+        if (bleep) cue("beep", true);
         timers.push(window.setTimeout(() => shiver(what.current, 7), 150));
       };
       /** the face scare brought you here, and it's being said for you */
@@ -386,12 +386,17 @@ export default function ThePoint() {
         saying.push(
           window.setTimeout(() => {
             const said = say("what");
+            // (heard a touch after it's played, where the sound's buffer is
+            // bigger: what's seen waits for what's heard)
+            const lag = said ? audioLag() : 0;
             // "What", then "the—", a letter at a time, as they're said
             [...what.current!.querySelectorAll("h3 > span")].forEach((word, i) =>
-              gsap.to(word.querySelectorAll("[data-letter]"), { autoAlpha: 1, duration: 0.04, stagger: 0.065, delay: i ? 0.35 : 0.04 }),
+              gsap.to(word.querySelectorAll("[data-letter]"), { autoAlpha: 1, duration: 0.04, stagger: 0.065, delay: (i ? 0.35 : 0.04) + lag }),
             );
             const end = said ? said - 0.02 : 0.6;
-            saying.push(window.setTimeout(cutOff, end * 1000));
+            // the bleep on the end of the line, in the sound's own time; the bar as it's heard
+            if (said) saying.push(window.setTimeout(() => cue("beep", true), end * 1000));
+            saying.push(window.setTimeout(() => cutOff(!said), (end + lag) * 1000));
             // and then it laughs at you, and says it as the toast does
             const laughs = say("safe", end + 0.5);
             saying.push(
