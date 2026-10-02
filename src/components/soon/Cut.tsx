@@ -21,8 +21,13 @@ const DARK_EYES: { at: string; tilt: number }[] = [
 
 /** how long each line has before the next comes up, in ms */
 const STEP = 950;
-/** how long the studio card has before the first line, in ms */
-const PRESENTS = 1500;
+/**
+ * The studio card, like the top of a trailer: it comes up, holds, goes
+ * — all the way to black — and only then the first line. In ms: when it
+ * starts to go, and when the first line comes up out of the black.
+ */
+const PRESENTS_OUT = 1500;
+const PRESENTS = 2350;
 
 /** which letters of a line run, how far, and when */
 function drips(line: string, i: number) {
@@ -87,7 +92,7 @@ export default function Cut({
     gsap.registerPlugin(ScrollTrigger);
     const down = [...cardEl.querySelectorAll<HTMLElement>("[data-row]")];
     const up = [...cardEl.querySelectorAll<HTMLElement>("[data-row-back]")];
-    const studio = cardEl.querySelector<HTMLElement>("[data-presents]");
+    const studio = veilEl.querySelector<HTMLElement>("[data-presents]");
     // on the way down, the studio card comes first
     const lead = studio ? PRESENTS : 0;
     let timers: number[] = [];
@@ -106,11 +111,12 @@ export default function Cut({
       const rows = way === "down" ? down : up;
       const wait = way === "down" ? lead : 0;
       if (studio && way === "down") {
-        // the studio's logo comes up out of the dark, opens its eyes, and steps back for the first line
+        // the studio's logo comes up out of the dark, opens its eyes, holds,
+        // and goes — a beat of black — before the first line
         studio.dataset.on = "true";
         cue("toll");
         timers.push(window.setTimeout(() => (studio.dataset.muOpen = "true"), 550));
-        timers.push(window.setTimeout(() => (studio.dataset.past = "true"), wait));
+        timers.push(window.setTimeout(() => (studio.dataset.gone = "true"), PRESENTS_OUT));
       }
       rows.forEach((row, i) => {
         timers.push(
@@ -118,7 +124,8 @@ export default function Cut({
             if (!row.isConnected) return;
             row.dataset.on = "true";
             if (i > 0) rows[i - 1].dataset.past = "true";
-            if (i === 0 && !(studio && way === "down")) cue("toll");
+            // after the studio card, the cold open comes in on a whisper
+            if (i === 0) cue(studio && way === "down" ? "whisper" : "toll");
           }, wait + i * STEP),
         );
       });
@@ -133,7 +140,7 @@ export default function Cut({
       }
       if (studio) {
         studio.dataset.on = "false";
-        studio.dataset.past = "false";
+        studio.dataset.gone = "false";
         studio.dataset.muOpen = "false";
       }
     };
@@ -212,13 +219,14 @@ export default function Cut({
             <InkEyes key={i} className={e.at} tilt={e.tilt} blink={4 + i} delay={i * 0.12} />
           ))}
         </div>
+        {/* the studio card: its own shot, in the middle of the black */}
+        {presents ? (
+          <div data-presents data-on="false" data-gone="false" className="soon-presents">
+            <MuLearn alive={false} className="w-[min(64vw,24rem)]" />
+            <span className="label soon-presents-word">{MU.presents}</span>
+          </div>
+        ) : null}
         <div ref={card} className="soon-cut-card" data-way="down">
-          {presents ? (
-            <div data-presents data-on="false" data-past="false" className="soon-presents">
-              <MuLearn alive={false} className="w-[min(64vw,24rem)]" />
-              <span className="label soon-presents-word">{MU.presents}</span>
-            </div>
-          ) : null}
           {[
             ...lines.map((line, k) => ({ line, attr: "data-row", last: k === lines.length - 1 })),
             ...back.map((line, k) => ({ line, attr: "data-row-back", last: k === back.length - 1 })),

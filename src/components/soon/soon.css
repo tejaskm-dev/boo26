@@ -976,26 +976,27 @@ html[data-js="true"] .soon-room[data-torch] .soon-shade {
   display: block;
 }
 
-/* the studio card, before the first line of the first cut: µLearn ASIET
-   presents. It comes up out of the dark slowly, opens its eyes, and steps
-   back for the line — only on the way down. */
+/* the studio card, before the first cut's lines: µLearn ASIET presents.
+   Its own shot, the way a trailer opens — up out of the black, a slow push
+   in while its eyes open, then gone, all the way to black, before the
+   first line comes up in the same place. Only on the way down. */
 .soon-presents {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: clamp(0.55rem, 1.8vh, 1rem);
-  margin-bottom: clamp(0.8rem, 3vh, 2rem);
+  pointer-events: none;
   opacity: 0;
   translate: 0 0.7rem;
   scale: 0.94;
   transition:
     opacity 1s ease,
     translate 1.3s var(--ease-out-soft),
-    scale 1.3s var(--ease-out-soft);
-}
-
-.soon-cut-card[data-way="up"] .soon-presents {
-  display: none;
+    scale 2.2s var(--ease-out-soft);
 }
 
 .soon-presents[data-on="true"] {
@@ -1004,11 +1005,13 @@ html[data-js="true"] .soon-room[data-torch] .soon-shade {
   scale: 1;
 }
 
-.soon-presents[data-past="true"] {
-  opacity: 0.3;
-  translate: 0 -0.4rem;
-  scale: 0.6;
-  transition-duration: 0.7s;
+/* and it goes — still moving in as it fades — before the first line */
+.soon-presents[data-on="true"][data-gone="true"] {
+  opacity: 0;
+  scale: 1.035;
+  transition:
+    opacity 0.6s ease-in,
+    scale 0.9s ease-in;
 }
 
 .soon-presents-word {
