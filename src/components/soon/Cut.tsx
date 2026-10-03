@@ -208,6 +208,12 @@ export default function Cut({
     let shown = false;
     let early = 0;
     let gone = 0;
+    /**
+     * Where the black let go on the way back up — and how far up you've been
+     * since: it stays down until you come back down past that (null: it
+     * goes by the lines alone).
+     */
+    let leftUp: number | null = null;
     const show = (on: boolean, way: "down" | "up" = "down") => {
       if (on === shown) return;
       shown = on;
@@ -244,7 +250,21 @@ export default function Cut({
         const top = self.start + vh * 1.3;
         const bottom = self.end + vh * 0.6;
         const y = self.scroll();
-        show(shown ? y > top - vh * 1.12 && y < bottom - vh * 0.74 : y > top - vh * 1.06 && y < bottom - vh * 0.8, self.direction < 0 ? "up" : "down");
+        const goingUp = self.direction < 0;
+        // On the way back up, once it's had its say (none of its holds has
+        // the page), the black goes as the act above comes back into view —
+        // as, on the way down, it goes as the next act's words are coming.
+        // Left to the far line, it stayed up for a whole screen of swiping
+        // after the card was done: black, with its line still on it, however
+        // far you went — it looked stuck. Gone, it stays gone until you turn
+        // and come back down past where you turned (or out of the top).
+        if (leftUp !== null) {
+          leftUp = Math.min(leftUp, y);
+          if (y > leftUp + vh * 0.06 || y < top - vh * 1.12) leftUp = null;
+        }
+        if (leftUp === null && shown && goingUp && !mine && y < top - vh * 0.26) leftUp = y;
+        const within = shown ? y > top - vh * 1.12 && y < bottom - vh * 0.74 : y > top - vh * 1.06 && y < bottom - vh * 0.8;
+        show(leftUp === null && within, goingUp ? "up" : "down");
       },
     });
     const st = ScrollTrigger.create({
@@ -265,7 +285,10 @@ export default function Cut({
         lastP = p;
         // dark in, hold, dark out
         if (!touch) veilEl.style.opacity = String(Math.max(0, Math.min(1, p / 0.18, (1 - p) / 0.22)));
-        if (!breathed && p > 0.06) {
+        // (on a phone, nothing starts once its black has let go on the way
+        // back up: it's over, and it isn't to be heard again from behind it)
+        const black = !touch || shown;
+        if (!breathed && p > 0.06 && black) {
           breathed = true;
           cue("inhale");
         }
@@ -315,7 +338,7 @@ export default function Cut({
           if (holdFor(goingUp ? "up" : "down", true)) play(goingUp ? "up" : "down");
           return;
         }
-        if (!playing && p > 0.2 && p < 0.8) play(goingUp && up.length ? "up" : "down");
+        if (!playing && p > 0.2 && p < 0.8 && black) play(goingUp && up.length ? "up" : "down");
         // (on a phone, with the black still up from before: before the
         // stretch too, straight away — the black never went, so nor do they)
         if (touch && shown && !playing && (goingUp ? p >= 0.8 : p <= 0.2)) play(goingUp && up.length ? "up" : "down");
