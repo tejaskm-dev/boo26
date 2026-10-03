@@ -139,10 +139,14 @@ export default function Countdown({ onCarry }: { onCarry: () => void }) {
   const count = back ? 0 : t.fakeout.length - shown;
   const done = relaxed || still || back;
 
+  // The screen it holds is the whole screen with the toolbars away (100vh, on
+  // a phone): the edges darken right to the bottom whatever the toolbar's
+  // doing. A screen with them out (svh) left a pale strip under the dark
+  // while they were away.
   return (
-    <div ref={room} data-countdown className="relative h-[125svh]">
+    <div ref={room} data-countdown className="relative h-[calc(100vh+25svh)]">
       <div
-        className="soon-countdown sticky top-0 grid h-[100svh] place-items-center overflow-hidden px-[var(--edge)] text-center"
+        className="soon-countdown sticky top-0 grid h-screen place-items-center overflow-hidden px-[var(--edge)] text-center"
         data-step={still ? t.fakeout.length - 1 : counting && !back ? step : -1}
         data-relaxed={done ? "true" : "false"}
       >

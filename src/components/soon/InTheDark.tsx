@@ -19,6 +19,7 @@ import { getLenis } from "@/lib/lenis";
 import { prefersReducedMotion } from "@/lib/motion";
 import { isNavActive } from "@/lib/navState";
 import { subscribePointer } from "@/lib/pointer";
+import { onResize } from "@/lib/viewport";
 import { CUTS, SECRETS, SOON, TROLL } from "@/lib/soon";
 import { answer, buzz, shiver, troll } from "./troll";
 
@@ -551,7 +552,8 @@ export default function InTheDark() {
     measure();
     const ro = new ResizeObserver(() => measure());
     ro.observe(run);
-    window.addEventListener("resize", measure);
+    // (not for a phone's toolbars sliding about: nothing in here moves for them)
+    const stopResize = onResize(measure);
     ScrollTrigger.addEventListener("refresh", measure);
     gsap.ticker.add(tick);
     if (!fine) gsap.ticker.add(sweep);
@@ -564,7 +566,7 @@ export default function InTheDark() {
       unsub();
       io.disconnect();
       ro.disconnect();
-      window.removeEventListener("resize", measure);
+      stopResize();
       ScrollTrigger.removeEventListener("refresh", measure);
       if (lenis) lenis.off("scroll", onScroll);
       else window.removeEventListener("scroll", onScroll);

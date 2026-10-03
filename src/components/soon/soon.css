@@ -1847,9 +1847,12 @@ section[data-awake="true"] .soon-inkeyes:not([data-shut="true"]) svg {
 
 .soon-critters-canvas {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
   width: 100%;
-  height: 100%;
+  /* the screen with the toolbars away (Critters.tsx): it covers the screen
+     however far they're out, and needn't change as they move */
+  height: 100vh;
 }
 
 /* ------------------------------------------------------------ the loops
