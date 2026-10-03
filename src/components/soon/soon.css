@@ -825,9 +825,12 @@ html[data-js="true"] .soon-room[data-torch] .soon-shade {
 }
 
 /* ------------------------------------------------------- the last shot
-   (NotYet) Held on screen for a while, like the room. */
+   (NotYet) Held on screen a little while. The shot plays out on its own
+   clock, held for (hold.ts), so the page only has to keep it there long
+   enough to read the ask: held for longer, it was screens of scrolling
+   with nothing changing. */
 .soon-drop-runway {
-  height: max(240svh, 70rem);
+  height: max(150svh, 52rem);
 }
 
 @media (prefers-reduced-motion: reduce) {

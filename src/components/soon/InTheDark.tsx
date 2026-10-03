@@ -428,6 +428,20 @@ export default function InTheDark() {
       if (dive > 0.97 && !through) {
         through = true;
         cue("thud");
+        // Out the other side, into the light, on the way down: carried on to
+        // the countdown. Left to the scroll, it was the light — a whole screen
+        // of it, empty — scrolled off by hand before the next act showed. Just
+        // short of it, then over the line, so the countdown's own hold has it.
+        const next = document.querySelector<HTMLElement>("[data-countdown]");
+        if (next && (getLenis()?.direction ?? 0) > 0) {
+          const at = () => next.getBoundingClientRect().top + scrollY();
+          hold("room-out", 0, {
+            to: at() - 2,
+            glide: 0.9,
+            easing: (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2),
+            onRelease: () => !isNavActive() && getLenis()?.scrollTo(at() + 2, { immediate: true, force: true }),
+          });
+        }
       } else if (dive < 0.5) through = false;
     };
     const lenis = getLenis();

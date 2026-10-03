@@ -140,7 +140,7 @@ export default function Countdown({ onCarry }: { onCarry: () => void }) {
   const done = relaxed || still || back;
 
   return (
-    <div ref={room} className="relative h-[125svh]">
+    <div ref={room} data-countdown className="relative h-[125svh]">
       <div
         className="soon-countdown sticky top-0 grid h-[100svh] place-items-center overflow-hidden px-[var(--edge)] text-center"
         data-step={still ? t.fakeout.length - 1 : counting && !back ? step : -1}
