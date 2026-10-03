@@ -36,10 +36,11 @@ import { isNavActive, subscribeNavActive } from "@/lib/navState";
  * out on its own clock (and whatever was being said) can stop, and leave
  * itself finished rather than half done. Nothing's held while it's open.
  *
- * Held means Lenis stopped (wheel and touch swallowed) and the scrolling
- * keys ignored. Whatever was already moving the page — a fling's momentum on
- * a phone — is stopped dead first, for two frames, so the ease to the right
- * spot never has to fight it. A wheel, a trackpad or the keys move the page
+ * Held means Lenis stopped (wheel and touch swallowed), the scrolling keys
+ * ignored, and the page locked from <body> (never <html>: any change there
+ * restyles the whole document). Whatever was already moving the page — a
+ * fling's momentum on a phone — is stopped dead with it, so the ease to the
+ * right spot never has to fight it. A wheel, a trackpad or the keys move the page
  * on Lenis's own glide instead, which a hold can simply take over: the page
  * carries on as it was going and comes to rest, rather than stopping dead
  * and lurching on into place.
@@ -174,15 +175,17 @@ export function hold(key: string, ms: number, opts: HoldOptions = {}): boolean {
   current = slot;
   let released = false;
   const timers: number[] = [];
-  const root = document.documentElement;
+  const body = document.body;
   // where a wheel's glide was taking the page, and how fast it was going
   // (stopping forgets both)
   const headed = lenis.targetScroll;
   const going = speed();
   const wheel = !touched;
-  // stop whatever's moving the page, momentum and all
+  // stop whatever's moving the page, momentum and all — from <body>: any
+  // change to <html> restyles the whole document, a dropped frame just as
+  // the moment lands
   lenis.stop();
-  root.classList.add("soon-halt");
+  body.dataset.held = "true";
   // where it caught you: stopping just synced Lenis with the page (a phone's
   // own scrolling can leave it behind), so this is the real position
   const at = lenis.scroll;
@@ -220,7 +223,6 @@ export function hold(key: string, ms: number, opts: HoldOptions = {}): boolean {
     window.addEventListener("touchcancel", up, { passive: true });
   };
   twoFrames(() => {
-    root.classList.remove("soon-halt");
     // On a phone the fling runs on the compositor, which only learns the
     // page has stopped once this frame is drawn — and the frame a scene
     // starts in is a busy one (a slam, a sound, a heading), so a fast
@@ -250,7 +252,7 @@ export function hold(key: string, ms: number, opts: HoldOptions = {}): boolean {
     document.removeEventListener("visibilitychange", onHide);
     window.removeEventListener("keydown", onKey);
     for (const type of PUSHES) window.removeEventListener(type, onPush);
-    root.classList.remove("soon-halt");
+    delete body.dataset.held;
     // (the menu's open: it starts the scroll again itself, as it shuts)
     if (!isNavActive()) lenis.start();
     if (current === slot) current = null;
