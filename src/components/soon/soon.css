@@ -848,6 +848,14 @@ html[data-js="true"] .soon-room[data-torch] .soon-shade {
   height: max(125svh, 46rem);
 }
 
+/* on a phone it's a moment at the seam, not a stretch of page (Cut.tsx): a
+   gap between the acts, and the card comes up over the seam itself */
+@media (hover: none) and (pointer: coarse) {
+  .soon-cut-room {
+    height: clamp(2.5rem, 8svh, 4.5rem);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .soon-cut-room {
     display: none;

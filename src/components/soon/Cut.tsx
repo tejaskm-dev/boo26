@@ -57,7 +57,8 @@ function words(line: string) {
 }
 
 /**
- * A cut between acts — a scene of its own, a screen and a bit long.
+ * A cut between acts — a scene of its own, a screen and a bit long (on a
+ * phone, a moment at the seam between them: see below).
  *
  * The picture fades to black; the film flickers; eyes open round the edge
  * of the frame; and the lines come up one at a time in the BOO! brush, each
@@ -116,6 +117,13 @@ export default function Cut({
     let caughtUp = false;
     /** one of its holds has the page (easing it back, or holding it) */
     let mine = false;
+    /**
+     * The studio card's been seen through, this visit. It's the top of the
+     * trailer, once: come down through again (nothing holds you then) and
+     * the lines come straight up, so they're seen and said, not scrolled
+     * past while the logo's still up.
+     */
+    let opened = false;
     /** where the last update had it (or which end it was left by): a step through it, or clean past it? */
     let lastP = -1;
 
@@ -131,8 +139,8 @@ export default function Cut({
       if (plan?.way === way) return plan;
       const rows = way === "down" ? down : up;
       const said = way === "down" ? voices : backVoices;
-      // on the way down, the studio card comes first
-      let t = studio && way === "down" ? PRESENTS : 0;
+      // on the way down, the studio card comes first (the first time)
+      let t = studio && way === "down" && !opened ? PRESENTS : 0;
       const at = rows.map((_, i) => {
         const now = t;
         const line = said[i];
@@ -156,7 +164,8 @@ export default function Cut({
       const rows = way === "down" ? down : up;
       const said = way === "down" ? voices : backVoices;
       const { at } = planFor(way);
-      if (studio && way === "down") {
+      const opening = studio && way === "down" && !opened;
+      if (opening) {
         // the studio's logo comes up out of the dark, opens its eyes, holds,
         // and goes — a beat of black — before the first line
         studio.dataset.on = "true";
@@ -170,6 +179,7 @@ export default function Cut({
             if (!row.isConnected) return;
             row.dataset.on = "true";
             if (i > 0) rows[i - 1].dataset.past = "true";
+            if (opening) opened = true;
             const line = said[i];
             const spoken = line ? say(line) > 0 : false;
             // after the studio card, the cold open comes in on a whisper (or
@@ -196,78 +206,158 @@ export default function Cut({
       }
     };
 
-    // The black. With a mouse or a trackpad it follows the scroll, darker
-    // the further in. On a phone the page scrolls on its own thread and the
-    // script hears about it late, so following it left the black half up and
-    // behind: there the scroll only says when — up just before the card's
-    // stretch of page reaches the screen, down as the next act's words are
-    // coming, with some give either way so going back and forth across the
-    // line can't make it flicker — and the fade is the browser's own
-    // (soon.css), on the compositor.
-    const touch = isTouch();
-    veilEl.dataset.fade = touch ? "clock" : "scroll";
-    let shown = false;
-    let early = 0;
-    let gone = 0;
-    /**
-     * Where the black let go on the way back up — and how far up you've been
-     * since: it stays down until you come back down past that (null: it
-     * goes by the lines alone).
-     */
-    let leftUp: number | null = null;
-    const show = (on: boolean, way: "down" | "up" = "down") => {
-      if (on === shown) return;
-      shown = on;
-      veilEl.dataset.shown = on ? "true" : "false";
-      // its film (grain, flicker, the eyes' blinks) runs only while it's up
-      veilEl.dataset.on = on ? "true" : "false";
-      // and what's behind the black rests while it's up
-      curtain(on);
-      // On a phone the black is up before the card's stretch of page even
-      // starts, so the card starts as soon as it is: waiting for a fifth of
-      // the way in was half a screen of black with nothing on it, and a
-      // scroll that came to rest there looked like the card had broken.
-      window.clearTimeout(early);
-      window.clearTimeout(gone);
-      if (on && touch) early = window.setTimeout(() => shown && !playing && play(way === "up" && up.length ? "up" : "down"), 250);
-      // and there it's the black that says it's over: once it's all the way
-      // gone, it's ready to play again — never while it's still up with its
-      // lines taken off it
-      if (!on && touch)
-        gone = window.setTimeout(() => {
-          if (shown || mine) return;
-          reset();
-          breathed = false;
-        }, 560);
-    };
-    const dark = ScrollTrigger.create({
-      trigger: el,
-      start: "top 130%",
-      end: "bottom 60%",
-      onToggle: ({ isActive }) => !isActive && show(false),
-      onUpdate: (self) => {
-        if (!touch) return;
-        const vh = window.innerHeight;
-        const top = self.start + vh * 1.3;
-        const bottom = self.end + vh * 0.6;
-        const y = self.scroll();
-        const goingUp = self.direction < 0;
-        // On the way back up, once it's had its say (none of its holds has
-        // the page), the black goes as the act above comes back into view —
-        // as, on the way down, it goes as the next act's words are coming.
-        // Left to the far line, it stayed up for a whole screen of swiping
-        // after the card was done: black, with its line still on it, however
-        // far you went — it looked stuck. Gone, it stays gone until you turn
-        // and come back down past where you turned (or out of the top).
-        if (leftUp !== null) {
-          leftUp = Math.min(leftUp, y);
-          if (y > leftUp + vh * 0.06 || y < top - vh * 1.12) leftUp = null;
+    const key = (way: "down" | "up") => (way === "up" ? `cut-up:${lines.join("|")}` : `cut:${lines.join("|")}`);
+    /** how long it's held once its last line is up, in ms: that line's own moment to be read */
+    const tail = (way: "down" | "up") => (way === "up" ? 600 : 700);
+
+    // On a phone the card is a moment at the seam between two acts, not a
+    // stretch of page. Scrolled through, it was a screen and a half of
+    // swiping in the dark — most of it after the card had said its piece —
+    // and its black came up a whole screen early, over the end of the act
+    // before, which went unseen (01's file, 03's "Make them look twice").
+    // Now its page is barely a gap (soon.css), the black comes up as the
+    // seam reaches the middle of the screen, whichever way you're going, and
+    // the page is held still for exactly as long as the card takes. The
+    // moment it's said its piece the black goes, wherever you are, and you
+    // carry on from the seam. The page scrolls on its own thread there and
+    // the script hears about it late, so nothing here follows the scroll:
+    // it only says when, and the fade is the browser's own, on the
+    // compositor (soon.css).
+    if (isTouch()) {
+      veilEl.dataset.fade = "clock";
+      let shown = false;
+      let early = 0;
+      let gone = 0;
+      let done = 0;
+      /** played out at this seam: its black has gone, and stays gone until you've left the seam */
+      let over = false;
+      /** the page being measured again (the phone turned round): it moves under you, and that's no fling */
+      let refreshing = false;
+      const show = (on: boolean) => {
+        if (on === shown) return;
+        shown = on;
+        veilEl.dataset.shown = on ? "true" : "false";
+        // its film (grain, flicker, the eyes' blinks) runs only while it's up
+        veilEl.dataset.on = on ? "true" : "false";
+        // and what's behind the black rests while it's up
+        curtain(on);
+        window.clearTimeout(gone);
+        // once it's all the way gone, it's ready to play again — never while
+        // it's still up with its lines taken off it
+        if (!on)
+          gone = window.setTimeout(() => {
+            if (shown || mine) return;
+            reset();
+          }, 560);
+      };
+      /** off the seam: the black goes, and it's ready to play again */
+      const leave = () => {
+        window.clearTimeout(early);
+        window.clearTimeout(done);
+        over = false;
+        show(false);
+      };
+      /** the card, from the top: the black, the lines, and the hold while they're said */
+      const begin = (way: "down" | "up", band: ScrollTrigger, past = false) => {
+        if (over) return;
+        const w = way === "up" && up.length ? "up" : "down";
+        // (back on it a moment after leaving it, before it had reset: worked out again)
+        if (playing) plan = null;
+        // a beat for the black to come up, the lines, and the last one's moment
+        const ms = 250 + planFor(w).end + tail(w);
+        const from = performance.now();
+        const finish = () => {
+          window.clearTimeout(done);
+          over = true;
+          show(false);
+        };
+        // held while it plays, once a visit each way: anywhere in the first
+        // part of the seam's stretch, eased back to it only if a fling ran on
+        // past
+        let held = false;
+        if (w === "up" ? !caughtUp : !caught) {
+          const into = (f: number) => (w === "down" ? band.start + (band.end - band.start) * f : band.end - (band.end - band.start) * f);
+          const [a, b] = [into(0.04), into(0.6)];
+          // (brought back, its time starts once it's there: the card's already going)
+          held = hold(key(w), past ? ms - 600 : ms, {
+            ...(past ? { to: into(0.3), glide: 0.6 } : { range: [Math.min(a, b), Math.max(a, b)] as [number, number] }),
+            way: w,
+            tail: tail(w),
+            onRelease: () => {
+              mine = false;
+              // let go in its last moment (you moved on): so does the black
+              if (performance.now() - from >= ms - tail(w) - 50) finish();
+              // and let go off the seam (the menu took the page, say): it's been left
+              if (!band.isActive) leave();
+            },
+          });
+          if (held) {
+            mine = true;
+            if (w === "up") caughtUp = true;
+            else caught = true;
+          }
         }
-        if (leftUp === null && shown && goingUp && !mine && y < top - vh * 0.26) leftUp = y;
-        const within = shown ? y > top - vh * 1.12 && y < bottom - vh * 0.74 : y > top - vh * 1.06 && y < bottom - vh * 0.8;
-        show(leftUp === null && within, goingUp ? "up" : "down");
-      },
-    });
+        // flung clean past it in one frame, it's brought back for it — and if
+        // it can't be (a jump, the menu), it's simply left behind
+        if (past && !held) return;
+        // (back on it a moment after leaving it, before it had reset: from the top)
+        if (playing) {
+          window.clearTimeout(gone);
+          reset();
+        }
+        show(true);
+        cue("inhale");
+        window.clearTimeout(early);
+        window.clearTimeout(done);
+        early = window.setTimeout(() => shown && !playing && play(w), 250);
+        done = window.setTimeout(finish, ms);
+      };
+      // the seam crossing the middle of the screen: down past 64% of the way
+      // down it, up past 30% — the same stretch, from either end
+      const seam = ScrollTrigger.create({
+        trigger: el,
+        start: "center 64%",
+        end: "center 30%",
+        // (while its hold has the page, the page is only ever on its way back
+        // to the seam: a fling that ran on out of it before it stopped, or
+        // the ease bringing it back in, is neither leaving it nor arriving —
+        // and coming back in from below isn't coming up through it)
+        onToggle: (self) => mine || (self.isActive ? begin(self.direction < 0 ? "up" : "down", self) : leave()),
+        onUpdate: (self) => {
+          const p = self.progress;
+          const was = lastP;
+          lastP = p;
+          // a fling (a slow phone, a busy moment) that went clean past the
+          // seam in one frame still gets the card: the hold brings it back
+          // for it. A jump (a link) isn't held, and is simply left behind —
+          // and nor is the page moving under you (the phone turned round)
+          if (self.isActive || was < 0 || mine || refreshing) return;
+          if (was <= 0 && p >= 1 && !caught) begin("down", self, true);
+          else if (was >= 1 && p <= 0 && !caughtUp && up.length) begin("up", self, true);
+        },
+        onRefreshInit: () => {
+          refreshing = true;
+        },
+        // which side of it the page is on from the start: the first fling
+        // clean past it is the one that matters most
+        onRefresh: (self) => {
+          refreshing = false;
+          lastP = self.progress;
+        },
+      });
+      return () => {
+        window.clearTimeout(early);
+        window.clearTimeout(gone);
+        window.clearTimeout(done);
+        if (shown) curtain(false);
+        seam.kill();
+        timers.forEach((t) => window.clearTimeout(t));
+      };
+    }
+
+    // With a mouse or a trackpad the black follows the scroll, darker the
+    // further in, and the card is a stretch of page of its own.
+    veilEl.dataset.fade = "scroll";
     const st = ScrollTrigger.create({
       trigger: el,
       start: "top 85%",
@@ -276,7 +366,6 @@ export default function Cut({
       onToggle: (self) => {
         const { isActive } = self;
         if (!isActive) lastP = self.progress >= 0.5 ? 1 : 0;
-        if (touch) return;
         veilEl.style.visibility = isActive ? "visible" : "hidden";
         veilEl.dataset.on = isActive ? "true" : "false";
       },
@@ -285,11 +374,8 @@ export default function Cut({
         const was = lastP < 0 ? (self.direction < 0 ? 1 : 0) : lastP;
         lastP = p;
         // dark in, hold, dark out
-        if (!touch) veilEl.style.opacity = String(Math.max(0, Math.min(1, p / 0.18, (1 - p) / 0.22)));
-        // (on a phone, nothing starts once its black has let go on the way
-        // back up: it's over, and it isn't to be heard again from behind it)
-        const black = !touch || shown;
-        if (!breathed && p > 0.06 && black) {
+        veilEl.style.opacity = String(Math.max(0, Math.min(1, p / 0.18, (1 - p) / 0.22)));
+        if (!breathed && p > 0.06) {
           breathed = true;
           cue("inhale");
         }
@@ -308,15 +394,15 @@ export default function Cut({
         const holdFor = (way: "down" | "up", past = false) => {
           const at = way === "up" ? 0.64 : 0.36;
           const stretch: [number, number] = way === "up" ? [0.38, 0.74] : [0.26, 0.62];
-          // for what's left of it: on a phone it can be playing already, from
-          // when the black came up — and once it's all been said, not at all
+          // for what's left of it — and once it's all been said, not at all
           const left = playing === way ? planFor(way).end - (performance.now() - playedAt) : planFor(way).end;
           if (left < 400) return false;
-          const ok = hold(way === "up" ? `cut-up:${lines.join("|")}` : `cut:${lines.join("|")}`, left + (way === "up" ? 600 : 700), {
+          const ok = hold(key(way), left + tail(way), {
             ...(past
               ? { to: self.start + range * at, glide: 0.7 }
               : { range: [self.start + range * stretch[0], self.start + range * stretch[1]] as [number, number] }),
             way,
+            tail: tail(way),
             onRelease: () => (mine = false),
           });
           if (!ok) {
@@ -339,28 +425,20 @@ export default function Cut({
           if (holdFor(goingUp ? "up" : "down", true)) play(goingUp ? "up" : "down");
           return;
         }
-        if (!playing && p > 0.2 && p < 0.8 && black) play(goingUp && up.length ? "up" : "down");
-        // (on a phone, with the black still up from before: before the
-        // stretch too, straight away — the black never went, so nor do they)
-        if (touch && shown && !playing && (goingUp ? p >= 0.8 : p <= 0.2)) play(goingUp && up.length ? "up" : "down");
+        if (!playing && p > 0.2 && p < 0.8) play(goingUp && up.length ? "up" : "down");
         // caught while it's playing, in the stretch it plays in — not on the
         // way out of it, which would only ease the page back again
         if (playing === "down" && p > 0.2 && p < 0.8 && !caught) holdFor("down");
         if (playing === "up" && p > 0.2 && p < 0.8 && !caughtUp) holdFor("up");
-        // left behind, either way: ready to play again (on the way out of
-        // it only; on a phone, once its black has gone — see show())
-        if (!touch && (goingUp ? p < 0.08 : p > 0.96)) {
+        // left behind, either way: ready to play again (on the way out of it only)
+        if (goingUp ? p < 0.08 : p > 0.96) {
           reset();
           breathed = false;
         }
       },
     });
     return () => {
-      window.clearTimeout(early);
-      window.clearTimeout(gone);
-      if (shown) curtain(false);
       st.kill();
-      dark.kill();
       timers.forEach((t) => window.clearTimeout(t));
     };
   }, [lines, back, voices, backVoices]);
