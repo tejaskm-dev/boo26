@@ -514,10 +514,17 @@ const LINES: Record<Line, { level: number; wet: number; pan?: number }> = {
 
 const clips = new Map<Line, AudioBuffer>();
 let fetched = false;
-const spoken = new Set<Line>();
+/**
+ * How long after it's finished before a line can be said again, in seconds:
+ * long enough that a card played again straight away can't stutter it,
+ * short enough that every time you come back to one, you hear it.
+ */
+const AGAIN = 3;
+/** when each line was last done being said, on the sound's own clock */
+const lastSaid = new Map<Line, number>();
 let talkingUntil = 0;
 /** what's being said, or about to be: so it can all be stopped */
-const saying = new Set<{ src: AudioBufferSourceNode; fade: GainNode }>();
+const saying = new Set<{ line: Line; src: AudioBufferSourceNode; fade: GainNode }>();
 /** a line that gives way to anything else said over it (the hello), while it lasts */
 let giving: { src: AudioBufferSourceNode; fade: GainNode; until: number } | null = null;
 
@@ -550,6 +557,9 @@ async function fetchLines(c: AudioContext) {
   }
 }
 
+/** said not long ago, and still too recently to say again */
+const resting = (line: Line) => !!ctx && ctx.currentTime < (lastSaid.get(line) ?? -Infinity) + AGAIN;
+
 /** how long after it's played a sound is actually heard, in seconds (more where the buffer's bigger) */
 export function audioLag(): number {
   if (!ctx) return 0;
@@ -558,22 +568,23 @@ export function audioLag(): number {
 
 /** how long `say(line)` would take if it were said now, in seconds — 0 if it wouldn't be */
 export function lineLength(line: Line): number {
-  if (!on || !ctx || ctx.state !== "running" || spoken.has(line)) return 0;
+  if (!on || !ctx || ctx.state !== "running" || resting(line)) return 0;
   return clips.get(line)?.duration ?? 0;
 }
 
 /**
- * Says one of the lines, `delay` seconds from now: once a visit, never over
- * another line (one that's just finishing, it waits for), and only with the
- * sound on and the menu not up (shutting is fine: that's the page arriving
- * where it was sent). Returns how long from now until it's said, in seconds,
- * so a moment can land on the end of it — or 0, if it isn't going to be.
- * A line that `gives` way is cut short (quickly faded) by anything said
- * over it, rather than making that wait: the hello, which mustn't cost the
- * first card its voice.
+ * Says one of the lines, `delay` seconds from now: every time its moment
+ * comes round (a card played again, a joke set off again) — though never
+ * twice in a breath — never over another line (one that's just finishing,
+ * it waits for), and only with the sound on and the menu not up (shutting
+ * is fine: that's the page arriving where it was sent). Returns how long
+ * from now until it's said, in seconds, so a moment can land on the end of
+ * it — or 0, if it isn't going to be. A line that `gives` way is cut short
+ * (quickly faded) by anything said over it, rather than making that wait:
+ * the hello, which mustn't cost the first card its voice.
  */
 export function say(line: Line, delay = 0, { gives = false }: { gives?: boolean } = {}): number {
-  if (!on || !ctx || !master || ctx.state !== "running" || spoken.has(line)) return 0;
+  if (!on || !ctx || !master || ctx.state !== "running" || resting(line)) return 0;
   const menu = document.documentElement.dataset.nav;
   if (menu === "opening" || menu === "open") return 0;
   const clip = clips.get(line);
@@ -596,7 +607,7 @@ export function say(line: Line, delay = 0, { gives = false }: { gives?: boolean 
     if (talkingUntil - t > 0.6) return 0;
     t = talkingUntil + 0.06;
   }
-  spoken.add(line);
+  lastSaid.set(line, t + clip.duration);
   talkingUntil = t + clip.duration;
   const { level, wet, pan = 0 } = LINES[line];
   const src = ctx.createBufferSource();
@@ -605,7 +616,7 @@ export function say(line: Line, delay = 0, { gives = false }: { gives?: boolean 
   side.pan.value = pan;
   const fade = ctx.createGain();
   src.connect(side).connect(fade).connect(bus(ctx, level, wet));
-  const it = { src, fade };
+  const it = { line, src, fade };
   saying.add(it);
   if (gives) giving = { src, fade, until: t + clip.duration };
   src.onended = () => {
@@ -625,11 +636,12 @@ export function say(line: Line, delay = 0, { gives = false }: { gives?: boolean 
 /**
  * Stops whatever's being said, and whatever's about to be — the visitor's
  * taken the page somewhere else (the menu, a link), so it's not for there.
+ * Cut off, it can be said again as soon as its moment comes back.
  */
 export function hush() {
   if (!ctx) return;
   const t = ctx.currentTime;
-  for (const { src, fade } of saying) {
+  for (const { line, src, fade } of saying) {
     fade.gain.cancelScheduledValues(t);
     fade.gain.setTargetAtTime(0, t, 0.03);
     try {
@@ -637,6 +649,7 @@ export function hush() {
     } catch {
       // already stopped
     }
+    lastSaid.delete(line);
   }
   saying.clear();
   giving = null;

@@ -73,8 +73,9 @@ function words(line: string) {
  * there's no cut.
  *
  * With the sound on, a line can be said out loud as it comes up (`voices`,
- * one for each of `lines`, and `backVoices` for `back`) — once a visit —
- * and then each gets as long as it takes to say, and is held for.
+ * one for each of `lines`, and `backVoices` for `back`) — every time it
+ * does, not just the first — and then each gets as long as it takes to say,
+ * and is held for.
  */
 export default function Cut({
   lines,
