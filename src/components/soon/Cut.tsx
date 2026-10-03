@@ -143,9 +143,12 @@ export default function Cut({
       return plan;
     };
 
+    /** when this play started: a hold that catches it later holds only for what's left */
+    let playedAt = 0;
     const play = (way: "down" | "up") => {
       if (playing) return;
       playing = way;
+      playedAt = performance.now();
       cardEl.dataset.way = way;
       // eyes open round the frame for as long as it plays
       eyesEl.dataset.look = "true";
@@ -203,7 +206,9 @@ export default function Cut({
     const touch = isTouch();
     veilEl.dataset.fade = touch ? "clock" : "scroll";
     let shown = false;
-    const show = (on: boolean) => {
+    let early = 0;
+    let gone = 0;
+    const show = (on: boolean, way: "down" | "up" = "down") => {
       if (on === shown) return;
       shown = on;
       veilEl.dataset.shown = on ? "true" : "false";
@@ -211,6 +216,22 @@ export default function Cut({
       veilEl.dataset.on = on ? "true" : "false";
       // and what's behind the black rests while it's up
       curtain(on);
+      // On a phone the black is up before the card's stretch of page even
+      // starts, so the card starts as soon as it is: waiting for a fifth of
+      // the way in was half a screen of black with nothing on it, and a
+      // scroll that came to rest there looked like the card had broken.
+      window.clearTimeout(early);
+      window.clearTimeout(gone);
+      if (on && touch) early = window.setTimeout(() => shown && !playing && play(way === "up" && up.length ? "up" : "down"), 250);
+      // and there it's the black that says it's over: once it's all the way
+      // gone, it's ready to play again — never while it's still up with its
+      // lines taken off it
+      if (!on && touch)
+        gone = window.setTimeout(() => {
+          if (shown || mine) return;
+          reset();
+          breathed = false;
+        }, 560);
     };
     const dark = ScrollTrigger.create({
       trigger: el,
@@ -223,7 +244,7 @@ export default function Cut({
         const top = self.start + vh * 1.3;
         const bottom = self.end + vh * 0.6;
         const y = self.scroll();
-        show(shown ? y > top - vh * 1.12 && y < bottom - vh * 0.74 : y > top - vh * 1.06 && y < bottom - vh * 0.8);
+        show(shown ? y > top - vh * 1.12 && y < bottom - vh * 0.74 : y > top - vh * 1.06 && y < bottom - vh * 0.8, self.direction < 0 ? "up" : "down");
       },
     });
     const st = ScrollTrigger.create({
@@ -263,7 +284,11 @@ export default function Cut({
         const holdFor = (way: "down" | "up", past = false) => {
           const at = way === "up" ? 0.64 : 0.36;
           const stretch: [number, number] = way === "up" ? [0.38, 0.74] : [0.26, 0.62];
-          const ok = hold(way === "up" ? `cut-up:${lines.join("|")}` : `cut:${lines.join("|")}`, planFor(way).end + (way === "up" ? 600 : 700), {
+          // for what's left of it: on a phone it can be playing already, from
+          // when the black came up — and once it's all been said, not at all
+          const left = playing === way ? planFor(way).end - (performance.now() - playedAt) : planFor(way).end;
+          if (left < 400) return false;
+          const ok = hold(way === "up" ? `cut-up:${lines.join("|")}` : `cut:${lines.join("|")}`, left + (way === "up" ? 600 : 700), {
             ...(past
               ? { to: self.start + range * at, glide: 0.7 }
               : { range: [self.start + range * stretch[0], self.start + range * stretch[1]] as [number, number] }),
@@ -291,18 +316,24 @@ export default function Cut({
           return;
         }
         if (!playing && p > 0.2 && p < 0.8) play(goingUp && up.length ? "up" : "down");
+        // (on a phone, with the black still up from before: before the
+        // stretch too, straight away — the black never went, so nor do they)
+        if (touch && shown && !playing && (goingUp ? p >= 0.8 : p <= 0.2)) play(goingUp && up.length ? "up" : "down");
         // caught while it's playing, in the stretch it plays in — not on the
         // way out of it, which would only ease the page back again
         if (playing === "down" && p > 0.2 && p < 0.8 && !caught) holdFor("down");
         if (playing === "up" && p > 0.2 && p < 0.8 && !caughtUp) holdFor("up");
-        // left behind, either way: ready to play again
-        if (p < 0.08 || p > 0.96) {
+        // left behind, either way: ready to play again (on the way out of
+        // it only; on a phone, once its black has gone — see show())
+        if (!touch && (goingUp ? p < 0.08 : p > 0.96)) {
           reset();
           breathed = false;
         }
       },
     });
     return () => {
+      window.clearTimeout(early);
+      window.clearTimeout(gone);
       if (shown) curtain(false);
       st.kill();
       dark.kill();

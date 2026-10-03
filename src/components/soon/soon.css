@@ -621,6 +621,23 @@ html[data-js="true"] .soon-room[data-torch] .soon-shade {
   pointer-events: none;
 }
 
+/* and the rest of the room's eyes go with them: zoomed off past the edges
+   in a moment anyway, and every pair's glow blurred again at every new size
+   was the dive's lag, both ways through it */
+.soon-room .soon-cover-over .soon-inkeyes {
+  transition:
+    opacity 0.25s ease,
+    visibility 0s linear 0s;
+}
+
+.soon-room[data-dive="true"] .soon-cover-over .soon-inkeyes {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.25s ease,
+    visibility 0s linear 0.25s;
+}
+
 /* the torch you can hold — phones and touch laptops only */
 .soon-handle-rail {
   display: none;
