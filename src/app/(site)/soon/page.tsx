@@ -15,6 +15,8 @@ import SoundStage from "@/components/soon/SoundStage";
 import Peeker from "@/components/soon/Peeker";
 import Dread from "@/components/soon/Dread";
 import ScrollHealth from "@/components/soon/ScrollHealth";
+import Anchors from "@/components/soon/Anchors";
+import { FROM_THE_TOP } from "@/components/soon/top";
 import Awake from "@/components/soon/Awake";
 import Waiting from "@/components/soon/Waiting";
 import MuLearn from "@/components/soon/MuLearn";
@@ -51,6 +53,8 @@ export default function SoonPage() {
 
   return (
     <>
+      {/* before any of it is drawn: a reload starts at the top, never put back down the page (top.ts) */}
+      <script dangerouslySetInnerHTML={{ __html: FROM_THE_TOP }} />
       <EyeGlow />
       <SoonChrome />
       <main className="relative overflow-x-clip">
@@ -71,6 +75,7 @@ export default function SoonPage() {
       <Peeker />
       <Dread />
       <ScrollHealth />
+      <Anchors />
       {/* the hero is the full site's: this marks it awake, so its loops rest off screen */}
       <Awake target="#top" />
       {/* for anyone reading the source */}
