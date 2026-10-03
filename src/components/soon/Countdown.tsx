@@ -98,7 +98,8 @@ export default function Countdown({ onCarry }: { onCarry: () => void }) {
         // held right where it is; only a long overshoot is eased back.
         const over = window.scrollY - (el.getBoundingClientRect().top + window.scrollY);
         const back = over > window.innerHeight * 0.2 ? { to: el, glide: 0.35 } : {};
-        if (!hold("countdown", calm + 1300, { ...back, onRelease: () => carry.current() })) {
+        // (once "relax." is up, the rest of it is for reading it: move on in it and you're carried on)
+        if (!hold("countdown", calm + 1300, { ...back, tail: 1300, onRelease: () => carry.current() })) {
           // not held (you were going the other way): carry you on only if you're still watching
           timers.push(
             window.setTimeout(() => {
@@ -118,6 +119,7 @@ export default function Countdown({ onCarry }: { onCarry: () => void }) {
         to: el,
         glide: 0.4,
         way: "up",
+        tail: 1100,
         onHeld: () => {
           buzz(14);
           heart(1.5);

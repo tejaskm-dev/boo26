@@ -222,7 +222,7 @@ export default function InTheDark() {
       if (awake) return;
       awake = true;
       // stay and watch it happen
-      hold("room-wake", 2400);
+      hold("room-wake", 2400, { tail: 700 });
       setWoke(true);
       el.dataset.cat = "awake";
       overEl.dataset.look = "true";
@@ -378,13 +378,15 @@ export default function InTheDark() {
       // slides in or out, a swipe that starts on the handle has to scroll
       const docked = Math.abs(stageTop()) < window.innerHeight * 0.04 ? "true" : "false";
       if (el.dataset.docked !== docked) el.dataset.docked = docked;
-      if (p > 0.03) hold("room-in", 2700);
+      // (its first look comes a moment in: after that, only standing in it)
+      if (p > 0.03) hold("room-in", 2700, { tail: 1300 });
       // back up into it once it's awake: it's watching the way you came, and
       // it holds you there a moment, growling. A fling up straight through
       // it is brought back to the middle of the room for it.
       if (awake && returned && p < 0.62) {
         hold("room:up", 2400, {
           way: "up",
+          tail: 1200,
           ...(p < 0.05 ? { to: runTop + (runH - stageH) * 0.5, glide: 0.6 } : {}),
           onHeld: () => cue("growl"),
         });

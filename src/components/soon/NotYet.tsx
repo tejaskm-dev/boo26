@@ -174,7 +174,8 @@ export default function NotYet() {
         const drop = gone + 1.15;
         const know = drop + 0.75;
         const done = know + 1.2;
-        if (!hold("drop", Math.round((done + 0.6) * 1000))) return;
+        // (once "You'll know." has landed, the rest is for reading it)
+        if (!hold("drop", Math.round((done + 0.6) * 1000), { tail: Math.round((done - know + 0.6) * 1000) })) return;
         begun = true;
         steps = [
           ...wrappers.map((w, i) => gsap.delayedCall(0.15 + (i / wrappers.length) * (gone - 0.2), () => (w.dataset.look = "true"))),
@@ -212,6 +213,7 @@ export default function NotYet() {
       const knowing = (to?: number) =>
         hold("drop:up", 2400, {
           way: "up",
+          tail: 1200,
           ...(to !== undefined ? { to, glide: 0.6 } : {}),
           onHeld: () => {
             glitch(title.current, "tear");
