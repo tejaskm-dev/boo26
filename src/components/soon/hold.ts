@@ -15,8 +15,11 @@ import { isNavActive, subscribeNavActive } from "@/lib/navState";
  * section moves the page screens at once, and that's somewhere to go, not
  * a scroll through. It can ease the page to the right spot first. It
  * always lets go: after its time, the moment the tab is hidden, and — if
- * anything ever went wrong — a few seconds after that. With motion turned
- * down nothing is ever held.
+ * anything ever went wrong — a few seconds after that. A hold is only ever
+ * as long as its moment: whatever it keeps after the moment's last beat is
+ * there to take it in (`tail`), and trying to move on in it — a swipe, a
+ * scroll, a key — lets go there and then. With motion turned down nothing
+ * is ever held.
  *
  * Every hold says so on window as "soon:hold" — `{ key, held: true, ms,
  * way }` once it's still, `{ key, held: false, way }` as it lets go — which
@@ -33,10 +36,11 @@ import { isNavActive, subscribeNavActive } from "@/lib/navState";
  * out on its own clock (and whatever was being said) can stop, and leave
  * itself finished rather than half done. Nothing's held while it's open.
  *
- * Held means Lenis stopped (wheel and touch swallowed) and the scrolling
- * keys ignored. Whatever was already moving the page — a fling's momentum on
- * a phone — is stopped dead first, for two frames, so the ease to the right
- * spot never has to fight it. A wheel, a trackpad or the keys move the page
+ * Held means Lenis stopped (wheel and touch swallowed), the scrolling keys
+ * ignored, and the page locked from <body> (never <html>: any change there
+ * restyles the whole document). Whatever was already moving the page — a
+ * fling's momentum on a phone — is stopped dead with it, so the ease to the
+ * right spot never has to fight it. A wheel, a trackpad or the keys move the page
  * on Lenis's own glide instead, which a hold can simply take over: the page
  * carries on as it was going and comes to rest, rather than stopping dead
  * and lurching on into place.
@@ -44,6 +48,12 @@ import { isNavActive, subscribeNavActive } from "@/lib/navState";
 
 /** the keys that scroll a page */
 const KEYS = new Set(["ArrowDown", "ArrowUp", "PageDown", "PageUp", "Home", "End", " ", "Spacebar"]);
+/**
+ * And everything that's someone trying to. A finger coming down counts: let
+ * go then, before the swipe's first move, and that swipe takes the page —
+ * once its first move has been refused, a phone won't scroll for any of it.
+ */
+const PUSHES = ["wheel", "touchstart", "touchmove", "keydown"] as const;
 const twoFrames = (fn: () => void) => requestAnimationFrame(() => requestAnimationFrame(fn));
 
 let current: { key: string; release: () => void } | null = null;
@@ -142,6 +152,12 @@ export type HoldOptions = {
   onRelease?: () => void;
   /** the way you have to be going for it to catch you: down, unless it says */
   way?: "down" | "up";
+  /**
+   * The last this many ms of it are only for taking in what's just happened
+   * — the moment itself is over. Scroll (or swipe, or press a key) in them
+   * and it lets go there and then: you've seen it, and you want to move on.
+   */
+  tail?: number;
 };
 
 export function hold(key: string, ms: number, opts: HoldOptions = {}): boolean {
@@ -159,15 +175,17 @@ export function hold(key: string, ms: number, opts: HoldOptions = {}): boolean {
   current = slot;
   let released = false;
   const timers: number[] = [];
-  const root = document.documentElement;
+  const body = document.body;
   // where a wheel's glide was taking the page, and how fast it was going
   // (stopping forgets both)
   const headed = lenis.targetScroll;
   const going = speed();
   const wheel = !touched;
-  // stop whatever's moving the page, momentum and all
+  // stop whatever's moving the page, momentum and all — from <body>: any
+  // change to <html> restyles the whole document, a dropped frame just as
+  // the moment lands
   lenis.stop();
-  root.classList.add("soon-halt");
+  body.dataset.held = "true";
   // where it caught you: stopping just synced Lenis with the page (a phone's
   // own scrolling can leave it behind), so this is the real position
   const at = lenis.scroll;
@@ -205,7 +223,6 @@ export function hold(key: string, ms: number, opts: HoldOptions = {}): boolean {
     window.addEventListener("touchcancel", up, { passive: true });
   };
   twoFrames(() => {
-    root.classList.remove("soon-halt");
     // On a phone the fling runs on the compositor, which only learns the
     // page has stopped once this frame is drawn — and the frame a scene
     // starts in is a busy one (a slam, a sound, a heading), so a fast
@@ -234,7 +251,8 @@ export function hold(key: string, ms: number, opts: HoldOptions = {}): boolean {
     timers.forEach((t) => window.clearTimeout(t));
     document.removeEventListener("visibilitychange", onHide);
     window.removeEventListener("keydown", onKey);
-    root.classList.remove("soon-halt");
+    for (const type of PUSHES) window.removeEventListener(type, onPush);
+    delete body.dataset.held;
     // (the menu's open: it starts the scroll again itself, as it shuts)
     if (!isNavActive()) lenis.start();
     if (current === slot) current = null;
@@ -246,12 +264,22 @@ export function hold(key: string, ms: number, opts: HoldOptions = {}): boolean {
   };
   document.addEventListener("visibilitychange", onHide);
   let held = false;
+  // its last stretch, for taking it in: a push there is someone moving on
+  let resting = Infinity;
+  const onPush = (e: Event) => {
+    if (performance.now() < resting) return;
+    if (e instanceof KeyboardEvent && !KEYS.has(e.key)) return;
+    if (e instanceof WheelEvent && Math.abs(e.deltaY) < 4) return;
+    release();
+  };
+  if (opts.tail) for (const type of PUSHES) window.addEventListener(type, onPush, { passive: true });
   const still = () => {
     if (released || held) return;
     held = true;
     window.dispatchEvent(new CustomEvent("soon:hold", { detail: { key, held: true, ms, way } }));
     opts.onHeld?.();
     timers.push(window.setTimeout(release, ms));
+    if (opts.tail) resting = performance.now() + Math.max(0, ms - opts.tail);
   };
   if (opts.to !== undefined) {
     const to = opts.to;

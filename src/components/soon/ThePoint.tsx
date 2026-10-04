@@ -110,7 +110,9 @@ export default function ThePoint() {
           // and you say it: carried down to WHAT THE—, behind the face
           timers.push(window.setTimeout(sayIt, 350));
         };
+        // (the face comes a moment after it's leaned in: past that, it's only waiting)
         const leaned = hold("lean", 2500, {
+          tail: 1400,
           to: leanAt(),
           glide: 2.6,
           easing: (x: number) => -(Math.cos(Math.PI * x) - 1) / 2,
@@ -157,11 +159,11 @@ export default function ThePoint() {
         start: "top 40%",
         end: "bottom 60%",
         // flung clean past it in one frame: brought back to lean in after all
-        onLeave: () => hold("lean", 2500, { to: leanAt(), glide: 0.6 }),
+        onLeave: () => hold("lean", 2500, { to: leanAt(), glide: 0.6, tail: 1400 }),
         // back up to it, and it says "lean out." — held for that, and brought
         // back for it if the way up went straight past
-        onEnterBack: () => flipped.current.lean && hold("lean:up", 1600, { to: leanAt(), glide: 0.5, way: "up" }),
-        onLeaveBack: () => flipped.current.lean && hold("lean:up", 1600, { to: leanAt(), glide: 0.6, way: "up" }),
+        onEnterBack: () => flipped.current.lean && hold("lean:up", 1600, { to: leanAt(), glide: 0.5, way: "up", tail: 900 }),
+        onLeaveBack: () => flipped.current.lean && hold("lean:up", 1600, { to: leanAt(), glide: 0.6, way: "up", tail: 900 }),
         onToggle: ({ isActive, direction }) => {
           lean.current!.dataset.close = isActive ? "true" : "false";
           lean.current!.dataset.look = isActive ? "true" : "false";
@@ -215,7 +217,7 @@ export default function ThePoint() {
           cutOff();
           // a fling that ran on well past it is brought back to it
           const top = what.current!.getBoundingClientRect().top;
-          hold("what", 1500, top < window.innerHeight * 0.05 ? { to: top + window.scrollY - window.innerHeight * 0.36, glide: 0.35 } : {});
+          hold("what", 1500, { tail: 800, ...(top < window.innerHeight * 0.05 ? { to: top + window.scrollY - window.innerHeight * 0.36, glide: 0.35 } : {}) });
         },
       });
       // and back up past it, it's "Language!" — bleeped, and held a moment
@@ -237,7 +239,7 @@ export default function ThePoint() {
         // (the menu's opened since the face went up: it's not for there)
         if (isNavActive()) return;
         letGo("lean");
-        if (!hold("what", 3000, { to: whatAt(), glide: 0.7 })) {
+        if (!hold("what", 3000, { to: whatAt(), glide: 0.7, tail: 700 })) {
           const r = lean.current!.getBoundingClientRect();
           if (r.bottom < 0 || r.top > window.innerHeight) return;
           const said = say("what");
@@ -295,6 +297,7 @@ export default function ThePoint() {
       const tellOff = () =>
         flipped.current.what &&
         hold("what:up", 1500, {
+          tail: 800,
           to: whatAt(),
           glide: 0.4,
           way: "up",
