@@ -1204,20 +1204,21 @@ html[data-js="true"] .soon-room[data-torch] .soon-shade {
 }
 
 .soon-goo[data-on="true"] .soon-drip[data-drop] .soon-drip-stem {
-  animation: soon-drip-run-long 2.6s linear var(--d) backwards;
+  animation: soon-drip-run-long 2.2s linear var(--d) backwards;
 }
 
 .soon-goo[data-on="true"] .soon-drip[data-drop] .soon-drip-run {
-  animation: soon-drip-carry-long 2.6s linear var(--d) backwards;
+  animation: soon-drip-carry-long 2.2s linear var(--d) backwards;
 }
 
 .soon-goo[data-on="true"] .soon-drip[data-drop] .soon-drip-bead {
-  animation: soon-drip-gather 1.6s ease-out var(--d) backwards;
+  animation: soon-drip-gather 1.3s ease-out var(--d) backwards;
 }
 
-/* lets go 1.87s in, when the neck's at its longest (72% of 2.6s) */
+/* lets go 1.45s in, when the neck's at its longest (66% of 2.2s): on a
+   phone, the last line's drop goes as its card does */
 .soon-goo[data-on="true"] .soon-drip-drop {
-  animation: soon-drip-let-go 1.5s linear calc(var(--d) + 1.3s) backwards;
+  animation: soon-drip-let-go 1.3s linear calc(var(--d) + 0.95s) backwards;
 }
 
 @keyframes soon-drip-run {
@@ -1238,17 +1239,17 @@ html[data-js="true"] .soon-room[data-torch] .soon-shade {
 /* runs, hangs there stretching under the weight, lets go, springs back */
 @keyframes soon-drip-run-long {
   0% { scale: 1 0; animation-timing-function: cubic-bezier(0.25, 0.7, 0.4, 1); }
-  60% { scale: 1 1; animation-timing-function: ease-in; }
-  72% { scale: 1 1.07; animation-timing-function: cubic-bezier(0.2, 0.9, 0.3, 1); }
-  84% { scale: 1 0.85; animation-timing-function: ease-in-out; }
+  58% { scale: 1 1; animation-timing-function: ease-in; }
+  66% { scale: 1 1.07; animation-timing-function: cubic-bezier(0.2, 0.9, 0.3, 1); }
+  80% { scale: 1 0.85; animation-timing-function: ease-in-out; }
   100% { scale: 1 0.9; }
 }
 
 @keyframes soon-drip-carry-long {
   0% { translate: 0 -100%; animation-timing-function: cubic-bezier(0.25, 0.7, 0.4, 1); }
-  60% { translate: 0 0; animation-timing-function: ease-in; }
-  72% { translate: 0 7%; animation-timing-function: cubic-bezier(0.2, 0.9, 0.3, 1); }
-  84% { translate: 0 -15%; animation-timing-function: ease-in-out; }
+  58% { translate: 0 0; animation-timing-function: ease-in; }
+  66% { translate: 0 7%; animation-timing-function: cubic-bezier(0.2, 0.9, 0.3, 1); }
+  80% { translate: 0 -15%; animation-timing-function: ease-in-out; }
   100% { translate: 0 -10%; }
 }
 

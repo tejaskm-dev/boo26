@@ -80,8 +80,9 @@ function drips(line: string, i: number) {
   const spots = [...line].flatMap((ch, k) => (FEET[ch] ?? []).map(([x, foot]) => ({ k, x, foot })));
   const letters = [...line].filter((ch) => /[A-Z0-9]/.test(ch)).length;
   const n = Math.min(spots.length, Math.max(2, Math.round(letters / 3.2)));
-  // the long ones: one a line, two on a long one, never at the very edges
-  const drops = new Set(n >= 5 ? [1, n - 2] : [Math.min(n - 1, 1 + (i % Math.max(1, n - 1)))]);
+  // the long ones: one a line, two on a long one — early in it, so a
+  // phone's card (held only as long as its lines take) sees the drop go
+  const drops = new Set(n >= 5 ? [1, Math.floor(n / 2)] : [i % 2 === 0 ? 0 : Math.min(1, n - 1)]);
   let last = -1;
   for (let j = 0; j < n; j++) {
     let s = Math.floor(((j + 0.5) * spots.length) / n + (noise(i, j) - 0.5) * 1.2);
@@ -96,8 +97,8 @@ function drips(line: string, i: number) {
       // a sag or a nub, a run, or a long one that lets go
       long: drop ? 0.72 + r * 0.32 : r < 0.5 ? 0.1 + r * 0.24 : 0.3 + (r - 0.5) * 0.6,
       neck: drop ? 0.088 : 0.09 + r * 0.02,
-      // a beat after its letter lands (a letter lands about 0.4s after it starts to fall)
-      delay: +(k * 0.045 + 0.42 + noise(j, i * 5 + k) * 0.32).toFixed(3),
+      // as its letter lands (about 0.4s after it starts to fall)
+      delay: +(k * 0.045 + 0.4 + noise(j, i * 5 + k) * 0.2).toFixed(3),
       drop,
     };
     at.set(k, [...(at.get(k) ?? []), drip]);
