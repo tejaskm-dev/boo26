@@ -1079,114 +1079,174 @@ html[data-js="true"] .soon-room[data-torch] .soon-shade {
   text-shadow: 0 0 24px rgba(216, 255, 40, 0.28);
 }
 
-/* the goo running off it. Each drip hangs from the letter's own baseline
-   (a zero-size marker sitting on it), in the letter's own colour: a lip that
-   flares into the letter, a stem that runs down, and a drop that gathers at
-   the end and lets go. Only transforms move. */
-.soon-drip-at {
-  position: relative;
-  display: inline-block;
-  width: 0;
-  height: 0;
-  vertical-align: baseline;
-}
-
+/* the goo running off it, the way it runs off the BOO! lockup. A drip hangs
+   under the foot of a stroke (Cut.tsx knows where each letter's feet are),
+   in the letter's own colour, and everything in it is melted into one shape
+   by the goo filter (Goo, in Cut.tsx): a foot standing in for the bottom of
+   the stroke, a neck that runs down off it — the filter swells where they
+   meet, the way goo pulls off a surface — and a bead that gathers at the
+   end. The long ones hang there getting heavy, let a drop go — the goo
+   stretches a thread to it before it snaps — and spring back a little.
+   Only transforms and opacity move, and no keyframe reads a custom
+   property, so all of it runs on the compositor. Each part's own style is
+   where it ends up, and the animations fill backwards only: a landed drip
+   lets its animations, and their layers, go. */
 .soon-drip {
   position: absolute;
-  left: calc(-0.39em + var(--x, 0em));
-  top: -0.09em;
-  width: 0.32em;
-  height: calc(var(--long) * 1em);
+  /* the baseline is 0.924em down a letter; the foot stands 0.124em above it */
+  top: 0.8em;
+  width: 0.6em;
+  height: 4em;
+  margin-left: -0.3em;
   pointer-events: none;
+  /* the blur is a share of this box, so the box is the same for every drip */
+  filter: url(#soon-goo);
 }
 
-/* the lip: concave on both sides, where the goo pulls away from the letter */
-.soon-drip::before {
-  content: "";
+.soon-drip > * {
   position: absolute;
-  inset: 0 0 auto;
-  height: 0.17em;
   background: currentColor;
-  -webkit-mask:
-    radial-gradient(circle at 0 100%, transparent 0.1em, #000 0.106em) 0 0 / 50% 100% no-repeat,
-    radial-gradient(circle at 100% 100%, transparent 0.1em, #000 0.106em) 100% 0 / 50% 100% no-repeat;
-  mask:
-    radial-gradient(circle at 0 100%, transparent 0.1em, #000 0.106em) 0 0 / 50% 100% no-repeat,
-    radial-gradient(circle at 100% 100%, transparent 0.1em, #000 0.106em) 100% 0 / 50% 100% no-repeat;
-  transform-origin: 50% 0;
-  scale: 1 0;
 }
 
-.soon-drip > b {
-  position: absolute;
-  left: 50%;
-  top: 0.06em;
-  bottom: 0.07em;
-  width: 0.11em;
-  translate: -50% 0;
-  border-radius: 0 0 999px 999px;
-  background: currentColor;
-  transform-origin: 50% 0;
-  scale: 1 0;
+/* (a wrapped line's top line: see Cut.tsx) */
+.soon-goo-w[data-high="true"] .soon-drip {
+  display: none;
 }
 
-/* the drop: rides the tip of the stem down, then lets go */
-.soon-drip > i {
-  position: absolute;
-  left: 50%;
+/* inside the stroke, where nothing shows but the sag of its underside: it's
+   what the neck pulls off */
+.soon-drip-foot {
   top: 0;
-  width: 0.19em;
-  height: 0.21em;
-  translate: -50% 0;
+  left: calc(50% - var(--foot) * 0.42em);
+  width: calc(var(--foot) * 0.84em);
+  height: 0.16em;
+  border-radius: 0.04em 0.04em 50% 50% / 0.04em 0.04em 0.08em 0.08em;
+}
+
+/* the neck: thick where it leaves the letter, thinning down to the bead (a
+   trapezoid drawn in borders, so it scales as one shape) */
+.soon-drip-stem {
+  box-sizing: content-box;
+  top: 0.09em;
+  left: calc(50% - var(--neck) * 0.8em);
+  width: calc(var(--neck) * 0.7em);
+  height: 0;
+  border-top: calc(var(--long) * 1em + 0.034em) solid currentColor;
+  border-right: calc(var(--neck) * 0.45em) solid transparent;
+  border-left: calc(var(--neck) * 0.45em) solid transparent;
+  background: none;
+  transform-origin: 50% 0;
+}
+
+/* carries the bead (and the drop) down the end of the neck */
+.soon-drip-run {
+  top: 0.09em;
+  left: 50%;
+  width: 0;
+  height: calc(var(--long) * 1em + 0.034em);
+  background: none;
+}
+
+.soon-drip-bead,
+.soon-drip-drop {
+  position: absolute;
+  left: calc(var(--neck) * -1.05em);
+  bottom: calc(var(--neck) * -1.05em);
+  width: calc(var(--neck) * 2.1em);
+  height: calc(var(--neck) * 2.1em);
+  border-radius: 50% 50% 50% 50% / 44% 44% 56% 56%;
+  background: currentColor;
+}
+
+/* a long one's bead is heavier */
+.soon-drip[data-drop] .soon-drip-bead {
+  left: calc(var(--neck) * -1.2em);
+  bottom: calc(var(--neck) * -1.2em);
+  width: calc(var(--neck) * 2.4em);
+  height: calc(var(--neck) * 2.4em);
+}
+
+/* gone, in the end */
+.soon-drip-drop {
   opacity: 0;
 }
 
-.soon-drip > i::after {
-  content: "";
-  display: block;
-  width: 100%;
-  height: 100%;
-  border-radius: 50% 50% 50% 50% / 62% 62% 38% 38%;
-  background: currentColor;
+/* where the long ones end up: sprung back a little once the drop's gone */
+.soon-drip[data-drop] .soon-drip-stem {
+  scale: 1 0.9;
 }
 
-.soon-goo[data-on="true"] .soon-drip::before {
-  animation: soon-drip-lip 0.5s ease-out var(--d) both;
+.soon-drip[data-drop] .soon-drip-run {
+  translate: 0 -10%;
 }
 
-.soon-goo[data-on="true"] .soon-drip > b {
-  animation: soon-drip-stem 1.8s cubic-bezier(0.3, 0.9, 0.3, 1) var(--d) both;
+.soon-goo[data-on="true"] .soon-drip-stem {
+  animation: soon-drip-run calc(0.8s + var(--long) * 1.1s) cubic-bezier(0.25, 0.7, 0.4, 1) var(--d) backwards;
 }
 
-.soon-goo[data-on="true"] .soon-drip > i {
-  animation: soon-drip-bead 1.8s cubic-bezier(0.3, 0.9, 0.3, 1) var(--d) both;
+.soon-goo[data-on="true"] .soon-drip-run {
+  animation: soon-drip-carry calc(0.8s + var(--long) * 1.1s) cubic-bezier(0.25, 0.7, 0.4, 1) var(--d) backwards;
 }
 
-.soon-goo[data-on="true"] .soon-drip > i::after {
-  animation: soon-drip-fall 1.1s cubic-bezier(0.55, 0, 1, 1) calc(var(--d) + 1.9s) both;
+.soon-goo[data-on="true"] .soon-drip-bead {
+  animation: soon-drip-gather calc(0.8s + var(--long) * 1.1s) ease-out var(--d) backwards;
 }
 
-@keyframes soon-drip-lip {
-  from { scale: 0.3 0; }
-  to { scale: 1 1; }
+.soon-goo[data-on="true"] .soon-drip[data-drop] .soon-drip-stem {
+  animation: soon-drip-run-long 2.6s linear var(--d) backwards;
 }
 
-@keyframes soon-drip-stem {
+.soon-goo[data-on="true"] .soon-drip[data-drop] .soon-drip-run {
+  animation: soon-drip-carry-long 2.6s linear var(--d) backwards;
+}
+
+.soon-goo[data-on="true"] .soon-drip[data-drop] .soon-drip-bead {
+  animation: soon-drip-gather 1.6s ease-out var(--d) backwards;
+}
+
+/* lets go 1.87s in, when the neck's at its longest (72% of 2.6s) */
+.soon-goo[data-on="true"] .soon-drip-drop {
+  animation: soon-drip-let-go 1.5s linear calc(var(--d) + 1.3s) backwards;
+}
+
+@keyframes soon-drip-run {
   from { scale: 1 0; }
-  75% { scale: 1 1.05; }
   to { scale: 1 1; }
 }
 
-@keyframes soon-drip-bead {
-  0% { opacity: 1; translate: -50% 0; }
-  75% { opacity: 1; translate: -50% calc(var(--long) * 1.05em - 0.19em); }
-  100% { opacity: 1; translate: -50% calc(var(--long) * 1em - 0.19em); }
+@keyframes soon-drip-carry {
+  from { translate: 0 -100%; }
+  to { translate: 0 0; }
 }
 
-@keyframes soon-drip-fall {
-  0% { translate: 0 0; scale: 1 1; opacity: 1; }
-  15% { translate: 0 0.05em; scale: 0.9 1.15; }
-  100% { translate: 0 2.6em; scale: 0.8 1.3; opacity: 0; }
+@keyframes soon-drip-gather {
+  from { scale: 0.4; }
+  to { scale: 1; }
+}
+
+/* runs, hangs there stretching under the weight, lets go, springs back */
+@keyframes soon-drip-run-long {
+  0% { scale: 1 0; animation-timing-function: cubic-bezier(0.25, 0.7, 0.4, 1); }
+  60% { scale: 1 1; animation-timing-function: ease-in; }
+  72% { scale: 1 1.07; animation-timing-function: cubic-bezier(0.2, 0.9, 0.3, 1); }
+  84% { scale: 1 0.85; animation-timing-function: ease-in-out; }
+  100% { scale: 1 0.9; }
+}
+
+@keyframes soon-drip-carry-long {
+  0% { translate: 0 -100%; animation-timing-function: cubic-bezier(0.25, 0.7, 0.4, 1); }
+  60% { translate: 0 0; animation-timing-function: ease-in; }
+  72% { translate: 0 7%; animation-timing-function: cubic-bezier(0.2, 0.9, 0.3, 1); }
+  84% { translate: 0 -15%; animation-timing-function: ease-in-out; }
+  100% { translate: 0 -10%; }
+}
+
+/* the drop: gathers in the bead, gets heavy, pulls away on a thread, falls */
+@keyframes soon-drip-let-go {
+  0% { opacity: 1; translate: 0 0; scale: 0.6; }
+  38% { opacity: 1; translate: 0 0.03em; scale: 1.08 1.14; animation-timing-function: ease-in; }
+  50% { opacity: 1; translate: 0 0.22em; scale: 0.92 1.3; animation-timing-function: cubic-bezier(0.5, 0, 1, 0.7); }
+  100% { opacity: 0.3; translate: 0 2.2em; scale: 0.78 1.12; }
 }
 
 /* a hold stopping a fling dead: two frames, then the page is free to ease (hold.ts) */

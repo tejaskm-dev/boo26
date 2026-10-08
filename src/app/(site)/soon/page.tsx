@@ -20,6 +20,7 @@ import Waiting from "@/components/soon/Waiting";
 import MuLearn from "@/components/soon/MuLearn";
 import Banner from "@/components/soon/Banner";
 import { EyeGlow } from "@/components/soon/InkEyes";
+import { Goo } from "@/components/soon/Cut";
 import { SOON } from "@/lib/soon";
 import { LEGAL } from "@/lib/site";
 import { siteLive } from "@/lib/live";
@@ -52,6 +53,7 @@ export default function SoonPage() {
   return (
     <>
       <EyeGlow />
+      <Goo />
       <SoonChrome />
       <main className="relative overflow-x-clip">
         <Hero format={SOON.format} facts={SOON.hero.facts} cta={SOON.hero.cta} next={SOON.hero.next} />
