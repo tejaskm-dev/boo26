@@ -98,7 +98,8 @@ export default function Countdown({ onCarry }: { onCarry: () => void }) {
         // held right where it is; only a long overshoot is eased back.
         const over = window.scrollY - (el.getBoundingClientRect().top + window.scrollY);
         const back = over > window.innerHeight * 0.2 ? { to: el, glide: 0.35 } : {};
-        if (!hold("countdown", calm + 1300, { ...back, onRelease: () => carry.current() })) {
+        // (once "relax." is up, the rest of it is for reading it: move on in it and you're carried on)
+        if (!hold("countdown", calm + 1300, { ...back, tail: 1300, onRelease: () => carry.current() })) {
           // not held (you were going the other way): carry you on only if you're still watching
           timers.push(
             window.setTimeout(() => {
@@ -118,6 +119,7 @@ export default function Countdown({ onCarry }: { onCarry: () => void }) {
         to: el,
         glide: 0.4,
         way: "up",
+        tail: 1100,
         onHeld: () => {
           buzz(14);
           heart(1.5);
@@ -137,10 +139,14 @@ export default function Countdown({ onCarry }: { onCarry: () => void }) {
   const count = back ? 0 : t.fakeout.length - shown;
   const done = relaxed || still || back;
 
+  // The screen it holds is the whole screen with the toolbars away (100vh, on
+  // a phone): the edges darken right to the bottom whatever the toolbar's
+  // doing. A screen with them out (svh) left a pale strip under the dark
+  // while they were away.
   return (
-    <div ref={room} className="relative h-[125svh]">
+    <div ref={room} data-countdown className="relative h-[calc(100vh+25svh)]">
       <div
-        className="soon-countdown sticky top-0 grid h-[100svh] place-items-center overflow-hidden px-[var(--edge)] text-center"
+        className="soon-countdown sticky top-0 grid h-screen place-items-center overflow-hidden px-[var(--edge)] text-center"
         data-step={still ? t.fakeout.length - 1 : counting && !back ? step : -1}
         data-relaxed={done ? "true" : "false"}
       >

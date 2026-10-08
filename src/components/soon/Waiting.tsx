@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { prefersReducedMotion, whenOpen } from "@/lib/motion";
+import { isTouch } from "@/lib/tier";
 import { WAIT } from "@/lib/soon";
 
 /** the hero's narrowed eyes, in a 134x68 box (as InkEyes) */
@@ -27,12 +28,15 @@ type Scene = {
   end: string;
   /** what it says if you stop in it, or it lets you go in it — null says nothing */
   line: (el: HTMLElement, p: number, up: boolean) => string | null;
+  /** not a scene at all on a phone */
+  desk?: boolean;
 };
 
 /** the pinned scenes, by their data-wait */
 const SCENES: Record<string, Scene> = {
-  // a title card: the black, from when it's down to when it lifts (as Cut.tsx)
-  cut: { start: "top 85%", end: "bottom 55%", line: () => WAIT.idle.cut },
+  // a title card: the black, from when it's down to when it lifts (as Cut.tsx) —
+  // on a phone it's a moment at the seam, held while it lasts, not a stretch
+  cut: { start: "top 85%", end: "bottom 55%", line: () => WAIT.idle.cut, desk: true },
   room: {
     start: "top top",
     end: "bottom bottom",
@@ -275,10 +279,11 @@ export default function Waiting() {
     };
 
     let sts: ScrollTrigger[] = [];
+    const touch = isTouch();
     const stop = whenOpen(() => {
       sts = [...document.querySelectorAll<HTMLElement>("[data-wait]")].flatMap((scene) => {
         const kind = SCENES[scene.dataset.wait ?? ""];
-        if (!kind) return [];
+        if (!kind || (kind.desk && touch)) return [];
         return [
           ScrollTrigger.create({
             trigger: scene,

@@ -825,9 +825,12 @@ html[data-js="true"] .soon-room[data-torch] .soon-shade {
 }
 
 /* ------------------------------------------------------- the last shot
-   (NotYet) Held on screen for a while, like the room. */
+   (NotYet) Held on screen a little while. The shot plays out on its own
+   clock, held for (hold.ts), so the page only has to keep it there long
+   enough to read the ask: held for longer, it was screens of scrolling
+   with nothing changing. */
 .soon-drop-runway {
-  height: max(240svh, 70rem);
+  height: max(150svh, 52rem);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -846,6 +849,14 @@ html[data-js="true"] .soon-room[data-torch] .soon-shade {
 .soon-cut-room {
   position: relative;
   height: max(125svh, 46rem);
+}
+
+/* on a phone it's a moment at the seam, not a stretch of page (Cut.tsx): a
+   gap between the acts, and the card comes up over the seam itself */
+@media (hover: none) and (pointer: coarse) {
+  .soon-cut-room {
+    height: clamp(2.5rem, 8svh, 4.5rem);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1249,10 +1260,11 @@ html[data-js="true"] .soon-room[data-torch] .soon-shade {
   100% { opacity: 0.3; translate: 0 2.2em; scale: 0.78 1.12; }
 }
 
-/* a hold stopping a fling dead: two frames, then the page is free to ease (hold.ts) */
-/* hidden first, for a browser that doesn't know clip — and for Lenis's own stop, too */
-html.soon-halt,
-html.lenis.lenis-stopped {
+/* a hold (hold.ts): the page can't be scrolled by hand, and a fling's
+   momentum stops dead. On <body>, which hands it to the window: the same
+   on <html> restyled the whole document every time a hold began or ended.
+   (Hidden first, for a browser that doesn't know clip.) */
+body[data-held] {
   overflow: hidden;
   overflow: clip;
 }
@@ -1896,9 +1908,12 @@ section[data-awake="true"] .soon-inkeyes:not([data-shut="true"]) svg {
 
 .soon-critters-canvas {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
   width: 100%;
-  height: 100%;
+  /* the screen with the toolbars away (Critters.tsx): it covers the screen
+     however far they're out, and needn't change as they move */
+  height: 100vh;
 }
 
 /* ------------------------------------------------------------ the loops

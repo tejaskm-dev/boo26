@@ -39,6 +39,16 @@ export default function SmoothScroll() {
       lenis.on("scroll", publish);
     }
 
+    // Lenis marks every change of state — scrolling, gliding, stopped — as
+    // a class on <html>, at the start and the end of every swipe and every
+    // hold. Any change to <html>'s classes restyles the whole document:
+    // ~2,000 elements, measured at 25–50ms on a phone, landing just as a
+    // swipe begins. Nothing here styles by those classes (the teaser's holds
+    // lock the page from <body>, src/components/soon/hold.ts), so it keeps
+    // the one it starts with, and stops there.
+    const quiet = lenis as unknown as { updateClassName?: () => void };
+    if (typeof quiet.updateClassName === "function") quiet.updateClassName = () => {};
+
     setLenis(lenis);
     lenis.on("scroll", ScrollTrigger.update);
     const tick = (time: number) => lenis.raf(time * 1000);

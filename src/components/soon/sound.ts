@@ -34,7 +34,9 @@ import { rich } from "@/lib/tier";
  * lighter: a bigger buffer for the sound to be made in, so it never runs
  * dry and crackles; a shorter room; one voice to each note of the choir
  * rather than three. And if the phone ever puts the sound to sleep (a call,
- * the screen going off), the next tap wakes it.
+ * the screen going off) — or never quite lets it start — the next tap wakes
+ * it. An iPhone on silent plays it anyway, as it would a video: it was let
+ * in with the sound (`asPlayback`).
  */
 
 export type Cue =
@@ -249,12 +251,101 @@ function startBed(c: AudioContext, light: boolean): Bed {
 let wanted = true;
 export const soundWanted = () => wanted;
 
+/**
+ * An iPhone set to silent mutes a page's sound — all of it, every time, the
+ * way it mutes a game's — unless the page says it's playing something, as
+ * a video does (Safari 16.4 on). This one is: it was let in with the sound,
+ * headphones on. (Elsewhere there's no such switch, and nothing to say.)
+ */
+function asPlayback() {
+  const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession;
+  try {
+    if (session && session.type !== "playback") session.type = "playback";
+  } catch {
+    // not ours to set, here
+  }
+}
+
+/**
+ * A moment of nothing, played in the tap itself: some phones only let a
+ * page's sound out once something has started from inside one.
+ */
+function nudge(c: AudioContext) {
+  try {
+    const s = c.createBufferSource();
+    s.buffer = c.createBuffer(1, 1, c.sampleRate);
+    s.connect(c.destination);
+    s.start(0);
+  } catch {
+    // nothing to let out
+  }
+}
+
+/** it's making sound now: let it in — if it's still wanted, and not in already */
+function started() {
+  if (on || !wanted || !ctx || !master || ctx.state !== "running") return;
+  master.gain.setTargetAtTime(0.8, ctx.currentTime, 1.2);
+  on = true;
+  applyScene(true);
+  for (const fn of listeners) fn(on);
+}
+
+/**
+ * Everything the score is made of, built once — in the tap that first asks
+ * for it, so it's all there the moment the browser lets it play, whether
+ * that's now or a tap later.
+ */
+function build(c: AudioContext) {
+  const comp = c.createDynamicsCompressor();
+  comp.threshold.value = -20;
+  comp.knee.value = 10;
+  comp.ratio.value = 10;
+  comp.attack.value = 0.003;
+  comp.release.value = 0.3;
+  comp.connect(c.destination);
+  master = c.createGain();
+  master.gain.value = 0;
+  master.connect(comp);
+  verb = c.createConvolver();
+  verb.buffer = light ? impulse(c, 2, 2.2) : impulse(c);
+  const ret = c.createGain();
+  ret.gain.value = 0.7;
+  verb.connect(ret).connect(master);
+  bed = startBed(c, light);
+  void fetchLines(c);
+  // (and any that a dropped connection lost, once it's back)
+  window.addEventListener("online", () => wanted && void fetchLines(c));
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) void c.suspend().catch(() => {});
+    else if (wanted) void c.resume().catch(() => {});
+  });
+  c.addEventListener("statechange", () => {
+    // let play at last (a tap after the one that asked), or back from wherever the phone put it
+    if (c.state === "running") return started();
+    // put to sleep by the phone itself (a call, another app's sound), in plain view: ask for it back
+    if (on && wanted && !document.hidden && c.state !== "closed") void c.resume().catch(() => {});
+  });
+  // Put to sleep by the phone and not woken by coming back — or never let
+  // start at all — the next tap does it. Wanted is enough: it needn't have
+  // got going yet.
+  const wake = () => {
+    if (wanted && c.state !== "running" && !document.hidden) {
+      nudge(c);
+      void c.resume().catch(() => {});
+    }
+  };
+  for (const type of ["pointerup", "touchend", "keydown", "click"] as const) window.addEventListener(type, wake, { capture: true, passive: true });
+}
+
 export async function setSound(next: boolean) {
   if (typeof window === "undefined") return;
   wanted = next;
   if (next) {
     const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!Ctor) return;
+    // all of it in the tap itself, before anything's waited on: past the
+    // first wait, a phone may no longer count it as one
+    asPlayback();
     if (!ctx) {
       light = !rich();
       try {
@@ -263,41 +354,19 @@ export async function setSound(next: boolean) {
       } catch {
         ctx = new Ctor();
       }
-    }
-    await ctx.resume();
-    if (!master) {
-      const comp = ctx.createDynamicsCompressor();
-      comp.threshold.value = -20;
-      comp.knee.value = 10;
-      comp.ratio.value = 10;
-      comp.attack.value = 0.003;
-      comp.release.value = 0.3;
-      comp.connect(ctx.destination);
-      master = ctx.createGain();
-      master.gain.value = 0;
-      master.connect(comp);
-      verb = ctx.createConvolver();
-      verb.buffer = light ? impulse(ctx, 2, 2.2) : impulse(ctx);
-      const ret = ctx.createGain();
-      ret.gain.value = 0.7;
-      verb.connect(ret).connect(master);
-      bed = startBed(ctx, light);
+      build(ctx);
+    } else {
+      // (whatever didn't arrive last time)
       void fetchLines(ctx);
-      document.addEventListener("visibilitychange", () => {
-        if (!ctx) return;
-        if (document.hidden) void ctx.suspend();
-        else if (on) void ctx.resume();
-      });
-      // put to sleep by the phone (a call, the screen off) and not woken by
-      // coming back: the next tap does it
-      const wake = () => {
-        if (on && ctx && ctx.state !== "running" && !document.hidden) void ctx.resume();
-      };
-      for (const type of ["pointerup", "touchend", "keydown"] as const) window.addEventListener(type, wake, { capture: true, passive: true });
     }
-    master.gain.setTargetAtTime(0.8, ctx.currentTime, 1.2);
-    on = true;
-    applyScene(true);
+    nudge(ctx);
+    try {
+      await ctx.resume();
+    } catch {
+      // not let yet: the next tap asks again
+    }
+    // on, if it's playing — and if it isn't yet, the moment it is (build)
+    started();
   } else if (ctx && master) {
     master.gain.setTargetAtTime(0, ctx.currentTime, 0.2);
     on = false;
@@ -513,11 +582,18 @@ const LINES: Record<Line, { level: number; wet: number; pan?: number }> = {
 };
 
 const clips = new Map<Line, AudioBuffer>();
-let fetched = false;
-const spoken = new Set<Line>();
+let fetching = false;
+/**
+ * How long after it's finished before a line can be said again, in seconds:
+ * long enough that a card played again straight away can't stutter it,
+ * short enough that every time you come back to one, you hear it.
+ */
+const AGAIN = 3;
+/** when each line was last done being said, on the sound's own clock */
+const lastSaid = new Map<Line, number>();
 let talkingUntil = 0;
 /** what's being said, or about to be: so it can all be stopped */
-const saying = new Set<{ src: AudioBufferSourceNode; fade: GainNode }>();
+const saying = new Set<{ line: Line; src: AudioBufferSourceNode; fade: GainNode }>();
 /** a line that gives way to anything else said over it (the hello), while it lasts */
 let giving: { src: AudioBufferSourceNode; fade: GainNode; until: number } | null = null;
 
@@ -527,28 +603,63 @@ function hello(): Line {
   return /iPhone|iPad|iPod/.test(ua) ? "hi-iphone" : /Android/.test(ua) ? "hi-android" : "hi-computer";
 }
 
-/** fetched all at once, but unpacked one at a time, in page order — so the score never stutters for them */
+/**
+ * One line's recording — asked for again, a moment later, if the connection
+ * drops it (a phone between masts): left at one try, a line lost on the way
+ * was never said all visit.
+ */
+async function download(line: Line, priority: RequestPriority): Promise<ArrayBuffer | null> {
+  for (let tries = 0; tries < 3; tries++) {
+    if (tries) await new Promise((r) => window.setTimeout(r, tries * 1500));
+    try {
+      const r = await fetch(`/sounds/${line}.m4a`, { priority });
+      if (r.ok) return await r.arrayBuffer();
+      // (not there to be had: asking again won't change that)
+      if (r.status < 500) return null;
+    } catch {
+      // dropped on the way: ask again
+    }
+  }
+  return null;
+}
+
+/** unpacked, either way a browser takes it (an older Safari only answers by callback) */
+function decode(c: AudioContext, raw: ArrayBuffer) {
+  return new Promise<AudioBuffer>((resolve, reject) => {
+    const p = c.decodeAudioData(raw, resolve, reject);
+    if (p && typeof p.then === "function") p.then(resolve, reject);
+  });
+}
+
+/**
+ * Fetched all at once, but unpacked one at a time, in page order — so the
+ * score never stutters for them. The first few wanted (the hello, the first
+ * card's) are asked for ahead of the rest: on a slow phone connection, all
+ * of them at once arrived together, and a line that comes after its moment
+ * is never said. Only what isn't here yet: asked again (the sound turned
+ * back on, the connection back), it fetches what went missing.
+ */
 async function fetchLines(c: AudioContext) {
-  if (fetched) return;
-  fetched = true;
+  if (fetching) return;
+  fetching = true;
   // (and of the hellos, only yours)
   const mine = hello();
-  const lines = (Object.keys(LINES) as Line[]).filter((line) => !line.startsWith("hi-") || line === mine);
-  const data = lines.map((line) =>
-    fetch(`/sounds/${line}.m4a`)
-      .then((r) => (r.ok ? r.arrayBuffer() : null))
-      .catch(() => null),
-  );
+  const lines = (Object.keys(LINES) as Line[]).filter((line) => !clips.has(line) && (!line.startsWith("hi-") || line === mine));
+  const data = lines.map((line, i) => download(line, i < 3 ? "high" : "low"));
   for (let i = 0; i < lines.length; i++) {
     const raw = await data[i];
     if (!raw) continue;
     try {
-      clips.set(lines[i], await c.decodeAudioData(raw));
+      clips.set(lines[i], await decode(c, raw));
     } catch {
       // that line just goes unsaid
     }
   }
+  fetching = false;
 }
+
+/** said not long ago, and still too recently to say again */
+const resting = (line: Line) => !!ctx && ctx.currentTime < (lastSaid.get(line) ?? -Infinity) + AGAIN;
 
 /** how long after it's played a sound is actually heard, in seconds (more where the buffer's bigger) */
 export function audioLag(): number {
@@ -558,22 +669,23 @@ export function audioLag(): number {
 
 /** how long `say(line)` would take if it were said now, in seconds — 0 if it wouldn't be */
 export function lineLength(line: Line): number {
-  if (!on || !ctx || ctx.state !== "running" || spoken.has(line)) return 0;
+  if (!on || !ctx || ctx.state !== "running" || resting(line)) return 0;
   return clips.get(line)?.duration ?? 0;
 }
 
 /**
- * Says one of the lines, `delay` seconds from now: once a visit, never over
- * another line (one that's just finishing, it waits for), and only with the
- * sound on and the menu not up (shutting is fine: that's the page arriving
- * where it was sent). Returns how long from now until it's said, in seconds,
- * so a moment can land on the end of it — or 0, if it isn't going to be.
- * A line that `gives` way is cut short (quickly faded) by anything said
- * over it, rather than making that wait: the hello, which mustn't cost the
- * first card its voice.
+ * Says one of the lines, `delay` seconds from now: every time its moment
+ * comes round (a card played again, a joke set off again) — though never
+ * twice in a breath — never over another line (one that's just finishing,
+ * it waits for), and only with the sound on and the menu not up (shutting
+ * is fine: that's the page arriving where it was sent). Returns how long
+ * from now until it's said, in seconds, so a moment can land on the end of
+ * it — or 0, if it isn't going to be. A line that `gives` way is cut short
+ * (quickly faded) by anything said over it, rather than making that wait:
+ * the hello, which mustn't cost the first card its voice.
  */
 export function say(line: Line, delay = 0, { gives = false }: { gives?: boolean } = {}): number {
-  if (!on || !ctx || !master || ctx.state !== "running" || spoken.has(line)) return 0;
+  if (!on || !ctx || !master || ctx.state !== "running" || resting(line)) return 0;
   const menu = document.documentElement.dataset.nav;
   if (menu === "opening" || menu === "open") return 0;
   const clip = clips.get(line);
@@ -596,7 +708,7 @@ export function say(line: Line, delay = 0, { gives = false }: { gives?: boolean 
     if (talkingUntil - t > 0.6) return 0;
     t = talkingUntil + 0.06;
   }
-  spoken.add(line);
+  lastSaid.set(line, t + clip.duration);
   talkingUntil = t + clip.duration;
   const { level, wet, pan = 0 } = LINES[line];
   const src = ctx.createBufferSource();
@@ -605,7 +717,7 @@ export function say(line: Line, delay = 0, { gives = false }: { gives?: boolean 
   side.pan.value = pan;
   const fade = ctx.createGain();
   src.connect(side).connect(fade).connect(bus(ctx, level, wet));
-  const it = { src, fade };
+  const it = { line, src, fade };
   saying.add(it);
   if (gives) giving = { src, fade, until: t + clip.duration };
   src.onended = () => {
@@ -625,11 +737,12 @@ export function say(line: Line, delay = 0, { gives = false }: { gives?: boolean 
 /**
  * Stops whatever's being said, and whatever's about to be — the visitor's
  * taken the page somewhere else (the menu, a link), so it's not for there.
+ * Cut off, it can be said again as soon as its moment comes back.
  */
 export function hush() {
   if (!ctx) return;
   const t = ctx.currentTime;
-  for (const { src, fade } of saying) {
+  for (const { line, src, fade } of saying) {
     fade.gain.cancelScheduledValues(t);
     fade.gain.setTargetAtTime(0, t, 0.03);
     try {
@@ -637,6 +750,7 @@ export function hush() {
     } catch {
       // already stopped
     }
+    lastSaid.delete(line);
   }
   saying.clear();
   giving = null;

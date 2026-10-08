@@ -9,6 +9,7 @@ import { isNavActive } from "@/lib/navState";
 import { curtainUp } from "@/lib/curtain";
 import { SPRITE } from "@/lib/sprites";
 import { onTierDrop, rich } from "@/lib/tier";
+import { onResize, screenHeight } from "@/lib/viewport";
 import { TROLL } from "@/lib/soon";
 import { buzz, troll } from "./troll";
 
@@ -111,9 +112,11 @@ export default function Critters({
     let area: Box = { x: 0, y: 0, w: 1, h: 1 };
     let small = false;
     let eyes: Eye[] = [];
+    // (the screen with the toolbars away: a phone's toolbars come and go
+    // without the canvas having to be made again, blank for a frame)
     const size = () => {
       W = window.innerWidth;
-      H = window.innerHeight;
+      H = screenHeight();
       cv.width = Math.round(W * dpr);
       cv.height = Math.round(H * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -334,11 +337,10 @@ export default function Critters({
     size();
     measure();
     seed();
-    const onResize = () => {
+    const stopResize = onResize(() => {
       size();
       measure();
-    };
-    window.addEventListener("resize", onResize);
+    });
     const ro = new ResizeObserver(() => measure());
     ro.observe(section);
     ScrollTrigger.addEventListener("refresh", measure);
@@ -356,7 +358,7 @@ export default function Critters({
       io.disconnect();
       ro.disconnect();
       ScrollTrigger.removeEventListener("refresh", measure);
-      window.removeEventListener("resize", onResize);
+      stopResize();
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("touchstart", onTouch);
       window.removeEventListener("touchmove", onTouch);

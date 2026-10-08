@@ -19,6 +19,7 @@ import { getLenis } from "@/lib/lenis";
 import { prefersReducedMotion } from "@/lib/motion";
 import { isNavActive } from "@/lib/navState";
 import { subscribePointer } from "@/lib/pointer";
+import { onResize } from "@/lib/viewport";
 import { CUTS, SECRETS, SOON, TROLL } from "@/lib/soon";
 import { answer, buzz, shiver, troll } from "./troll";
 
@@ -222,7 +223,7 @@ export default function InTheDark() {
       if (awake) return;
       awake = true;
       // stay and watch it happen
-      hold("room-wake", 2400);
+      hold("room-wake", 2400, { tail: 700 });
       setWoke(true);
       el.dataset.cat = "awake";
       overEl.dataset.look = "true";
@@ -378,13 +379,15 @@ export default function InTheDark() {
       // slides in or out, a swipe that starts on the handle has to scroll
       const docked = Math.abs(stageTop()) < window.innerHeight * 0.04 ? "true" : "false";
       if (el.dataset.docked !== docked) el.dataset.docked = docked;
-      if (p > 0.03) hold("room-in", 2700);
+      // (its first look comes a moment in: after that, only standing in it)
+      if (p > 0.03) hold("room-in", 2700, { tail: 1300 });
       // back up into it once it's awake: it's watching the way you came, and
       // it holds you there a moment, growling. A fling up straight through
       // it is brought back to the middle of the room for it.
       if (awake && returned && p < 0.62) {
         hold("room:up", 2400, {
           way: "up",
+          tail: 1200,
           ...(p < 0.05 ? { to: runTop + (runH - stageH) * 0.5, glide: 0.6 } : {}),
           onHeld: () => cue("growl"),
         });
@@ -426,6 +429,20 @@ export default function InTheDark() {
       if (dive > 0.97 && !through) {
         through = true;
         cue("thud");
+        // Out the other side, into the light, on the way down: carried on to
+        // the countdown. Left to the scroll, it was the light — a whole screen
+        // of it, empty — scrolled off by hand before the next act showed. Just
+        // short of it, then over the line, so the countdown's own hold has it.
+        const next = document.querySelector<HTMLElement>("[data-countdown]");
+        if (next && (getLenis()?.direction ?? 0) > 0) {
+          const at = () => next.getBoundingClientRect().top + scrollY();
+          hold("room-out", 0, {
+            to: at() - 2,
+            glide: 0.9,
+            easing: (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2),
+            onRelease: () => !isNavActive() && getLenis()?.scrollTo(at() + 2, { immediate: true, force: true }),
+          });
+        }
       } else if (dive < 0.5) through = false;
     };
     const lenis = getLenis();
@@ -535,7 +552,8 @@ export default function InTheDark() {
     measure();
     const ro = new ResizeObserver(() => measure());
     ro.observe(run);
-    window.addEventListener("resize", measure);
+    // (not for a phone's toolbars sliding about: nothing in here moves for them)
+    const stopResize = onResize(measure);
     ScrollTrigger.addEventListener("refresh", measure);
     gsap.ticker.add(tick);
     if (!fine) gsap.ticker.add(sweep);
@@ -548,7 +566,7 @@ export default function InTheDark() {
       unsub();
       io.disconnect();
       ro.disconnect();
-      window.removeEventListener("resize", measure);
+      stopResize();
       ScrollTrigger.removeEventListener("refresh", measure);
       if (lenis) lenis.off("scroll", onScroll);
       else window.removeEventListener("scroll", onScroll);
