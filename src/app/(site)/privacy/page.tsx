@@ -4,6 +4,7 @@ import { A, Item, Key, List, P } from "@/components/legal/Prose";
 import { EVENT, LEGAL_UPDATED } from "@/lib/site";
 import { STORAGE } from "@/lib/storage";
 import { pageMeta } from "@/lib/seo";
+import { siteLive } from "@/lib/live";
 
 export const metadata: Metadata = pageMeta({
   title: `Privacy Policy — ${EVENT.name} ${EVENT.year}`,
@@ -103,6 +104,23 @@ const PRIVACY: LegalDoc = {
         </P>
       ),
     },
+    // the teaser's "Tell a friend" (src/components/soon/chain.ts); the full site has no such button
+    ...(siteLive()
+      ? []
+      : [
+          {
+            id: "sharing",
+            title: "Telling a friend",
+            body: (
+              <P>
+                The &ldquo;Tell a friend&rdquo; button writes its message from what you got up to on the page this visit,
+                and forgets it when you leave. The link it shares ends in a number (like <Key>?n=3</Key>): how many times
+                that link has been passed on. It doesn&rsquo;t say who you are or who sent it, and nothing is stored or
+                sent anywhere.
+              </P>
+            ),
+          },
+        ]),
     {
       id: "newsletter",
       title: "The newsletter box",

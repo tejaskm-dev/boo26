@@ -15,6 +15,7 @@ import { prefersReducedMotion } from "@/lib/motion";
 import { isNavActive } from "@/lib/navState";
 import { BACK, SECRETS, SOON, TROLL } from "@/lib/soon";
 import { shiver, troll } from "./troll";
+import { did } from "./chain";
 import { audioLag, cue, heart, say } from "./sound";
 import { jumpscare } from "./JumpScare";
 import { hold, inView, letGo } from "./hold";
@@ -107,6 +108,7 @@ export default function ThePoint() {
         const face = () => {
           if (lean.current?.dataset.close !== "true") return;
           if (!jumpscare("face")) return;
+          did("face");
           // and you say it: carried down to WHAT THE—, behind the face
           timers.push(window.setTimeout(sayIt, 350));
         };

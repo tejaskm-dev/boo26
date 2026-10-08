@@ -12,6 +12,7 @@ import { onTierDrop, rich } from "@/lib/tier";
 import { onResize, screenHeight } from "@/lib/viewport";
 import { TROLL } from "@/lib/soon";
 import { buzz, troll } from "./troll";
+import { did } from "./chain";
 
 type Bat = { x: number; y: number; vx: number; vy: number; t: number; p: number; w: number; life: number; dir: number };
 type Eye = { el: HTMLElement; x: number; y: number; r: number; shut: boolean; shutUntil: number; lx: number; ly: number };
@@ -207,6 +208,7 @@ export default function Critters({
         if (Math.hypot(eye.x - x, eye.y - y) < eye.r + 16) {
           eye.shutUntil = performance.now() + 2600;
           buzz(12);
+          did("poke");
           troll("eye-poke", TROLL.poke);
           return;
         }
