@@ -22,16 +22,21 @@ import Waiting from "@/components/soon/Waiting";
 import MuLearn from "@/components/soon/MuLearn";
 import Banner from "@/components/soon/Banner";
 import { EyeGlow } from "@/components/soon/InkEyes";
+import { Goo } from "@/components/soon/Cut";
 import { SOON } from "@/lib/soon";
 import { LEGAL } from "@/lib/site";
 import { siteLive } from "@/lib/live";
+import { KEYWORDS, pageMeta, siteGraph } from "@/lib/seo";
+import JsonLd from "@/components/site/JsonLd";
 import "@/components/soon/soon.css";
 
-export const metadata: Metadata = {
+/** it's served at "/", so that's the one address it gives search engines (and /soon redirects there) */
+export const metadata: Metadata = pageMeta({
   title: SOON.meta.title,
   description: SOON.meta.description,
-  openGraph: { title: SOON.meta.title, description: SOON.meta.description, type: "website" },
-};
+  path: "/",
+  keywords: KEYWORDS,
+});
 
 /** only the privacy policy: the terms and the code of conduct describe the night */
 const LEGAL_SOON = LEGAL.filter((l) => l.href === "/privacy");
@@ -55,7 +60,10 @@ export default function SoonPage() {
     <>
       {/* before any of it is drawn: a reload starts at the top, never put back down the page (top.ts) */}
       <script dangerouslySetInnerHTML={{ __html: FROM_THE_TOP }} />
+      {/* the site and who's behind it, for search — no date, no event, like the rest of the teaser */}
+      <JsonLd graph={siteGraph(SOON.meta.description)} />
       <EyeGlow />
+      <Goo />
       <SoonChrome />
       <main className="relative overflow-x-clip">
         <Hero format={SOON.format} facts={SOON.hero.facts} cta={SOON.hero.cta} next={SOON.hero.next} />

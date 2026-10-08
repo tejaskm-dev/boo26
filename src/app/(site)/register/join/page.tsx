@@ -8,7 +8,7 @@ import { EVENT } from "@/lib/site";
 export const metadata = registerMeta({
   title: `Join a team — ${EVENT.name} ${EVENT.year}`,
   description: `Got a team code from your teammate? Join their team for ${EVENT.name} ${EVENT.year}.`,
-});
+}, "/register/join");
 
 export default function JoinPage() {
   if (!registrationOpen()) return <Closed />;

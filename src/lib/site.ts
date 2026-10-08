@@ -21,7 +21,28 @@ export const EVENT = {
      Kerala is UTC+5:30 and the offset is written out so the countdown means
      the same thing from anywhere. */
   startsAt: "2026-10-24T14:00:00+05:30",
+  /* 20 hours on: 10 AM the next morning, the timeline's last stop. */
+  endsAt: "2026-10-25T10:00:00+05:30",
 } as const;
+
+/**
+ * What search results and share cards say about the full site. The rest —
+ * the address, the card, the structured data — is built in src/lib/seo.ts.
+ */
+export const SEO = {
+  title: `${EVENT.name} ${EVENT.year} · Halloween-night hackathon at ASIET, Kalady`,
+  description: `A 20-hour Halloween-night creative technology hackathon at ASIET, Kalady, on ${EVENT.dateLong}. Teams of two, one challenge: build something that makes someone react.`,
+  /** the share card's line */
+  share: `Most hackathons start with a problem. ${EVENT.name} starts with a reaction. ${EVENT.dateLong}, ASIET Kalady.`,
+  keywords: [
+    "hackathon",
+    "Halloween hackathon",
+    "overnight hackathon",
+    "creative technology hackathon",
+    "student hackathon",
+    "hackathon in Kerala",
+  ],
+};
 
 export { SOCIALS };
 

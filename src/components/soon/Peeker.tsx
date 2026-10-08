@@ -126,7 +126,7 @@ export default function Peeker() {
   return (
     <>
       <div ref={cat} className="soon-peeker" data-secret={TROLL.peek} aria-hidden="true">
-        <Sprite name="cat-oneeye" scale={1.1} />
+        <Sprite name="cat-oneeye" scale={1.1} zoom={2.6} />
       </div>
       <div ref={door} className="soon-door" aria-hidden="true">
         <p className="soon-door-line hand">{TROLL.winning}</p>

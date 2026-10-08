@@ -33,16 +33,104 @@ const PRESENTS = 2350;
 /** said out loud, the beat after each line before the next, in ms */
 const BREATH = 160;
 
-/** which letters of a line run, how far, and when */
+/**
+ * Where the brush's strokes come down onto the baseline — in em from the
+ * letter's left edge, and how wide the stroke is there (measured off Bagel
+ * Fat One) — because goo runs off the foot of a stroke. Round-bottomed
+ * letters (O, S, C, G, U, J, Q) aren't here: hung under a bowl, a drip
+ * reads as a Q's tail or a cedilla, not goo.
+ */
+const FEET: Record<string, readonly (readonly [number, number])[]> = {
+  A: [[0.138, 0.2], [0.573, 0.2]],
+  B: [[0.2, 0.17]],
+  D: [[0.2, 0.17]],
+  E: [[0.19, 0.17], [0.44, 0.14]],
+  F: [[0.135, 0.17]],
+  H: [[0.138, 0.165], [0.535, 0.165]],
+  I: [[0.138, 0.175]],
+  K: [[0.138, 0.175], [0.525, 0.18]],
+  L: [[0.19, 0.17], [0.42, 0.14]],
+  M: [[0.134, 0.163], [0.695, 0.165]],
+  N: [[0.134, 0.163], [0.51, 0.2]],
+  P: [[0.135, 0.17]],
+  R: [[0.14, 0.17], [0.521, 0.177]],
+  T: [[0.338, 0.17]],
+  W: [[0.309, 0.2], [0.637, 0.2]],
+  X: [[0.134, 0.177], [0.545, 0.18]],
+  Y: [[0.35, 0.17]],
+  Z: [[0.2, 0.17], [0.42, 0.17]],
+  "1": [[0.32, 0.17]],
+  "4": [[0.455, 0.17]],
+  "7": [[0.26, 0.19]],
+};
+
+/** a drip: where it hangs, how far it runs, how thick, when it starts, and whether it lets a drop go */
+type Drip = { x: number; foot: number; long: number; neck: number; delay: number; drop: boolean };
+
+/** steady noise for a line's drips: the same every render, so the server and the browser agree */
+const noise = (a: number, b: number) => (((a + 1) * 7919 + (b + 3) * 104729) % 997) / 997;
+
+/**
+ * Which feet of a line run, how far, and when: about one every three
+ * letters, spread along it, most of them short — a sag, a nub — and one or
+ * two that run long and let a drop go. Each starts as its letter lands.
+ */
 function drips(line: string, i: number) {
-  const letters = [...line].map((ch, k) => ({ ch, k })).filter(({ ch }) => /[A-Z]/i.test(ch));
-  if (!letters.length) return new Map<number, { long: number; delay: number; x: number }>();
-  const picks = [0.2, 0.58, 0.88].slice(0, line.length > 8 ? 3 : 2);
-  return new Map(
-    picks.map((at, j) => {
-      const k = letters[Math.min(letters.length - 1, Math.floor(at * letters.length) + ((i + j) % 2))].k;
-      return [k, { long: 0.55 + ((i * 7 + j * 5) % 5) * 0.14, delay: 0.32 + j * 0.24, x: ((i + j * 3) % 5) * 0.03 - 0.06 }] as const;
-    }),
+  const at = new Map<number, Drip[]>();
+  const spots = [...line].flatMap((ch, k) => (FEET[ch] ?? []).map(([x, foot]) => ({ k, x, foot })));
+  const letters = [...line].filter((ch) => /[A-Z0-9]/.test(ch)).length;
+  const n = Math.min(spots.length, Math.max(2, Math.round(letters / 3.2)));
+  // the long ones: one a line, two on a long one — early in it, so a
+  // phone's card (held only as long as its lines take) sees the drop go
+  const drops = new Set(n >= 5 ? [1, Math.floor(n / 2)] : [i % 2 === 0 ? 0 : Math.min(1, n - 1)]);
+  let last = -1;
+  for (let j = 0; j < n; j++) {
+    let s = Math.floor(((j + 0.5) * spots.length) / n + (noise(i, j) - 0.5) * 1.2);
+    s = Math.max(last + 1, Math.min(spots.length - (n - j), s));
+    last = s;
+    const { k, x, foot } = spots[s];
+    const r = noise(i * 13 + j, k);
+    const drop = drops.has(j);
+    const drip: Drip = {
+      x,
+      foot,
+      // a sag or a nub, a run, or a long one that lets go
+      long: drop ? 0.72 + r * 0.32 : r < 0.5 ? 0.1 + r * 0.24 : 0.3 + (r - 0.5) * 0.6,
+      neck: drop ? 0.088 : 0.09 + r * 0.02,
+      // as its letter lands (about 0.4s after it starts to fall)
+      delay: +(k * 0.045 + 0.4 + noise(j, i * 5 + k) * 0.2).toFixed(3),
+      drop,
+    };
+    at.set(k, [...(at.get(k) ?? []), drip]);
+  }
+  return at;
+}
+
+/**
+ * The goo itself, once for the page: blurred, then cut back to a hard edge,
+ * so whatever touches melts into one shape — the drip into the foot it runs
+ * off, a drop into the bead it pulls away from, stretching to a thread
+ * before it lets go. The blur is a share of the drip's own box (sized in
+ * em), so it's the same goo at any size the lines are set at.
+ */
+export function Goo() {
+  return (
+    <svg width="0" height="0" aria-hidden="true" className="pointer-events-none absolute">
+      <defs>
+        <filter
+          id="soon-goo"
+          x="-25%"
+          y="-4%"
+          width="150%"
+          height="108%"
+          primitiveUnits="objectBoundingBox"
+          colorInterpolationFilters="sRGB"
+        >
+          <feGaussianBlur in="SourceGraphic" stdDeviation="0.06 0.009" />
+          <feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 12 -5.4" />
+        </filter>
+      </defs>
+    </svg>
   );
 }
 
@@ -177,6 +265,11 @@ export default function Cut({
         timers.push(
           window.setTimeout(() => {
             if (!row.isConnected) return;
+            // a line that wraps (on a phone) drips off its bottom line only:
+            // off the top one, the goo would run into the words under it
+            const ws = [...row.querySelectorAll<HTMLElement>(".soon-goo-w")];
+            const low = Math.max(...ws.map((w) => w.offsetTop));
+            for (const w of ws) w.dataset.high = w.offsetTop < low - 4 ? "true" : "false";
             row.dataset.on = "true";
             if (i > 0) rows[i - 1].dataset.past = "true";
             if (opening) opened = true;
@@ -474,21 +567,32 @@ export default function Cut({
                     <span className="soon-goo-w">
                       {[...w.text].map((ch, n) => {
                         const k = w.at + n;
-                        const d = goo.get(k);
                         return (
                           <span key={k} className="soon-goo-l" data-tilt={(k * 37) % 5} style={{ "--i": k } as React.CSSProperties}>
                             {ch}
-                            {d ? (
-                              <span className="soon-drip-at">
-                                <span
-                                  className="soon-drip"
-                                  style={{ "--long": d.long, "--d": `${d.delay + k * 0.04}s`, "--x": `${d.x}em` } as React.CSSProperties}
-                                >
-                                  <b />
-                                  <i />
+                            {goo.get(k)?.map((d, q) => (
+                              <span
+                                key={q}
+                                className="soon-drip"
+                                data-drop={d.drop ? "" : undefined}
+                                style={
+                                  {
+                                    left: `${d.x}em`,
+                                    "--foot": d.foot,
+                                    "--long": d.long,
+                                    "--neck": d.neck,
+                                    "--d": `${d.delay}s`,
+                                  } as React.CSSProperties
+                                }
+                              >
+                                <span className="soon-drip-foot" />
+                                <span className="soon-drip-stem" />
+                                <span className="soon-drip-run">
+                                  <span className="soon-drip-bead" />
+                                  {d.drop ? <span className="soon-drip-drop" /> : null}
                                 </span>
                               </span>
-                            ) : null}
+                            ))}
                           </span>
                         );
                       })}

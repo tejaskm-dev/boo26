@@ -4,13 +4,15 @@ import LegalPage, { type LegalDoc } from "@/components/legal/LegalPage";
 import { A, Item, List, P } from "@/components/legal/Prose";
 import { EVENT, LEGAL_UPDATED } from "@/lib/site";
 import { siteLive } from "@/lib/live";
+import { pageMeta } from "@/lib/seo";
 
 // Written about the night (the haunted house, the hunt, the games), so it
 // waits for the full site; the teaser redirects this address home.
-export const metadata: Metadata = !siteLive() ? {} : {
+export const metadata: Metadata = !siteLive() ? {} : pageMeta({
   title: `Code of Conduct — ${EVENT.name} ${EVENT.year}`,
   description: `How everyone at ${EVENT.name} ${EVENT.year} looks after each other: make people react, never make them unsafe.`,
-};
+  path: "/code-of-conduct",
+});
 
 const CONDUCT: LegalDoc = {
   href: "/code-of-conduct",

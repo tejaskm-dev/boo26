@@ -22,11 +22,24 @@ import { isTouch, rich } from "@/lib/tier";
  * pointer subscription each, running the whole way down, is most of a frame
  * spent animating things nobody is looking at.
  */
+/**
+ * How wide a piece is drawn, for the browser to pick a file by — the same
+ * steps as --sprite-scale in globals.css, so a phone fetches the piece it
+ * shows (about half the width) rather than the desktop one at three times
+ * its pixels. With some room over, for a placement that sets it a little
+ * wider than its scale.
+ */
+const sizesFor = (px: number) => {
+  const at = (k: number) => `${Math.round(px * k * 1.3)}px`;
+  return `(max-width: 640px) ${at(0.52)}, (max-width: 1023px) ${at(0.74)}, ${at(1)}`;
+};
+
 export default function Sprite({
   name,
   scale = 1,
   drift = 0,
   idle = 0,
+  zoom = 1,
   className = "",
   alt = "",
   priority = false,
@@ -40,6 +53,8 @@ export default function Sprite({
   drift?: number;
   /** slow idle float, in px — the cats are alive even when nothing happens */
   idle?: number;
+  /** how far it's ever blown up past its own box (a lunge): it's fetched sharp enough for that */
+  zoom?: number;
   className?: string;
   alt?: string;
   priority?: boolean;
@@ -117,7 +132,7 @@ export default function Sprite({
         width={art.w}
         height={art.h}
         priority={priority}
-        sizes={`${Math.round(art.w * scale)}px`}
+        sizes={sizesFor(art.w * scale * zoom)}
         className="h-auto w-full"
         aria-hidden={alt === "" ? true : undefined}
       />

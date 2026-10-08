@@ -65,6 +65,7 @@ export default function Hero({
 
         {/* oversized on purpose — it runs wider than any column on the page */}
         <HeroLockup
+          heading
           data-anim="fade"
           className="w-[min(86vw,34rem)] md:w-[clamp(30rem,53vw,54rem)]"
         />

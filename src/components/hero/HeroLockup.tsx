@@ -15,11 +15,16 @@ import { rich } from "@/lib/tier";
 /**
  * The supplied lockup, oversized, with its cat wired up. The image is never
  * redrawn — only the pupils sit on top of it.
+ *
+ * At the top of a page it's the page's heading (`heading`): the name, read
+ * out from the picture's alt text. Nothing about how it looks changes.
  */
 export default function HeroLockup({
   className = "",
+  heading = false,
   ...rest
-}: React.HTMLAttributes<HTMLDivElement>) {
+}: React.HTMLAttributes<HTMLDivElement> & { heading?: boolean }) {
+  const Frame = heading ? "h1" : "div";
   const wrap = useRef<HTMLDivElement>(null);
   const drift = useRef<HTMLDivElement>(null);
   const [hovered, setHovered] = useState(false);
@@ -110,7 +115,7 @@ export default function HeroLockup({
       {...rest}
     >
       <div ref={drift} className="w-full will-change-transform">
-        <div
+        <Frame
           data-lockup
           className="relative w-full transition-transform duration-700 ease-[var(--ease-out-soft)] hover:scale-[1.012]"
           style={{ aspectRatio: "1350 / 909" }}
@@ -124,7 +129,7 @@ export default function HeroLockup({
             className="object-contain"
           />
           <CatEyes art={LOCKUP_EYES} track={fine} excited={hovered} />
-        </div>
+        </Frame>
       </div>
     </div>
   );

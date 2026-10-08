@@ -17,6 +17,10 @@ export const BRAND = {
      and the Greek mu is not. Anywhere the type is uppercased it has to go
      through <Micro>, or it renders as a plain M. */
   host: "µLearn ASIET",
+  /* Where the site lives. Every canonical address, share card, sitemap entry
+     and structured-data URL is built on this (src/lib/seo.ts); www. and the
+     vercel.app address both redirect here. */
+  url: "https://boo26.live",
   /* Every register CTA lands here. Until registration opens, /register and
      everything under it is the coming-soon page (src/lib/register/mode.ts). */
   registerHref: "/register",

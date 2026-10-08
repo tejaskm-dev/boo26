@@ -24,7 +24,8 @@ import { BRAND as EVENT } from "./brand";
 export const SOON = {
   meta: {
     title: `${EVENT.name} ${EVENT.year} · ASIET, Kalady`,
-    description: "Something's coming to ASIET. We're not allowed to say more.",
+    /* what a search result says under the name: the teaser's own line, nothing it doesn't already say */
+    description: `${EVENT.name} ${EVENT.year} is coming to ASIET, Kalady. That’s about all we’re allowed to tell you.`,
   },
 
   /** where the full site says what it is, the teaser whispers */

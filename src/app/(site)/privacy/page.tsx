@@ -3,11 +3,13 @@ import LegalPage, { type LegalDoc } from "@/components/legal/LegalPage";
 import { A, Item, Key, List, P } from "@/components/legal/Prose";
 import { EVENT, LEGAL_UPDATED } from "@/lib/site";
 import { STORAGE } from "@/lib/storage";
+import { pageMeta } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMeta({
   title: `Privacy Policy — ${EVENT.name} ${EVENT.year}`,
   description: `What the ${EVENT.name} ${EVENT.year} website and event do with information about you. No cookies, no analytics, no trackers.`,
-};
+  path: "/privacy",
+});
 
 /**
  * What the site does is checked, not assumed: it loads nothing from any other
