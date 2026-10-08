@@ -3,11 +3,12 @@
 import { useEffect, useRef } from "react";
 import { GlowEyes } from "@/components/ui/Glyphs";
 import { getLenis } from "@/lib/lenis";
-import { prefersReducedMotion } from "@/lib/motion";
+import { OPEN_EVENT, prefersReducedMotion } from "@/lib/motion";
 import { setSoonWords } from "@/lib/toast";
 import { SOCIALS } from "@/lib/brand";
-import { TROLL } from "@/lib/soon";
+import { CHAIN, TROLL } from "@/lib/soon";
 import { answer, buzz, shiver, troll } from "./troll";
+import { chainPlace, did } from "./chain";
 import { say } from "./sound";
 
 const IDLE = 22_000;
@@ -53,6 +54,22 @@ export default function Eggs() {
       console.log("%cwhat's your favourite scary movie?  (psst: /shh)", "color:#f3f0e7;background:#080808;padding:4px 10px");
     }
 
+    // sent here on a passed-on link: once they're in, they're told how far
+    // it's come (chain.ts) — never over the loading screen
+    const sent = chainPlace();
+    if (sent > 0) {
+      let hi = 0;
+      const greet = () => {
+        hi = window.setTimeout(() => troll("chain", CHAIN.arrived(sent)), 1800);
+      };
+      if (document.documentElement.dataset.wipe) window.addEventListener(OPEN_EVENT, greet, { once: true });
+      else greet();
+      cleanups.push(() => {
+        window.removeEventListener(OPEN_EVENT, greet);
+        window.clearTimeout(hi);
+      });
+    }
+
     // leave the tab, and it notices
     let title = document.title;
     let leftAt = 0;
@@ -63,7 +80,10 @@ export default function Eggs() {
         document.title = TROLL.away;
       } else {
         document.title = title;
-        if (leftAt && Date.now() - leftAt > 1500) troll("back", TROLL.back);
+        if (leftAt && Date.now() - leftAt > 1500) {
+          did("back");
+          troll("back", TROLL.back);
+        }
       }
     };
     document.addEventListener("visibilitychange", onVisibility);
@@ -79,6 +99,7 @@ export default function Eggs() {
       if (eyes.current?.dataset.show) delete eyes.current.dataset.show;
       idle = window.setTimeout(() => {
         if (document.hidden) return;
+        did("walls");
         if (troll("walls", TROLL.walls) && eyes.current) eyes.current.dataset.show = "true";
       }, IDLE);
     };
@@ -125,6 +146,7 @@ export default function Eggs() {
       const el = dark.current;
       if (!el || el.dataset.on) return;
       el.dataset.on = "true";
+      did("lights");
       window.clearTimeout(lights);
       lights = window.setTimeout(() => {
         delete el.dataset.on;
@@ -207,6 +229,7 @@ export default function Eggs() {
       const io = new IntersectionObserver(
         ([e]) => {
           if (!e.isIntersecting) return;
+          did("end");
           if (!troll("leaving", TROLL.leaving)) return;
           io.disconnect();
           say("leaving");

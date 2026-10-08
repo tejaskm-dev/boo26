@@ -130,8 +130,6 @@ export const SOON = {
     body: "Registration isn’t open, and we’re not saying when. This page will change. Keep an eye on it.",
     share: "Tell a friend",
     note: "keep it\nquiet.",
-    /** what a share sends: the old chain-message curse */
-    chain: "you’ve been visited by the BOO! cat. forward this to 3 friends or it sits on your keyboard forever.",
     band: [
       "SOMETHING IS WAKING UP",
       "ASIET, KALADY",
@@ -270,6 +268,72 @@ export const TROLL = {
   notYet: "not yet.",
   ghosted: "you’ve been ghosted.",
 } as const;
+
+/**
+ * What "Tell a friend" sends (NotYet.tsx, chain.ts): the old chain-message
+ * curse, written fresh every time it's sent. An opener; what the sender did
+ * on their visit, said back as a dare; the steps to make it leave — every
+ * one of them something that's really on the page — and what happens if you
+ * skip one. Someone who comes in on a passed-on link is told how far it's
+ * travelled. Like every line here: no when, and no what.
+ */
+export const CHAIN = {
+  /** one of these opens it */
+  hooks: [
+    "you’ve been visited by the BOO! cat. 🐈‍⬛",
+    "the BOO! cat is in this chat now. 🐈‍⬛",
+    "the BOO! cat followed me here. now it’s yours. 🐈‍⬛",
+  ],
+  /** what the sender did on their visit, the worst first — up to three are owned up to */
+  did: {
+    shh: "i found the page i wasn’t supposed to.",
+    woke: "i woke it.",
+    face: "i saw its face.",
+    up: "it followed me back up.",
+    lights: "i turned the lights off.",
+    end: "i made it to the end.",
+    poke: "i poked it in the eye.",
+    walls: "i went quiet. something noticed.",
+    back: "i looked away. it waited.",
+  },
+  /** after what they did */
+  turn: "your turn.",
+  /** a sender who did none of it */
+  nothing: "i didn’t find anything. that’s what it wanted.",
+  steps: "to make it leave:",
+  /** always the first step */
+  open: "open the link. sound on.",
+  /** two of these, different every time — every one is really there */
+  dares: [
+    "there’s something asleep in the dark. don’t wake it.",
+    "find the page you weren’t supposed to. (shh.)",
+    "scroll back up. see what changed.",
+    "go quiet for a while. something will notice.",
+    "poke the cat on the logo. three times.",
+    "look away. then come back.",
+  ],
+  /** always the last step */
+  pass: "send this to 3 friends.",
+  /** one of these ends it */
+  curses: [
+    "skip one and it sits on your keyboard forever.",
+    "skip one and it follows you home.",
+    "skip one and it moves in. it’s already picked a spot.",
+    "skip one and it knows.",
+  ],
+  /** the beat after it's sent — or, on a laptop, copied */
+  sent: "…we’ll know if you didn’t.",
+  copied: "…now paste it somewhere. we’ll know if you don’t.",
+  /** for someone who came in on a passed-on link: how many times it's been passed on */
+  arrived: (n: number) =>
+    n === 1
+      ? "someone passed it to you. you’re no. 1."
+      : n < 5
+        ? `you’re no. ${n}. it’s getting heavier.`
+        : n < 10
+          ? `${n} people before you. none of them got rid of it.`
+          : `passed on ${n} times. it’s not leaving.`,
+};
 
 /**
  * The eyes in the corner (Waiting.tsx), there only while the page is being

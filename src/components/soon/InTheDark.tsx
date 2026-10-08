@@ -22,6 +22,7 @@ import { subscribePointer } from "@/lib/pointer";
 import { onResize } from "@/lib/viewport";
 import { CUTS, SECRETS, SOON, TROLL } from "@/lib/soon";
 import { answer, buzz, shiver, troll } from "./troll";
+import { did } from "./chain";
 
 /** with the sound on, the card into the room is whispered too — and the one on the way back out */
 const VOICES = ["lights-off", "eyes-open", "breathing"] as const;
@@ -222,6 +223,7 @@ export default function InTheDark() {
     const wake = () => {
       if (awake) return;
       awake = true;
+      did("woke");
       // stay and watch it happen
       hold("room-wake", 2400, { tail: 700 });
       setWoke(true);

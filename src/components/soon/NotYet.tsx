@@ -8,7 +8,7 @@ import BlobButton from "@/components/ui/BlobButton";
 import Marquee from "@/components/fx/Marquee";
 import HeroLockup from "@/components/hero/HeroLockup";
 import { prefersReducedMotion } from "@/lib/motion";
-import { BACK, CUTS, MU, SECRETS, SOON, TROLL } from "@/lib/soon";
+import { BACK, CHAIN, CUTS, MU, SECRETS, SOON, TROLL } from "@/lib/soon";
 import Awake from "./Awake";
 import Critters from "./Critters";
 import Cut from "./Cut";
@@ -19,6 +19,7 @@ import { hold } from "./hold";
 import { useBacktrack } from "./backtrack";
 import { glitch, useGlitch } from "./glitch";
 import { answer, buzz, shiver } from "./troll";
+import { afterShare, chainMessage, passOn } from "./chain";
 
 /** what a silenced rumour says instead — block glyphs read as a broken font, not a redaction */
 const HUSH = "SHH.";
@@ -266,21 +267,26 @@ export default function NotYet() {
     setBand(items);
   }, [t.band]);
 
+  // the old chain message, written fresh each time, owning up to what this
+  // visitor did here, on a link one further along the chain (chain.ts)
   const share = async () => {
-    const url = `${window.location.origin}/`;
+    const url = passOn();
+    const text = chainMessage();
     const coarse = window.matchMedia("(hover: none), (pointer: coarse)").matches;
     if (coarse && navigator.share) {
       try {
-        await navigator.share({ title: SOON.meta.title, text: t.chain, url });
+        await navigator.share({ title: SOON.meta.title, text, url });
         answer(TROLL.shared);
+        afterShare(CHAIN.sent);
       } catch {
         /* closed the share sheet: fair */
       }
       return;
     }
     try {
-      await navigator.clipboard.writeText(`${t.chain} ${url}`);
+      await navigator.clipboard.writeText(`${text}\n\n${url}`);
       answer(TROLL.copied);
+      afterShare(CHAIN.copied);
     } catch {
       answer("copy the address bar. we trust you.");
     }

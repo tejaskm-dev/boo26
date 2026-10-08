@@ -10,6 +10,7 @@ import { MU } from "@/lib/soon";
 import InkEyes from "./InkEyes";
 import MuLearn from "./MuLearn";
 import { hold } from "./hold";
+import { did } from "./chain";
 import { cue, lineLength, say, type Line } from "./sound";
 
 /** where eyes open in the dark while the card is up */
@@ -247,6 +248,7 @@ export default function Cut({
       playing = way;
       playedAt = performance.now();
       cardEl.dataset.way = way;
+      if (way === "up") did("up");
       // eyes open round the frame for as long as it plays
       eyesEl.dataset.look = "true";
       const rows = way === "down" ? down : up;
