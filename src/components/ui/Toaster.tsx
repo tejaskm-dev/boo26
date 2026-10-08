@@ -66,13 +66,14 @@ export default function Toaster() {
           ref={pill}
           aria-hidden="true"
           style={{ visibility: "hidden", opacity: 0 }}
-          className="flex items-center gap-3 bg-ink px-6 py-3.5 text-bone shadow-[0_14px_34px_rgba(8,8,8,0.3)] ring-1 ring-lime/40 [border-radius:46%_54%_58%_42%/42%_60%_40%_58%] md:px-7 md:py-4"
+          className="flex max-w-full items-center gap-3 bg-ink px-6 py-3.5 text-bone shadow-[0_14px_34px_rgba(8,8,8,0.3)] ring-1 ring-lime/40 [border-radius:46%_54%_58%_42%/42%_60%_40%_58%] md:px-7 md:py-4"
         >
           <span className="h-[0.42rem] w-[0.42rem] shrink-0 rotate-45 bg-lime" />
           {current?.label ? (
             <span className="label whitespace-nowrap text-[0.66rem] text-bone/55 md:text-[0.72rem]">{current.label}</span>
           ) : null}
-          <span className="label whitespace-nowrap text-[0.66rem] text-lime md:text-[0.72rem]">{current?.message}</span>
+          {/* one line wherever it fits; on the narrowest phones a long one wraps rather than running off both edges */}
+          <span className="label min-w-0 text-balance text-center text-[0.66rem] text-lime min-[23rem]:whitespace-nowrap md:text-[0.72rem]">{current?.message}</span>
         </div>
       </div>
 
