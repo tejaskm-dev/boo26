@@ -11,9 +11,10 @@ import Scrollbar from "@/components/fx/Scrollbar";
 import SectionMotion from "@/components/fx/SectionMotion";
 import Toaster from "@/components/ui/Toaster";
 import PageWipe from "@/components/fx/PageWipe";
-import { EVENT, PRELOADER } from "@/lib/site";
+import { PRELOADER, SEO } from "@/lib/site";
 import { SOON } from "@/lib/soon";
 import { siteLive } from "@/lib/live";
+import { KEYWORDS, NAME, SHARE, SITE, indexable } from "@/lib/seo";
 import { WIPE_BOOT } from "@/lib/wipe";
 import "lenis/dist/lenis.css";
 import "../globals.css";
@@ -49,34 +50,48 @@ const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
 });
 
-const ICONS: Metadata["icons"] = {
-  icon: [
-    { url: "/favicon.ico" },
-    { url: "/icon.png", type: "image/png", sizes: "32x32" },
-  ],
-  apple: "/apple-touch-icon.png",
+/**
+ * What every page carries unless it says otherwise, the 404s included: the
+ * site's address (so a page can name itself by its path), whether search
+ * engines should have this deploy at all (src/lib/seo.ts), and the large
+ * share card. The icons are files Next finds by name (src/app/icon*.png,
+ * apple-icon.png) — every page gets them.
+ */
+const verify = process.env.GOOGLE_SITE_VERIFICATION?.trim();
+const BASE: Metadata = {
+  metadataBase: SITE,
+  applicationName: NAME,
+  robots: indexable()
+    ? {
+        index: true,
+        follow: true,
+        googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 },
+      }
+    : { index: false, follow: false },
+  ...(verify ? { verification: { google: verify } } : {}),
 };
 
-/**
- * Every page that doesn't name itself carries these — the 404s included — so
- * while the teaser is up they carry no date, and no "Halloween" either.
- */
+/** a card's words, the same way on both sides */
+const card = (title: string, description: string): Metadata => ({
+  openGraph: { type: "website", siteName: NAME, locale: "en_IN", title, description, images: [SHARE] },
+  twitter: { card: "summary_large_image", title, description, images: [SHARE] },
+});
+
+/** while the teaser is up there's no date in any of it, and no "Halloween" either */
 const TEASER: Metadata = {
+  ...BASE,
   title: SOON.meta.title,
   description: SOON.meta.description,
-  icons: ICONS,
-  openGraph: { title: SOON.meta.title, description: SOON.meta.description, type: "website" },
+  keywords: KEYWORDS,
+  ...card(SOON.meta.title, SOON.meta.description),
 };
 
 export const metadata: Metadata = !siteLive() ? TEASER : {
-  title: `${EVENT.name} ${EVENT.year} — ${EVENT.date}, ${EVENT.venue}`,
-  description: `A Halloween-night creative technology hackathon at ASIET, Kalady. One challenge: build something that makes someone react. ${EVENT.dateLong}.`,
-  icons: ICONS,
-  openGraph: {
-    title: `${EVENT.name} ${EVENT.year}`,
-    description: `Most hackathons start with a problem. ${EVENT.name} starts with a reaction. ${EVENT.dateLong}, ASIET Kalady.`,
-    type: "website",
-  },
+  ...BASE,
+  title: SEO.title,
+  description: SEO.description,
+  keywords: [...KEYWORDS, ...SEO.keywords],
+  ...card(SEO.title, SEO.share),
 };
 
 export const viewport: Viewport = {

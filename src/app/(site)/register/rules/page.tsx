@@ -15,7 +15,7 @@ import { EVENT, TIMELINE } from "@/lib/site";
 export const metadata = registerMeta({
   title: `Rules & guidelines — ${EVENT.name} ${EVENT.year}`,
   description: `The rules for ${EVENT.name} ${EVENT.year}, and what to know for the night: what to bring, food, sleep and the fee.`,
-});
+}, "/register/rules");
 
 const pad = (i: number) => String(i + 1).padStart(2, "0");
 

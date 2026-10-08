@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { EVENT } from "@/lib/site";
 import { siteLive } from "@/lib/live";
+import { pageMeta } from "@/lib/seo";
 import { registrationOpen } from "./mode";
 
 const SOON: Metadata = {
@@ -15,10 +16,19 @@ const TEASER: Metadata = {
 };
 
 /**
- * A register page's metadata — or, while registration is switched off, the
- * coming-soon page's, because that's what every one of them shows.
+ * Closed, it's the same page at every /register address: not one for search
+ * results (the home page is), though its links still count.
  */
-export function registerMeta(meta: Metadata): Metadata {
-  if (!siteLive()) return TEASER;
-  return registrationOpen() ? meta : SOON;
+const CLOSED: Metadata["robots"] = { index: false, follow: true };
+
+/**
+ * A register page's metadata, with its own address for search engines
+ * (`path`) — or, while registration is switched off, the coming-soon page's,
+ * because that's what every one of them shows.
+ */
+export function registerMeta(meta: Metadata, path?: string): Metadata {
+  if (!siteLive()) return { ...TEASER, robots: CLOSED };
+  if (!registrationOpen()) return { ...SOON, robots: CLOSED };
+  if (!path) return meta;
+  return { ...pageMeta({ title: String(meta.title), description: String(meta.description ?? ""), path }), ...meta };
 }

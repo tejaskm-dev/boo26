@@ -8,7 +8,7 @@ import { EVENT } from "@/lib/site";
 export const metadata = registerMeta({
   title: `Register — ${EVENT.name} ${EVENT.year}`,
   description: `Register your team of two for ${EVENT.name} ${EVENT.year}: one of you starts the team, the other joins with the code. ${EVENT.dateLong}, ASIET Kalady.`,
-});
+}, "/register");
 
 export default function RegisterPage() {
   if (!registrationOpen()) return <Closed />;

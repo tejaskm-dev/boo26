@@ -14,7 +14,7 @@ import { EVENT } from "@/lib/site";
 export const metadata = registerMeta({
   title: `Judging — ${EVENT.name} ${EVENT.year}`,
   description: `How builds are judged at ${EVENT.name} ${EVENT.year}: the reaction first, then the build, the idea and the show.`,
-});
+}, "/register/judging");
 
 /** the reaction takes the lime; the rest step back into the dark in order */
 const SHADES = ["bg-lime", "bg-bone/70", "bg-bone/45", "bg-bone/25"];

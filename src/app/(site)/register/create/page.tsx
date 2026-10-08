@@ -9,7 +9,7 @@ import { EVENT } from "@/lib/site";
 export const metadata = registerMeta({
   title: `Start a team — ${EVENT.name} ${EVENT.year}`,
   description: `Start your team for ${EVENT.name} ${EVENT.year}, then send your teammate the code.`,
-});
+}, "/register/create");
 
 export default function CreatePage() {
   if (!registrationOpen()) return <Closed />;

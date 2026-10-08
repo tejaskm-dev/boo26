@@ -4,13 +4,15 @@ import LegalPage, { type LegalDoc } from "@/components/legal/LegalPage";
 import { A, Item, List, P } from "@/components/legal/Prose";
 import { EVENT, LEGAL_UPDATED } from "@/lib/site";
 import { siteLive } from "@/lib/live";
+import { pageMeta } from "@/lib/seo";
 
 // The terms describe the night itself (its date, what happens in it), so
 // they wait for the full site; the teaser redirects this address home.
-export const metadata: Metadata = !siteLive() ? {} : {
+export const metadata: Metadata = !siteLive() ? {} : pageMeta({
   title: `Terms of Service — ${EVENT.name} ${EVENT.year}`,
   description: `The terms for taking part in ${EVENT.name} ${EVENT.year}, a Halloween-night hackathon at ASIET, Kalady, on ${EVENT.dateLong}.`,
-};
+  path: "/terms",
+});
 
 /**
  * Facts only from what the site already states. Anything not settled yet —
