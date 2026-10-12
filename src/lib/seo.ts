@@ -135,6 +135,7 @@ export function siteGraph(description: string) {
       logo: LOGO,
       image: SHARE_IMAGE,
       email: BRAND.email,
+      sameAs: [BRAND.instagram],
       parentOrganization: { "@type": "Organization", name: BRAND.host },
     },
   ];

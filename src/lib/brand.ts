@@ -27,6 +27,7 @@ export const BRAND = {
   /* A temporary address until BOO! has its own. Change it here and the
      legal pages follow. */
   email: "boo26team@gmail.com",
+  instagram: "https://www.instagram.com/boo26.live",
 } as const;
 
 /**
@@ -36,7 +37,8 @@ export const BRAND = {
  */
 export const SOCIALS: { label: string; icon: string; href?: string }[] = [
   { label: "Discord", icon: "discord" },
-  { label: "Instagram", icon: "instagram" },
+  { label: "Instagram", icon: "instagram", href: "https://www.instagram.com/boo26.live" },
   { label: "LinkedIn", icon: "linkedin" },
   { label: "YouTube", icon: "youtube" },
 ];
+
