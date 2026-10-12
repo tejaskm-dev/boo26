@@ -1,8 +1,8 @@
 "use client";
 
 import Wordmark from "@/components/ui/Wordmark";
-import BlobButton from "@/components/ui/BlobButton";
 import MenuTrigger from "@/components/ui/MenuTrigger";
+import MuLearnLogo from "@/components/ui/MuLearnLogo";
 
 export default function Header({
   onOpenMenu,
@@ -11,7 +11,7 @@ export default function Header({
 }: {
   onOpenMenu: () => void;
   menuOpen: boolean;
-  cta: { label: string; href: string };
+  cta?: { label: string; href: string };
 }) {
   return (
     <header
@@ -21,9 +21,7 @@ export default function Header({
       <Wordmark className="pointer-events-auto" />
 
       <div className="pointer-events-auto flex items-center gap-[clamp(0.75rem,1.6vw,1.75rem)]">
-        <span className="hidden md:block">
-          <BlobButton href={cta.href}>{cta.label}</BlobButton>
-        </span>
+        <MuLearnLogo href={cta?.href} className="inline-flex" />
         <MenuTrigger onClick={onOpenMenu} expanded={menuOpen} />
       </div>
     </header>
