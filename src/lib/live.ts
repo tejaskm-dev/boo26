@@ -8,7 +8,7 @@
  * no dates or timings anywhere until it's announced, and a variable someone
  * forgot to set should never be the thing that publishes them.
  *
- * It's read where the pages are built, like BOO_REGISTRATION_OPEN, so flipping
+ * It's read where the pages are built, like REGISTER_URL, so flipping
  * it takes a new build (on Vercel, a redeploy). In exchange it costs nothing
  * when someone visits: no middleware, no check per request, nothing sent to
  * the browser. Both versions are plain static pages. next.config.ts reads the
