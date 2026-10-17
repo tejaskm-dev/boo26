@@ -5,6 +5,10 @@ import { currentAdmin, missingSetup } from "@/lib/admin/session";
 import { isState, listTeams, recentAdminActions, teamsAreTemporary } from "@/lib/register/store";
 import { codeFromPath } from "@/lib/register/code";
 import { origin } from "@/lib/origin";
+import { siteLive } from "@/lib/live";
+import { registerUrl } from "@/lib/register/external";
+import { teamMode } from "@/lib/team";
+import { CREW } from "@/lib/site";
 
 /**
  * The core team's view of registration. Nothing links here from the site, and
@@ -71,6 +75,10 @@ export default async function AdminPage({
       said={one(query.said) || undefined}
       seat={Number(one(query.seat)) === 1 || Number(one(query.seat)) === 2 ? Number(one(query.seat)) : undefined}
       temporary={teamsAreTemporary()}
+      live={siteLive()}
+      register={registerUrl()}
+      team={teamMode()}
+      crew={CREW.length}
     />
   );
 }

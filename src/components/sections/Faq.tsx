@@ -7,7 +7,9 @@ import RowMark from "@/components/ui/RowMark";
 import Words from "@/components/fx/Words";
 import BlobButton from "@/components/ui/BlobButton";
 import SoonLink from "@/components/ui/SoonLink";
-import { FAQ, NOTES, SOCIALS } from "@/lib/site";
+import Awake from "@/components/soon/Awake";
+import Spider from "@/components/site/Spider";
+import { FAQ, NOTES, SOCIALS, SURVIVAL } from "@/lib/site";
 import { comingSoon } from "@/lib/toast";
 
 const DISCORD = SOCIALS.find((s) => s.label === "Discord");
@@ -18,7 +20,7 @@ const DISCORD = SOCIALS.find((s) => s.label === "Discord");
  * down in the corner; the questions run as real buttons on the right, one open
  * at a time, each answer resting on a soft blob rather than in a card.
  */
-export default function Faq() {
+export default function Faq({ index = "07" }: { index?: string }) {
   const [open, setOpen] = useState<number | null>(0);
 
   return (
@@ -27,10 +29,13 @@ export default function Faq() {
       field="bone"
       className="pb-[clamp(4rem,10vh,7rem)] pt-[clamp(5rem,15vh,12rem)] md:pt-[clamp(5rem,22vh,12rem)]"
     >
+      <Awake />
+      {/* hanging from the top of the section, in the air between the two halves */}
+      <Spider note={SURVIVAL.notes.spider} className="right-[7%] top-0 z-20 lg:left-[46%] lg:right-auto" drop="clamp(3.5rem, 11vh, 8rem)" />
       <div className="grid gap-[clamp(2.5rem,5vw,4.5rem)] px-[var(--edge)] lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.1fr)]">
         {/* the poster half */}
         <div className="relative">
-          <SectionLabel index="07">FAQ</SectionLabel>
+          <SectionLabel index={index}>FAQ</SectionLabel>
 
           <p className="hand mt-6 max-w-[12ch] -rotate-[4deg] whitespace-pre-line text-[clamp(1.15rem,2vw,1.8rem)] text-ink/70">
             {NOTES.faq}
@@ -40,12 +45,15 @@ export default function Faq() {
             <Words as="h2" className="brush lean -rotate-[2deg] select-none text-[clamp(5.5rem,17vw,13.5rem)] leading-[0.82]">
               FAQ
             </Words>
+            {/* sat up on top of the word, off the end of the Q rather than on it */}
             <Sprite
               name="cat-confused"
               scale={0.68}
               drift={16}
               idle={6}
-              className="absolute -top-[clamp(2rem,5vw,4rem)] right-[6%] z-10"
+              data-note={SURVIVAL.notes.faqCat}
+              style={{ pointerEvents: "auto" }}
+              className="absolute -right-[4%] top-0 z-10 -translate-y-[84%]"
             />
           </div>
 
@@ -54,8 +62,9 @@ export default function Faq() {
           </p>
 
           {/* the desk, down in the corner */}
-          <div data-scrub="up" data-scrub-amount="16" className="relative mt-[clamp(2.5rem,6vh,4rem)] hidden min-h-[11rem] lg:block">
-            <Sprite name="cat-laptop" scale={1.0} drift={12} idle={4} className="absolute bottom-0 left-0 z-10" />
+          {/* deep enough for the whole cat, so it never comes up over the line above */}
+          <div data-scrub="up" data-scrub-amount="16" className="relative mt-[clamp(2.5rem,6vh,4rem)] hidden min-h-[20rem] lg:block">
+            <Sprite name="cat-laptop" scale={1.0} drift={12} idle={4} className="absolute bottom-0 left-0 z-10" data-note={SURVIVAL.notes.laptop} style={{ pointerEvents: "auto" }} />
             <p className="hand absolute right-0 top-[10%] max-w-[13ch] whitespace-pre-line text-[clamp(1rem,1.4vw,1.25rem)] text-ink/55">
               Real questions.{"\n"}Real answers.{"\n"}(We think.)
             </p>

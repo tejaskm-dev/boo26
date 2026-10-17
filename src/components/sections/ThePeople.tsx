@@ -9,7 +9,8 @@ import GhostIndex from "@/components/ui/GhostIndex";
 import RiseIn from "@/components/fx/RiseIn";
 import { TEAM, type TeamMember } from "@/lib/site";
 
-export default function ThePeople() {
+/** 05 — the core team; the index moves up a place when the menu has fewer sections */
+export default function ThePeople({ index = "05" }: { index?: string }) {
   const [activeCard, setActiveCard] = useState<number | null>(null);
   /*
    * Hover is tracked here as well as in CSS. Tailwind's hover variants only
@@ -46,12 +47,12 @@ export default function ThePeople() {
       className="pb-[clamp(5rem,14vh,9rem)] pt-[clamp(7.5rem,22vh,15rem)] md:pt-[clamp(8.5rem,28vh,17rem)]"
     >
       <div className="px-[var(--edge)]">
-        <SectionLabel index="05">The People</SectionLabel>
+        <SectionLabel index={index}>The People</SectionLabel>
       </div>
 
       {/* Grand Hollow Number in Background */}
       <GhostIndex className="left-[40%] top-[8%] hidden text-[clamp(10rem,26vw,24rem)] lg:block">
-        05
+        {index}
       </GhostIndex>
 
       {/* Header Spread with Macro Parallax */}
@@ -256,9 +257,10 @@ function PushPin({ className = "" }: { className?: string }) {
  * - Recessed photo well with diagonal glossy Mylar film glare.
  * - Multi-layer micro-interactions on hover with companion mascots.
  */
-function PolaroidCard({
+export function PolaroidCard({
   member,
   index,
+  doodle = index,
   isActive,
   isOpen,
   onCardClick,
@@ -266,6 +268,8 @@ function PolaroidCard({
 }: {
   member: TeamMember;
   index: number;
+  /** which card's doodles and tape it wears — the crew's are offset, so no two rows match */
+  doodle?: number;
   /** lit: tapped open, or under a mouse or pen */
   isActive: boolean;
   /** tapped open — what aria-expanded reports */
@@ -273,7 +277,7 @@ function PolaroidCard({
   onCardClick: (index: number) => void;
   onHoverChange: (index: number, on: boolean) => void;
 }) {
-  const uid = `pol-${index}`;
+  const uid = `pol-${member.name.replace(/\W+/g, "-").toLowerCase()}-${index}`;
 
   return (
     <div
@@ -421,7 +425,7 @@ function PolaroidCard({
         {/* 3. Card Content (Registered precisely to match the SVG cutouts) */}
         <div className="relative z-10 flex flex-col p-2.5 pb-3.5 sm:p-3 sm:pb-4">
           {/* Authentic Doodles & Washi Tape per card */}
-          {index === 0 && (
+          {doodle === 0 && (
             <>
               {/* Detailed SVG Lime Washi Tape */}
               <svg
@@ -430,7 +434,7 @@ function PolaroidCard({
                 aria-hidden="true"
               >
                 <defs>
-                  <linearGradient id="tape-grad-0" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <linearGradient id={`${uid}-tape`} x1="0%" y1="0%" x2="100%" y2="0%">
                     <stop offset="0%" stopColor="#c8f800" stopOpacity="0.88" />
                     <stop offset="50%" stopColor="#d8ff28" stopOpacity="0.94" />
                     <stop offset="100%" stopColor="#b4ee00" stopOpacity="0.88" />
@@ -438,7 +442,7 @@ function PolaroidCard({
                 </defs>
                 <polygon
                   points="2,2 66,3 67,21 64,22 65,20 62,22 4,21 2,22 3,20 1,21"
-                  fill="url(#tape-grad-0)"
+                  fill={`url(#${uid}-tape)`}
                 />
                 <line x1="12" y1="5" x2="14" y2="19" stroke="#99cc00" strokeWidth="0.8" opacity="0.6" />
                 <line x1="34" y1="4" x2="33" y2="20" stroke="#ffffff" strokeWidth="0.8" opacity="0.4" />
@@ -451,7 +455,7 @@ function PolaroidCard({
             </>
           )}
 
-          {index === 1 && (
+          {doodle === 1 && (
             /* Nandana: Three sketch tick marks /// on upper right */
             <svg viewBox="0 0 24 24" className="pointer-events-none absolute -right-2 top-3 w-5 h-5 z-30 text-ink/75 stroke-current stroke-2 stroke-linecap-round">
               <line x1="3" y1="20" x2="9" y2="4" />
@@ -460,7 +464,7 @@ function PolaroidCard({
             </svg>
           )}
 
-          {index === 2 && (
+          {doodle === 2 && (
             <>
               {/* Rithvik: Two sketch tick marks // on upper right */}
               <svg viewBox="0 0 20 20" className="pointer-events-none absolute -right-2 top-2.5 w-4 h-4 z-30 text-ink/75 stroke-current stroke-2 stroke-linecap-round">
@@ -474,14 +478,14 @@ function PolaroidCard({
             </>
           )}
 
-          {index === 3 && (
+          {doodle === 3 && (
             /* Meera: Solid ink star doodle ★ on upper right */
             <svg viewBox="0 0 20 20" className="pointer-events-none absolute -right-2.5 top-7 w-4 h-4 z-30 fill-ink">
               <path d="M10 1l2.4 5.6 6.1.5-4.6 3.9 1.4 6-5.3-3.2-5.3 3.2 1.4-6-4.6-3.9 6.1-.5L10 1z"/>
             </svg>
           )}
 
-          {index === 4 && (
+          {doodle === 4 && (
             <>
               {/* Fahad: Two sketch tick marks // on upper right */}
               <svg viewBox="0 0 20 20" className="pointer-events-none absolute -right-2 top-4 w-4 h-4 z-30 text-ink/75 stroke-current stroke-2 stroke-linecap-round">
@@ -495,7 +499,7 @@ function PolaroidCard({
             </>
           )}
 
-          {index === 5 && (
+          {doodle === 5 && (
             <>
               {/* Sreelakshmi: Diagonal lime washi tape across top-right corner */}
               <svg
@@ -504,7 +508,7 @@ function PolaroidCard({
                 aria-hidden="true"
               >
                 <defs>
-                  <linearGradient id="tape-grad-5" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <linearGradient id={`${uid}-tape`} x1="0%" y1="0%" x2="100%" y2="0%">
                     <stop offset="0%" stopColor="#c8f800" stopOpacity="0.88" />
                     <stop offset="50%" stopColor="#d8ff28" stopOpacity="0.94" />
                     <stop offset="100%" stopColor="#b4ee00" stopOpacity="0.88" />
@@ -512,7 +516,7 @@ function PolaroidCard({
                 </defs>
                 <polygon
                   points="2,4 52,2 51,24 48,26 49,23 3,25 1,23"
-                  fill="url(#tape-grad-5)"
+                  fill={`url(#${uid}-tape)`}
                 />
                 <line x1="14" y1="5" x2="15" y2="23" stroke="#99cc00" strokeWidth="0.8" opacity="0.6" />
                 <line x1="38" y1="4" x2="37" y2="24" stroke="#ffffff" strokeWidth="0.8" opacity="0.4" />
@@ -533,7 +537,14 @@ function PolaroidCard({
 
           {/* The Recessed Photo Window with Emulsion Rim & Diagonal Gloss Sheen */}
           <div className="relative aspect-square w-full overflow-hidden rounded-[1px] bg-ink/10 shadow-[inset_0_2px_5px_rgba(0,0,0,0.28)] ring-1 ring-black/[0.15]">
+            {/* no photo yet (the crew, before theirs are in): an empty, unexposed well */}
+            {!member.image ? (
+              <div className="absolute inset-0 grid place-items-center bg-ink/[0.88]">
+                <span className="label text-[0.58rem] tracking-[0.2em] text-bone/40">photo soon</span>
+              </div>
+            ) : null}
             {/* 1. Base Monochrome Print (Classic vintage B&W Polaroid) */}
+            {member.image ? (
             <Image
               src={member.image}
               alt={member.name}
@@ -544,8 +555,10 @@ function PolaroidCard({
                 isActive ? "!scale-[1.04]" : ""
               }`}
             />
+            ) : null}
 
             {/* 2. Developing Full-Color Print — Liquid Chemical Emulsion Arc Expansion */}
+            {member.image ? (
             <div className="polaroid-color-reveal absolute inset-0 z-10 overflow-hidden" aria-hidden="true">
               <Image
                 src={member.image}
@@ -564,6 +577,7 @@ function PolaroidCard({
                 }`}
               />
             </div>
+            ) : null}
 
             {/* 3. Photochemical Laser Sweep Glint across the photo surface */}
             <div className="pointer-events-none absolute inset-0 z-20 overflow-hidden" aria-hidden="true">

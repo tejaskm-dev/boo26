@@ -15,9 +15,6 @@ import { siteLive } from "@/lib/live";
 
 import type { SpriteName } from "@/lib/sprites";
 
-/** while the teaser is up, the terms and the code of conduct wait (next.config.ts) */
-const LEGAL = siteLive() ? ALL_LEGAL : ALL_LEGAL.filter((l) => l.href === "/privacy");
-
 export type Clause = { id: string; title: string; body: React.ReactNode };
 
 export type LegalDoc = {
@@ -47,8 +44,17 @@ export type LegalDoc = {
  * Like the register page, only the wordmark rides in the corner: the home
  * page's menu points at anchors that aren't on this page.
  */
-export default function LegalPage({ doc }: { doc: LegalDoc }) {
+export default function LegalPage({
+  doc,
+  live = siteLive(),
+}: {
+  doc: LegalDoc;
+  /** which side's page this is; the dashboard's preview asks for the full site's before it's up */
+  live?: boolean;
+}) {
   const tag = `${doc.title} — ${EVENT.name} ${EVENT.year}`;
+  // while the teaser is up, the terms and the code of conduct wait (next.config.ts)
+  const legal = live ? ALL_LEGAL : ALL_LEGAL.filter((l) => l.href === "/privacy");
 
   return (
     <>
@@ -171,7 +177,7 @@ export default function LegalPage({ doc }: { doc: LegalDoc }) {
             <nav aria-label="The fine print">
               <p className="label label-loose text-bone/45">All of the fine print</p>
               <ol className="mt-[clamp(1.25rem,3vh,2rem)] border-t border-bone/15">
-                {LEGAL.map((l, i) => {
+                {legal.map((l, i) => {
                   const here = l.href === doc.href;
                   const inner = (
                     <>
@@ -213,7 +219,7 @@ export default function LegalPage({ doc }: { doc: LegalDoc }) {
                 <Sprite name="cat-sleepy" scale={0.5} drift={12} idle={4} />
               </RiseIn>
               <p className="hand max-w-[16ch] -rotate-[2deg] whitespace-pre-line text-[clamp(1.1rem,1.7vw,1.55rem)] text-bone/60">
-                {"Read all of it?\nRespect. Now go\nmake someone react."}
+                {live ? "Read all of it?\nRespect. Now go\nfind a way out." : "Read all of it?\nRespect. Now go\ntouch grass."}
               </p>
               <BlobButton href="/" size="lg">
                 Back to {EVENT.name}
@@ -223,7 +229,7 @@ export default function LegalPage({ doc }: { doc: LegalDoc }) {
 
           {/* the facts, running, as they close every page */}
           <div className="mt-[clamp(3rem,8vh,5rem)] border-y border-bone/12 py-[clamp(0.85rem,2.2vh,1.5rem)]">
-            <Marquee items={siteLive() ? BAND : SOON.closed.band} speed={42} className="display text-[clamp(1.6rem,4.4vw,3.4rem)] leading-none text-bone/70" />
+            <Marquee items={live ? BAND : SOON.closed.band} speed={42} className="display text-[clamp(1.6rem,4.4vw,3.4rem)] leading-none text-bone/70" />
           </div>
         </Section>
       </main>

@@ -116,7 +116,9 @@ export default function FieldForm({
      * form a few hundred pixels wide with the section's own square edge showing
      * across the rest. Sizing the wrapper and filling it removes the question.
      */
-    <span aria-hidden="true" className={`pointer-events-none absolute block ${className}`}>
+    // data-edge carries the form's frame (its viewBox): the full site moves
+    // the curve inside it (src/components/fx/LivingEdges.tsx) and never the frame
+    <span aria-hidden="true" data-edge={form.view} className={`pointer-events-none absolute block ${className}`}>
       <svg
         viewBox={form.view}
         preserveAspectRatio={form.fit}

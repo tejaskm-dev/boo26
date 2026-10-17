@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { prefersReducedMotion } from "@/lib/motion";
@@ -9,12 +9,19 @@ import Sprite from "@/components/ui/Sprite";
 import GhostIndex from "@/components/ui/GhostIndex";
 import EdgeLabel from "@/components/ui/EdgeLabel";
 import Words from "@/components/fx/Words";
-import { AFTER_DARK, NOTES } from "@/lib/site";
+import Awake from "@/components/soon/Awake";
+import InkEyes from "@/components/soon/InkEyes";
+import InkBlob from "@/components/site/InkBlob";
+import Critters from "@/components/soon/Critters";
+import CarnivalLights from "@/components/site/CarnivalLights";
+import { AFTER_DARK, NOTES, SURVIVAL } from "@/lib/site";
+
 
 /**
- * 04 — the night's non-coding half, told as three scenes rather than three
- * cards. Each is a field flip with its own props: a doorway you can push open,
- * a trail that crosses the page, and a tabletop at midnight.
+ * 04 — the night's non-coding half. It used to be three scenes (a haunted
+ * house, a treasure hunt inside it, the midnight games); the house and the
+ * hunt are off, and what the carnival holds isn't decided, so it's one scene
+ * now, a field flip with its own props: a tabletop at midnight.
  */
 export default function AfterDark() {
   return (
@@ -38,13 +45,12 @@ export default function AfterDark() {
 
           <div className="relative px-[var(--edge)] lg:pl-0">
             {/* the eyes only read as eyes when there is dark around them, so
-                they sit inside an ink blob rather than on the cream */}
+                they sit inside a blob of ink rather than on the cream — one
+                that slowly moves, like the hero's (InkBlob). Its box has room
+                round the blob (520 by 460 for a 400 by 340 shape). */}
             <div className="relative mx-auto grid w-fit place-items-center lg:mx-0">
-              <span
-                aria-hidden="true"
-                className="absolute h-[clamp(13rem,20vw,17rem)] w-[clamp(15rem,24vw,21rem)] bg-ink [border-radius:58%_42%_46%_54%/52%_58%_42%_48%]"
-              />
-              <Sprite name="eyes-glow" scale={0.69} drift={26} idle={6} className="relative" />
+              <InkBlob id="after-dark-ink" className="h-[clamp(17.6rem,27vw,23rem)] w-[clamp(19.5rem,31.2vw,27.3rem)]" />
+              <Sprite name="eyes-glow" scale={0.69} drift={26} idle={6} className="relative" data-note={SURVIVAL.notes.eyes} style={{ pointerEvents: "auto" }} />
             </div>
             <p className="hand mt-6 max-w-[12ch] whitespace-pre-line text-[clamp(1.05rem,1.6vw,1.5rem)] text-ink/60">
               {NOTES.afterDark}
@@ -59,132 +65,14 @@ export default function AfterDark() {
         </div>
       </Section>
 
-      <HauntedHouse />
-      <TreasureHunt />
-      <MidnightGames />
+      <MidnightCarnival />
     </>
   );
 }
 
-/** 01 — the doorway. Hovering pushes it open and the cat inside looks up. */
-function HauntedHouse() {
-  const [open, setOpen] = useState(false);
-  const item = AFTER_DARK[0];
-
-  return (
-    <Section
-      field="ink"
-      forms={[{ shape: "spillRight", tone: "bone", at: "inset-x-0 top-0 w-full h-[15vh] md:h-[24vh]" }]}
-      className="pb-[clamp(3.5rem,9vh,6rem)] pt-[clamp(5.5rem,18vh,14rem)] md:pt-[clamp(5.5rem,27vh,14rem)]"
-    >
-      <GhostIndex className="hidden left-[52%] top-[14%] text-[clamp(9rem,21vw,19rem)] lg:block">01</GhostIndex>
-      <EdgeLabel side="right" className="top-1/2 -translate-y-1/2">Haunted House</EdgeLabel>
-
-      <div className="grid items-center gap-[clamp(2rem,5vw,4rem)] px-[var(--edge)] lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
-        <Scene
-          index={item.index}
-          title={item.title}
-          note={item.note}
-          cta={item.cta}
-          tone="ink"
-          onActive={setOpen}
-        />
-
-        <div data-scrub="up" data-scrub-amount="16" className="relative mx-auto flex w-full max-w-[26rem] items-center justify-center">
-          {/* the door itself — the cat inside comes forward as it opens */}
-          <div
-            className="relative"
-            onPointerEnter={() => setOpen(true)}
-            onPointerLeave={() => setOpen(false)}
-          >
-            <Sprite
-              name="door-haunted"
-              scale={0.95}
-              drift={10}
-              className="relative z-10 drop-shadow-[0_18px_40px_rgba(0,0,0,0.55)]"
-            />
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute left-1/2 top-[52%] -translate-x-1/2 -translate-y-1/2 transition-[opacity,transform] duration-700 ease-[var(--ease-out-soft)]"
-              style={{ opacity: open ? 1 : 0, transform: `translate(-50%,-50%) scale(${open ? 1 : 0.82})` }}
-            >
-              <Sprite name="eyes-glow" scale={0.41} />
-            </div>
-          </div>
-
-          <Sprite name="cat-scared" scale={0.6} drift={14} idle={5} className="absolute -bottom-[6%] right-[2%] z-20" />
-        </div>
-      </div>
-
-      <p className="hand mt-[clamp(1.5rem,4vh,2.5rem)] max-w-[14ch] whitespace-pre-line px-[var(--edge)] text-[clamp(1rem,1.5vw,1.4rem)] text-bone/55">
-        {item.aside}
-      </p>
-    </Section>
-  );
-}
-
-/** 02 — the trail. Props sit along a dashed lime route across the field. */
-function TreasureHunt() {
-  const item = AFTER_DARK[1];
-  const scene = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (prefersReducedMotion()) return;
-    gsap.registerPlugin(ScrollTrigger);
-    const ctx = gsap.context(() => {
-      // the route assembles in reading order — note, trail, pin, trail, X
-      gsap.from(scene.current!.children, {
-        scale: 0.7,
-        autoAlpha: 0,
-        rotate: -10,
-        duration: 0.75,
-        stagger: 0.09,
-        ease: "back.out(1.8)",
-        scrollTrigger: { trigger: scene.current, start: "top 82%", once: true },
-      });
-    }, scene);
-    return () => ctx.revert();
-  }, []);
-
-  return (
-    <Section
-      field="bone"
-      forms={[{ shape: "shelf", tone: "ink", at: "inset-x-0 top-0 w-full h-[9vh] md:h-[13vh]" }]}
-      className="pb-[clamp(3.5rem,9vh,6rem)] pt-[clamp(5rem,12vh,10rem)] md:pt-[clamp(5rem,18vh,10rem)]"
-    >
-      <GhostIndex className="hidden right-[6%] top-[10%] text-[clamp(9rem,21vw,19rem)] lg:block">02</GhostIndex>
-      <EdgeLabel side="left" className="top-1/2 -translate-y-1/2">Treasure Hunt</EdgeLabel>
-
-      <div className="grid items-center gap-[clamp(2rem,5vw,4rem)] px-[var(--edge)] lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1fr)]">
-        {/* the route reads left to right, so the scene leads on desktop */}
-        <div ref={scene} data-scrub="up" data-scrub-amount="12" className="relative order-2 min-h-[clamp(16rem,26vw,22rem)] lg:order-1">
-          <Sprite name="trail-dash" scale={0.42} drift={22} className="absolute left-[30%] top-[22%]" />
-          <Sprite name="trail-dash" scale={0.5} drift={26} className="absolute left-[44%] top-[50%]" />
-          <Sprite name="x-mark" scale={0.4} drift={18} className="absolute right-[10%] top-[30%]" />
-          <Sprite name="map-pin" scale={0.2} drift={12} className="absolute right-[4%] bottom-[14%] opacity-70" />
-          <Sprite
-            name="cat-parchment"
-            scale={1.12}
-            drift={16}
-            idle={5}
-            className="absolute -bottom-[6%] left-[38%] z-10"
-          />
-        </div>
-
-        <div className="order-1 lg:order-2">
-          <Scene index={item.index} title={item.title} note={item.note} cta={item.cta} tone="bone" />
-          <p className="hand mt-[clamp(1.5rem,4vh,2.25rem)] max-w-[14ch] whitespace-pre-line text-[clamp(1rem,1.5vw,1.4rem)] text-ink/55">
-            {item.aside}
-          </p>
-        </div>
-      </div>
-    </Section>
-  );
-}
-
-/** 03 — the tabletop. Moon up, pieces scattered, cat on the controller. */
-function MidnightGames() {
-  const item = AFTER_DARK[2];
+/** The tabletop. Moon up, pieces scattered, cat on the controller. */
+function MidnightCarnival() {
+  const item = AFTER_DARK;
   const table = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -210,8 +98,11 @@ function MidnightGames() {
       forms={[{ shape: "notch", tone: "bone", at: "inset-x-0 top-0 w-full h-[12vh] md:h-[20vh]" }]}
       className="pb-[clamp(4rem,10vh,7rem)] pt-[clamp(5.5rem,16vh,13rem)] md:pt-[clamp(5.5rem,24vh,13rem)]"
     >
-      <GhostIndex className="hidden left-[46%] bottom-[12%] text-[clamp(9rem,21vw,19rem)] lg:block">03</GhostIndex>
-      <EdgeLabel side="right" className="top-1/2 -translate-y-1/2">Midnight Games</EdgeLabel>
+      <Awake />
+      {/* where the device can take it, cat-bats round the moon — tap the dark for more */}
+      <Critters bats={4} sky={[0, 0.17]} zone="[data-night]" className="z-[3]" />
+      <GhostIndex className="hidden left-[46%] bottom-[12%] text-[clamp(9rem,21vw,19rem)] lg:block">01</GhostIndex>
+      <EdgeLabel side="right" className="top-1/2 -translate-y-1/2">Midnight Carnival</EdgeLabel>
 
       <div className="grid items-center gap-[clamp(2rem,5vw,4rem)] px-[var(--edge)] lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div>
@@ -221,16 +112,28 @@ function MidnightGames() {
           </p>
         </div>
 
-        <div ref={table} data-scrub="down" data-scrub-amount="10" className="relative min-h-[clamp(15rem,24vw,20rem)]">
-          <Sprite name="moon" scale={0.44} drift={30} idle={7} className="absolute right-[12%] top-0" />
-          <Sprite name="dice" scale={0.5} drift={16} idle={4} className="absolute left-[30%] bottom-[6%] rotate-12" />
-          <Sprite
-            name="cat-controller"
-            scale={1.02}
-            drift={12}
-            idle={5}
-            className="absolute right-[4%] bottom-[8%] z-10"
-          />
+        {/* the carnival: a string of lights over the table, and the table */}
+        <div data-night className="relative pt-[clamp(3.5rem,7vw,5.5rem)]">
+          <CarnivalLights bulbs={7} className="inset-x-[-2%] top-0 h-[clamp(4.5rem,8vw,6.5rem)]" />
+          <span data-watch className="absolute left-[6%] top-[44%] w-[clamp(3.4rem,4.6vw,4.4rem)]">
+            <InkEyes className="!relative block w-full" tilt={8} blink={4.8} delay={0.6} />
+          </span>
+          <div ref={table} data-scrub="down" data-scrub-amount="10" className="relative min-h-[clamp(15rem,24vw,20rem)]">
+            <Sprite name="moon" scale={0.44} drift={30} idle={7} className="absolute right-[12%] top-0" data-note={SURVIVAL.notes.moon} style={{ pointerEvents: "auto" }} />
+            <Sprite name="candy" scale={0.5} drift={10} idle={3} className="absolute bottom-[2%] left-[6%] -rotate-[8deg]" />
+            <Sprite name="lollipop" scale={0.58} drift={12} idle={4} className="absolute bottom-[12%] left-[18%] -rotate-[16deg]" />
+            <Sprite name="dice" scale={0.5} drift={16} idle={4} className="absolute left-[34%] bottom-[6%] rotate-12" data-note={SURVIVAL.notes.dice} style={{ pointerEvents: "auto" }} />
+            <Sprite name="candy-corn" scale={0.62} drift={14} idle={4} className="absolute bottom-[4%] left-[52%] rotate-[14deg]" />
+            <Sprite
+              name="cat-controller"
+              scale={1.02}
+              drift={12}
+              idle={5}
+              data-note={SURVIVAL.notes.controller}
+              style={{ pointerEvents: "auto" }}
+              className="absolute right-[4%] bottom-[8%] z-10"
+            />
+          </div>
         </div>
       </div>
 
@@ -248,14 +151,12 @@ function Scene({
   note,
   cta,
   tone,
-  onActive,
 }: {
   index: string;
   title: readonly string[];
   note: string;
   cta: string;
   tone: "ink" | "bone";
-  onActive?: (v: boolean) => void;
 }) {
   const link = useRef<HTMLAnchorElement>(null);
   const muted = tone === "ink" ? "text-bone/60" : "text-ink/60";
@@ -291,10 +192,6 @@ function Scene({
       <a
         ref={link}
         href="#register"
-        onPointerEnter={() => onActive?.(true)}
-        onPointerLeave={() => onActive?.(false)}
-        onFocus={() => onActive?.(true)}
-        onBlur={() => onActive?.(false)}
         className="group label mt-[clamp(1.25rem,3vh,2rem)] inline-flex items-center gap-3 outline-none"
       >
         <span className="relative">

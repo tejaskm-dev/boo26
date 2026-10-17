@@ -1,0 +1,1064 @@
+/* ------------------------------------------------------------------ *
+ * The full site's effects (LiveHome.tsx imports this; the teaser never
+ * loads it, and this never loads with the teaser's soon.css).
+ *
+ * Two kinds of rule. Some are the teaser's own, copied as they are, for the
+ * teaser's components the full site uses unchanged — the hero's eyes in the
+ * ink (InkEyes), the living fields (InkField), the bats (Critters): they keep
+ * their soon- names because those components carry them. The rest are the
+ * teaser's effects remade for this side without its sound (fx-: the drips,
+ * the notes, the peeker, the torn lines, the eyes in the corner), and the
+ * full site's own (the declassified file, the carnival lights, the spider).
+ *
+ * As in soon.css: every loop is transform or opacity, runs only while its
+ * section is on screen ([data-awake], Awake.tsx), stops while the page is
+ * idle or the menu's open, and rests in a sensible pose with motion turned
+ * down (globals.css ends every animation on its first frame).
+ * ------------------------------------------------------------------ */
+
+/* ---------------------------------------------- the blink (as soon.css) */
+@keyframes soon-blink {
+  0%, 92%, 100% { scale: 1 1; }
+  95% { scale: 1 0.08; }
+}
+
+/* ------------------------------------------------------ the night field
+   (Heard). The hero's narrowed eyes, open while the section's on screen —
+   one after another as you arrive — and shut when you leave or get too close
+   (Critters). The glow is on the shape itself, so a blink only scales a
+   picture the browser already has. */
+.soon-inkeyes {
+  pointer-events: none;
+  transition: translate 0.4s var(--ease-out-soft);
+}
+
+/* the glow is in the drawing itself (EyeGlow), so a blink moves it rather than re-blurring it */
+.soon-inkeyes svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  fill: var(--color-lime);
+  transform-origin: 50% 62%;
+  transition: transform 0.18s ease;
+  animation: soon-blink 6s infinite;
+}
+
+/* closed until their section's on screen — or, where they're waiting for
+   something, until it happens */
+section:not([data-awake="true"]) .soon-inkeyes svg,
+[data-look]:not([data-look="true"]) .soon-inkeyes svg {
+  transform: scaleY(0.02);
+  opacity: 0;
+}
+
+section[data-awake="true"] .soon-inkeyes:not([data-shut="true"]) svg {
+  transition:
+    transform 0.5s cubic-bezier(0.2, 1.4, 0.4, 1) var(--d, 0s),
+    opacity 0.2s ease var(--d, 0s);
+}
+
+/* too close, and they're gone */
+.soon-inkeyes[data-shut="true"] svg {
+  transform: scaleY(0.02);
+  opacity: 0;
+  transition:
+    transform 0.16s ease,
+    opacity 0.2s ease 0.06s;
+}
+
+/* the living things, on one canvas fixed to the screen and clipped to the section */
+.soon-critters {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  clip-path: inset(0);
+}
+
+.soon-critters-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  /* the screen with the toolbars away (Critters.tsx): it covers the screen
+     however far they're out, and needn't change as they move */
+  height: 100vh;
+}
+
+/* ------------------------------------------------------------ the loops
+   Written last and one notch more specific than any of the animations above,
+   so their shorthands can't switch a loop back on behind these rules. */
+section .soon-loop {
+  animation-play-state: paused;
+}
+
+section[data-awake="true"] .soon-loop {
+  animation-play-state: running;
+}
+
+html[data-idle="true"] section .soon-loop,
+html[data-nav-active="true"] section .soon-loop {
+  animation-play-state: paused;
+}
+
+/* ------------------------------------------------ the living fields (InkField)
+   The field that reshapes gets a layer of its own, so its repaints stay its
+   own; the shadow under it, blurred once, never repaints at all — and where
+   it leans with the cursor, it's a layer too, so leaning moves it rather than
+   redrawing it. */
+.soon-ink-live {
+  will-change: transform;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .soon-ink-shade {
+    will-change: transform;
+  }
+}
+
+/* the lines: the BOO! brush, each letter dropping in like a blob of goo and
+   landing soft — played on a clock once the scroll gets you to it */
+.fx-goo.brush {
+  position: relative;
+  color: var(--color-bone);
+  font-size: clamp(1.9rem, 6.2vw, 4.8rem);
+  line-height: 1;
+  /* (not the colour: the last line turns lime as it comes up, while its
+     letters are still falling in — eased, that repainted every one of them
+     every frame) */
+  transition:
+    opacity 0.6s ease,
+    scale 0.8s var(--ease-out-soft);
+}
+
+.fx-goo-w {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.fx-goo-l {
+  position: relative;
+  display: inline-block;
+  transition: opacity 0.25s ease;
+}
+
+/* hidden for the fall only where the script is there to start it (and
+   motion's welcome): without it the word is simply there */
+html[data-js="true"] .fx-goo:not([data-on="true"]) .fx-goo-l {
+  opacity: 0;
+}
+
+.fx-goo[data-on="true"] .fx-goo-l {
+  opacity: 1;
+  /* backwards, not both: once a letter's landed it lets its animation go,
+     and with it its own layer — a card's worth of them, held for nothing */
+  animation: fx-goo 0.75s cubic-bezier(0.2, 0.9, 0.3, 1.15) backwards;
+  animation-delay: calc(var(--i) * 0.045s);
+}
+
+/* transforms and opacity only: a blur on every letter as it fell was a
+   repaint of every letter, every frame, all the way down */
+/* five tilts, written out: a custom property in the keyframes keeps the
+   animation off the compositor, and on a phone a card's worth of letters
+   falling on the main thread was dropped frames */
+@keyframes fx-goo {
+  0% { opacity: 0; translate: 0 -0.8em; scale: 0.82 1.35; rotate: 0deg; }
+  55% { opacity: 1; translate: 0 0.06em; scale: 1.12 0.84; rotate: 0deg; }
+  78% { translate: 0 -0.03em; scale: 0.96 1.05; rotate: 0deg; }
+  100% { opacity: 1; translate: 0 0; scale: 1 1; rotate: 0deg; }
+}
+@keyframes fx-goo-1 {
+  0% { opacity: 0; translate: 0 -0.8em; scale: 0.82 1.35; rotate: -4deg; }
+  55% { opacity: 1; translate: 0 0.06em; scale: 1.12 0.84; rotate: 1.6deg; }
+  78% { translate: 0 -0.03em; scale: 0.96 1.05; rotate: 0deg; }
+  100% { opacity: 1; translate: 0 0; scale: 1 1; rotate: 0deg; }
+}
+@keyframes fx-goo-2 {
+  0% { opacity: 0; translate: 0 -0.8em; scale: 0.82 1.35; rotate: -2deg; }
+  55% { opacity: 1; translate: 0 0.06em; scale: 1.12 0.84; rotate: 0.8deg; }
+  78% { translate: 0 -0.03em; scale: 0.96 1.05; rotate: 0deg; }
+  100% { opacity: 1; translate: 0 0; scale: 1 1; rotate: 0deg; }
+}
+@keyframes fx-goo-3 {
+  0% { opacity: 0; translate: 0 -0.8em; scale: 0.82 1.35; rotate: 2deg; }
+  55% { opacity: 1; translate: 0 0.06em; scale: 1.12 0.84; rotate: -0.8deg; }
+  78% { translate: 0 -0.03em; scale: 0.96 1.05; rotate: 0deg; }
+  100% { opacity: 1; translate: 0 0; scale: 1 1; rotate: 0deg; }
+}
+@keyframes fx-goo-4 {
+  0% { opacity: 0; translate: 0 -0.8em; scale: 0.82 1.35; rotate: 4deg; }
+  55% { opacity: 1; translate: 0 0.06em; scale: 1.12 0.84; rotate: -1.6deg; }
+  78% { translate: 0 -0.03em; scale: 0.96 1.05; rotate: 0deg; }
+  100% { opacity: 1; translate: 0 0; scale: 1 1; rotate: 0deg; }
+}
+.fx-goo[data-on="true"] .fx-goo-l[data-tilt="1"] { animation-name: fx-goo-1; }
+.fx-goo[data-on="true"] .fx-goo-l[data-tilt="2"] { animation-name: fx-goo-2; }
+.fx-goo[data-on="true"] .fx-goo-l[data-tilt="3"] { animation-name: fx-goo-3; }
+.fx-goo[data-on="true"] .fx-goo-l[data-tilt="4"] { animation-name: fx-goo-4; }
+
+/* the ones before it step back */
+.fx-goo[data-past="true"] {
+  opacity: 0.3;
+  scale: 0.55;
+}
+
+/* the last line is the one that matters */
+.fx-goo[data-last][data-on="true"] {
+  color: var(--color-lime);
+  text-shadow: 0 0 24px rgba(216, 255, 40, 0.28);
+}
+
+/* the goo running off it, the way it runs off the BOO! lockup. A drip hangs
+   under the foot of a stroke (Goo.tsx knows where each letter's feet are),
+   in the letter's own colour, and everything in it is melted into one shape
+   by the goo filter (GooFilter, in Goo.tsx): a foot standing in for the bottom of
+   the stroke, a neck that runs down off it — the filter swells where they
+   meet, the way goo pulls off a surface — and a bead that gathers at the
+   end. The long ones hang there getting heavy, let a drop go — the goo
+   stretches a thread to it before it snaps — and spring back a little.
+   Only transforms and opacity move, and no keyframe reads a custom
+   property, so all of it runs on the compositor. Each part's own style is
+   where it ends up, and the animations fill backwards only: a landed drip
+   lets its animations, and their layers, go. */
+.fx-drip {
+  position: absolute;
+  /* the baseline is 0.924em down a letter; the foot stands 0.124em above it */
+  top: 0.8em;
+  width: 0.6em;
+  height: 4em;
+  margin-left: -0.3em;
+  pointer-events: none;
+  /* the blur is a share of this box, so the box is the same for every drip */
+  filter: url(#fx-goo);
+}
+
+.fx-drip > * {
+  position: absolute;
+  background: currentColor;
+}
+
+/* (a wrapped line's top line: see Goo.tsx) */
+.fx-goo-w[data-high="true"] .fx-drip {
+  display: none;
+}
+
+/* inside the stroke, where nothing shows but the sag of its underside: it's
+   what the neck pulls off */
+.fx-drip-foot {
+  top: 0;
+  left: calc(50% - var(--foot) * 0.42em);
+  width: calc(var(--foot) * 0.84em);
+  height: 0.16em;
+  border-radius: 0.04em 0.04em 50% 50% / 0.04em 0.04em 0.08em 0.08em;
+}
+
+/* the neck: thick where it leaves the letter, thinning down to the bead (a
+   trapezoid drawn in borders, so it scales as one shape) */
+.fx-drip-stem {
+  box-sizing: content-box;
+  top: 0.09em;
+  left: calc(50% - var(--neck) * 0.8em);
+  width: calc(var(--neck) * 0.7em);
+  height: 0;
+  border-top: calc(var(--long) * 1em + 0.034em) solid currentColor;
+  border-right: calc(var(--neck) * 0.45em) solid transparent;
+  border-left: calc(var(--neck) * 0.45em) solid transparent;
+  background: none;
+  transform-origin: 50% 0;
+}
+
+/* carries the bead (and the drop) down the end of the neck */
+.fx-drip-run {
+  top: 0.09em;
+  left: 50%;
+  width: 0;
+  height: calc(var(--long) * 1em + 0.034em);
+  background: none;
+}
+
+.fx-drip-bead,
+.fx-drip-drop {
+  position: absolute;
+  left: calc(var(--neck) * -1.05em);
+  bottom: calc(var(--neck) * -1.05em);
+  width: calc(var(--neck) * 2.1em);
+  height: calc(var(--neck) * 2.1em);
+  border-radius: 50% 50% 50% 50% / 44% 44% 56% 56%;
+  background: currentColor;
+}
+
+/* a long one's bead is heavier */
+.fx-drip[data-drop] .fx-drip-bead {
+  left: calc(var(--neck) * -1.2em);
+  bottom: calc(var(--neck) * -1.2em);
+  width: calc(var(--neck) * 2.4em);
+  height: calc(var(--neck) * 2.4em);
+}
+
+/* gone, in the end */
+.fx-drip-drop {
+  opacity: 0;
+}
+
+/* where the long ones end up: sprung back a little once the drop's gone */
+.fx-drip[data-drop] .fx-drip-stem {
+  scale: 1 0.9;
+}
+
+.fx-drip[data-drop] .fx-drip-run {
+  translate: 0 -10%;
+}
+
+.fx-goo[data-on="true"] .fx-drip-stem {
+  animation: fx-drip-run calc(0.8s + var(--long) * 1.1s) cubic-bezier(0.25, 0.7, 0.4, 1) var(--d) backwards;
+}
+
+.fx-goo[data-on="true"] .fx-drip-run {
+  animation: fx-drip-carry calc(0.8s + var(--long) * 1.1s) cubic-bezier(0.25, 0.7, 0.4, 1) var(--d) backwards;
+}
+
+.fx-goo[data-on="true"] .fx-drip-bead {
+  animation: fx-drip-gather calc(0.8s + var(--long) * 1.1s) ease-out var(--d) backwards;
+}
+
+.fx-goo[data-on="true"] .fx-drip[data-drop] .fx-drip-stem {
+  animation: fx-drip-run-long 2.2s linear var(--d) backwards;
+}
+
+.fx-goo[data-on="true"] .fx-drip[data-drop] .fx-drip-run {
+  animation: fx-drip-carry-long 2.2s linear var(--d) backwards;
+}
+
+.fx-goo[data-on="true"] .fx-drip[data-drop] .fx-drip-bead {
+  animation: fx-drip-gather 1.3s ease-out var(--d) backwards;
+}
+
+/* lets go 1.45s in, when the neck's at its longest (66% of 2.2s): on a
+   phone, the last line's drop goes as its card does */
+.fx-goo[data-on="true"] .fx-drip-drop {
+  animation: fx-drip-let-go 1.3s linear calc(var(--d) + 0.95s) backwards;
+}
+
+@keyframes fx-drip-run {
+  from { scale: 1 0; }
+  to { scale: 1 1; }
+}
+
+@keyframes fx-drip-carry {
+  from { translate: 0 -100%; }
+  to { translate: 0 0; }
+}
+
+@keyframes fx-drip-gather {
+  from { scale: 0.4; }
+  to { scale: 1; }
+}
+
+/* runs, hangs there stretching under the weight, lets go, springs back */
+@keyframes fx-drip-run-long {
+  0% { scale: 1 0; animation-timing-function: cubic-bezier(0.25, 0.7, 0.4, 1); }
+  58% { scale: 1 1; animation-timing-function: ease-in; }
+  66% { scale: 1 1.07; animation-timing-function: cubic-bezier(0.2, 0.9, 0.3, 1); }
+  80% { scale: 1 0.85; animation-timing-function: ease-in-out; }
+  100% { scale: 1 0.9; }
+}
+
+@keyframes fx-drip-carry-long {
+  0% { translate: 0 -100%; animation-timing-function: cubic-bezier(0.25, 0.7, 0.4, 1); }
+  58% { translate: 0 0; animation-timing-function: ease-in; }
+  66% { translate: 0 7%; animation-timing-function: cubic-bezier(0.2, 0.9, 0.3, 1); }
+  80% { translate: 0 -15%; animation-timing-function: ease-in-out; }
+  100% { translate: 0 -10%; }
+}
+
+/* the drop: gathers in the bead, gets heavy, pulls away on a thread, falls */
+@keyframes fx-drip-let-go {
+  0% { opacity: 1; translate: 0 0; scale: 0.6; }
+  38% { opacity: 1; translate: 0 0.03em; scale: 1.08 1.14; animation-timing-function: ease-in; }
+  50% { opacity: 1; translate: 0 0.22em; scale: 0.92 1.3; animation-timing-function: cubic-bezier(0.5, 0, 1, 0.7); }
+  100% { opacity: 0.3; translate: 0 2.2em; scale: 0.78 1.12; }
+}
+
+/* ----------------------------------------- the hidden lines (Notes.tsx) */
+.fx-note {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 80;
+  pointer-events: none;
+}
+
+.fx-note > p {
+  translate: -50% -100%;
+  max-width: 15rem;
+  padding: 0.5rem 0.85rem 0.55rem;
+  border: 1px solid rgba(216, 255, 40, 0.6);
+  border-radius: 999px;
+  background: rgba(8, 8, 8, 0.92);
+  color: var(--color-lime);
+  font-size: clamp(1.05rem, 1.4vw, 1.25rem);
+  line-height: 1.05;
+  text-align: center;
+  white-space: nowrap;
+  opacity: 0;
+  scale: 0.85;
+  rotate: -2deg;
+  transition:
+    opacity 0.22s ease,
+    scale 0.35s cubic-bezier(0.2, 1.5, 0.4, 1);
+}
+
+.fx-note[data-on="true"] > p {
+  opacity: 1;
+  scale: 1;
+}
+
+/* ------------------------------------------- what follows you (Peeker.tsx) */
+.fx-peeker {
+  position: fixed;
+  bottom: 0;
+  left: 9vw;
+  z-index: 55;
+  translate: 0 105%;
+  transition: translate 0.32s cubic-bezier(0.5, 0, 0.75, 0);
+}
+
+.fx-peeker[data-side="right"] {
+  left: auto;
+  right: 11vw;
+}
+
+.fx-peeker[data-on="true"] {
+  translate: 0 38%;
+  transition: translate 1.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* the once it doesn't duck: up and at you, then gone */
+.fx-peeker[data-lunge="true"] {
+  transform-origin: 50% 100%;
+  animation: fx-peek-lunge 0.7s cubic-bezier(0.2, 1.4, 0.3, 1) both;
+}
+
+@keyframes fx-peek-lunge {
+  0% { transform: translateY(0) scale(1); }
+  35% { transform: translateY(-34vh) scale(2.6); }
+  70% { transform: translateY(-30vh) scale(2.45); }
+  100% { transform: translateY(0) scale(1); opacity: 0; }
+}
+
+.fx-door {
+  position: fixed;
+  right: 0;
+  top: 38%;
+  z-index: 55;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  translate: 105% 0;
+  transition: translate 0.35s cubic-bezier(0.5, 0, 0.75, 0);
+  pointer-events: none;
+}
+
+.fx-door[data-on="true"] {
+  translate: 12% 0;
+  transition: translate 1.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.fx-door-line {
+  color: rgba(8, 8, 8, 0.7);
+  font-size: clamp(1.05rem, 1.6vw, 1.35rem);
+  rotate: -5deg;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.4s ease 0.9s;
+}
+
+.fx-door[data-on="true"] .fx-door-line {
+  opacity: 1;
+}
+
+/* ------------------------------- lines that tear (glitch.ts: GlitchWord.tsx)
+   The ghosts above are lime and ink, which a lime heading on ink swallows
+   whole — so this one doesn't lean on colour. Each line holds its words
+   twice more, in ::before and ::after, laid exactly over it and hidden.
+   While the heading says it's torn (data-g), the line itself goes
+   see-through and the copies show instead: cut into bands and pushed
+   apart, a bone ghost on one, a hollow double, or, for one frame, the
+   other words. The insets reach past the box so the cut never clips the
+   tops of the letters. */
+/* each line's row clips top and bottom, for the rise the lines come up on,
+   but not the sides, so a tear (or longer words) can run past the edge */
+.fx-slice-row {
+  overflow: hidden;
+}
+
+@supports (overflow: clip) {
+  .fx-slice-row {
+    overflow: visible clip;
+  }
+}
+
+.fx-slice {
+  position: relative;
+}
+
+/* twice as wide as the line, so whatever's in them stays centred on it */
+.fx-slice::before,
+.fx-slice::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0 -50%;
+  visibility: hidden;
+  pointer-events: none;
+  -webkit-text-fill-color: currentColor;
+}
+
+.fx-slices[data-g] .fx-slice {
+  -webkit-text-fill-color: transparent;
+}
+
+.fx-slices[data-g] .fx-slice::before,
+.fx-slices[data-g] .fx-slice::after {
+  visibility: visible;
+}
+
+/* a — torn across the middle: the top half thrown left with its ghost, the bottom right */
+.fx-slices[data-g="a"] {
+  translate: 0.02em 0;
+}
+
+.fx-slices[data-g="a"] .fx-slice::before {
+  clip-path: inset(-40% 0 52% 0);
+  translate: -0.08em 0;
+  text-shadow: 0.07em 0 rgba(243, 240, 231, 0.8);
+}
+
+.fx-slices[data-g="a"] .fx-slice::after {
+  clip-path: inset(48% 0 -40% 0);
+  translate: 0.05em 0;
+}
+
+/* b — one thin band thrown well out; the rest barely moves */
+.fx-slices[data-g="b"] .fx-slice::before {
+  clip-path: inset(30% 0 52% 0);
+  translate: 0.18em 0;
+  text-shadow: -0.06em 0 rgba(243, 240, 231, 0.85);
+}
+
+.fx-slices[data-g="b"] .fx-slice::after {
+  clip-path: polygon(0 -40%, 100% -40%, 100% 30%, 0 30%, 0 48%, 100% 48%, 100% 140%, 0 140%);
+  translate: -0.025em 0;
+}
+
+/* c — a double exposure: a hollow bone outline a step off the solid line */
+.fx-slices[data-g="c"] {
+  translate: -0.02em 0;
+}
+
+.fx-slices[data-g="c"] .fx-slice::before {
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0.028em var(--color-bone);
+  translate: -0.09em 0.025em;
+}
+
+.fx-slices[data-g="c"] .fx-slice::after {
+  translate: 0.03em 0;
+}
+
+/* x — for one frame, the other words, with a band of them torn off */
+.fx-slices[data-g="x"] .fx-slice::before {
+  content: attr(data-alt);
+  text-shadow: 0.06em 0 rgba(243, 240, 231, 0.7);
+}
+
+.fx-slices[data-g="x"] .fx-slice::after {
+  content: attr(data-alt);
+  clip-path: inset(58% 0 -40% 0);
+  translate: 0.1em 0;
+}
+
+/* ------------------------------------------ the eyes in the corner (CornerEyes.tsx)
+   Opposite the sound switch, and only while the page won't move on: a blob
+   of ink with the hero's eyes in it, and a lime line round its edge that
+   fills while you wait (or, in a pinned scene, as you scroll through it).
+   The blob carries its own ink, and the note its own, so both read the same
+   on the bone fields, the ink ones and the black of a title card. */
+.fx-wait {
+  position: fixed;
+  right: var(--edge);
+  bottom: clamp(0.85rem, 2.2vh, 1.4rem);
+  z-index: 72;
+  display: flex;
+  /* on a phone the note goes above the eyes, as the sound switch's does —
+     the bottom edge is busy there (the switch, the torch) */
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.45rem;
+  pointer-events: none;
+  opacity: 0;
+  translate: 0 1.1rem;
+  scale: 0.7;
+  transform-origin: 100% 100%;
+  transition:
+    opacity 0.3s ease,
+    translate 0.4s var(--ease-out-soft),
+    scale 0.4s var(--ease-out-soft);
+}
+
+@media (min-width: 48rem) {
+  .fx-wait {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.55rem;
+  }
+}
+
+/* clear of the scroll rail, where there is one */
+@media (pointer: fine) {
+  .fx-wait {
+    right: max(var(--edge), 3rem);
+  }
+}
+
+.fx-wait:not([data-mode="off"]) {
+  opacity: 1;
+  translate: 0 0;
+  scale: 1;
+  transition:
+    opacity 0.35s ease,
+    translate 0.65s cubic-bezier(0.2, 1.4, 0.4, 1),
+    scale 0.65s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+.fx-wait-blob {
+  position: relative;
+  width: clamp(3.2rem, 4.2vw, 3.9rem);
+  aspect-ratio: 1;
+  filter: drop-shadow(0 10px 18px rgba(8, 8, 8, 0.35));
+}
+
+/* alive while it's up: a slow breath */
+.fx-wait:not([data-mode="off"]) .fx-wait-blob {
+  animation: fx-wait-breathe 2.8s ease-in-out infinite;
+}
+
+@keyframes fx-wait-breathe {
+  0%, 100% { scale: 1; }
+  50% { scale: 1.045 0.97; }
+}
+
+/* the ring it lets go with */
+.fx-wait-burst {
+  position: absolute;
+  inset: 4%;
+  border: 2px solid var(--color-lime);
+  border-radius: 50%;
+  opacity: 0;
+}
+
+.fx-wait-blob > svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.fx-wait-body {
+  fill: var(--color-ink);
+  stroke: rgba(216, 255, 40, 0.2);
+  stroke-width: 3;
+}
+
+.fx-wait-ring {
+  fill: none;
+  stroke: var(--color-lime);
+  stroke-width: 3.6;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.45s var(--ease-out-soft);
+}
+
+.fx-wait-eyes {
+  position: absolute;
+  left: 19%;
+  top: 33%;
+  width: 62%;
+  transform-origin: 50% 62%;
+  transition: transform 0.35s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+.fx-wait-eyes svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  fill: var(--color-lime);
+  transform-origin: 50% 62%;
+}
+
+.fx-wait:not([data-mode="off"]) .fx-wait-eyes svg {
+  animation: soon-blink 4.6s infinite;
+}
+
+/* scrolling while it's holding: a glare */
+.fx-wait[data-eyes="glare"] .fx-wait-eyes {
+  transform: scale(1.1, 0.42);
+}
+
+/* let go: shut, for a beat */
+.fx-wait[data-eyes="shut"] .fx-wait-eyes {
+  transform: scaleY(0.06);
+  transition-duration: 0.12s;
+}
+
+/* on you go: lids down, looking the way you're going — down the page, or back up it */
+.fx-wait[data-eyes="go"] .fx-wait-eyes {
+  transform: translateY(18%) scaleY(0.62);
+}
+
+.fx-wait[data-way="up"][data-eyes="go"] .fx-wait-eyes {
+  transform: translateY(-16%) scaleY(0.62);
+}
+
+.fx-wait-note {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.22rem 0.85rem 0.34rem;
+  white-space: nowrap;
+  color: var(--color-bone);
+  font-size: clamp(1.1rem, 1.5vw, 1.3rem);
+  background: var(--color-ink);
+  border-radius: 46% 54% 58% 42% / 42% 60% 40% 58%;
+  box-shadow:
+    0 0 0 1px rgba(216, 255, 40, 0.4),
+    0 10px 24px rgba(8, 8, 8, 0.3);
+  rotate: -3deg;
+  opacity: 0;
+  translate: 0 0.5rem;
+  scale: 0.8;
+  transform-origin: 100% 100%;
+  transition:
+    opacity 0.2s ease,
+    translate 0.3s var(--ease-out-soft),
+    scale 0.3s var(--ease-out-soft);
+}
+
+.fx-wait[data-note="true"] .fx-wait-note {
+  opacity: 1;
+  translate: 0 0;
+  scale: 1;
+  transition:
+    opacity 0.25s ease,
+    translate 0.55s cubic-bezier(0.2, 1.4, 0.4, 1),
+    scale 0.55s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+@media (min-width: 48rem) {
+  .fx-wait-note {
+    translate: 0.8rem 0;
+    transform-origin: 100% 50%;
+  }
+}
+
+.fx-wait-note svg {
+  display: none;
+  width: 0.6em;
+  height: 1.15em;
+  color: var(--color-lime);
+}
+
+.fx-wait[data-arrow="true"] .fx-wait-note svg {
+  display: block;
+  animation: cue 2.2s var(--ease-out-soft) infinite;
+}
+
+/* back up: the arrow (and its nudge) points up */
+.fx-wait[data-way="up"] .fx-wait-note svg {
+  rotate: 180deg;
+}
+
+/* ------------------------------------------- night, and dawn (Nightfall) */
+.fx-night {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  pointer-events: none;
+  background: radial-gradient(120% 95% at 50% 50%, rgba(8, 8, 8, 0) 55%, rgba(8, 8, 8, 0.85) 100%);
+  opacity: 0;
+  /* its opacity follows the scroll: a layer of its own, so that's a fade, not a full-screen repaint */
+  will-change: opacity;
+}
+
+/* first light, coming up from the bottom of the screen at the very end */
+.fx-dawn {
+  position: fixed;
+  inset: auto 0 0;
+  height: 55vh;
+  z-index: 45;
+  pointer-events: none;
+  background: radial-gradient(85% 100% at 50% 100%, rgba(216, 255, 40, 0.11) 0%, rgba(243, 240, 231, 0.05) 42%, rgba(243, 240, 231, 0) 72%);
+  opacity: 0;
+  will-change: opacity;
+}
+
+/* --------------------------------------- the file, torn open (Declassified)
+   Each answer sits under the teaser's marker stroke. Open, the stroke is
+   ripped off from the left, a ragged edge running across it, and a scrap
+   is left stuck at its end; then the stamp comes down. The default — no
+   script, or motion turned down — is the file already open. */
+.fx-file-line {
+  position: relative;
+  display: inline-block;
+  padding: 0.18em 0;
+}
+
+.fx-file-bar,
+.fx-file-scrap {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  margin: auto 0;
+  height: clamp(2.2rem, 3.9vw, 2.9rem);
+  pointer-events: none;
+}
+
+.fx-file-bar {
+  left: -0.45em;
+  right: -0.45em;
+  clip-path: polygon(104% 0, 104% 0, 104% 100%, 105% 100%, 102% 84%, 106.5% 66%, 103% 48%, 107% 30%, 102.5% 14%);
+}
+
+/* a scrap left stuck where the bar ended, just past the words, never on them */
+.fx-file-scrap {
+  left: calc(100% + 0.12em);
+  width: 1.5em;
+  clip-path: polygon(16% 0, 100% 0, 100% 100%, 18% 100%, 4% 84%, 22% 66%, 9% 48%, 26% 30%, 7% 14%);
+  rotate: 4deg;
+}
+
+.fx-file-bar svg,
+.fx-file-scrap svg,
+.fx-file-why svg,
+.fx-highlight svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.fx-file-bar path,
+.fx-file-scrap path,
+.fx-file-why path {
+  fill: var(--color-ink);
+}
+
+/* armed: covered, until it's opened */
+html[data-js="true"] .fx-file:not([data-open="true"]) .fx-file-bar {
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 1% 100%, -2% 84%, 2.5% 66%, -1% 48%, 3% 30%, -1.5% 14%);
+}
+
+html[data-js="true"] .fx-file:not([data-open="true"]) .fx-file-scrap {
+  opacity: 0;
+}
+
+.fx-file[data-open="true"] .fx-file-bar {
+  animation: fx-rip 0.62s cubic-bezier(0.55, 0, 0.7, 0.4) calc(var(--i) * 0.3s + 0.15s) backwards;
+}
+
+.fx-file[data-open="true"] .fx-file-scrap {
+  animation: fx-scrap 0.35s cubic-bezier(0.2, 1.4, 0.4, 1) calc(var(--i) * 0.3s + 0.6s) backwards;
+}
+
+@keyframes fx-rip {
+  0% { clip-path: polygon(0 0, 100% 0, 100% 100%, 1% 100%, -2% 84%, 2.5% 66%, -1% 48%, 3% 30%, -1.5% 14%); translate: 0 0; rotate: 0deg; }
+  18% { translate: 0 -0.08em; rotate: -0.8deg; }
+  100% { clip-path: polygon(104% 0, 104% 0, 104% 100%, 105% 100%, 102% 84%, 106.5% 66%, 103% 48%, 107% 30%, 102.5% 14%); translate: 0.5em -0.12em; rotate: 1.6deg; }
+}
+
+@keyframes fx-scrap {
+  from { opacity: 0; scale: 0.6; }
+}
+
+/* the stamp */
+/* across the rule above the file, clear of its first line */
+.fx-file-stamp.label {
+  position: absolute;
+  right: 0;
+  top: -2.7rem;
+  z-index: 2;
+  padding: 0.42em 0.8em 0.38em;
+  border: 2px solid var(--color-lime);
+  border-radius: 4px 9px 5px 8px / 8px 4px 9px 5px;
+  background: var(--color-ink);
+  color: var(--color-lime);
+  font-size: clamp(0.64rem, 0.9vw, 0.78rem);
+  letter-spacing: 0.24em;
+  rotate: -8deg;
+  box-shadow: 0 8px 22px rgba(8, 8, 8, 0.22);
+}
+
+html[data-js="true"] .fx-file:not([data-open="true"]) .fx-file-stamp {
+  opacity: 0;
+}
+
+.fx-file[data-open="true"] .fx-file-stamp {
+  animation: fx-stamp 0.42s cubic-bezier(0.3, 1.6, 0.5, 1) calc(var(--rows) * 0.3s + 0.6s) backwards;
+}
+
+@keyframes fx-stamp {
+  from { opacity: 0; scale: 1.9; rotate: -18deg; }
+}
+
+/* the one that stays blacked out: on hover, the lime hairline every field
+   carries slips out from behind it */
+.fx-file-why {
+  transition: translate 0.35s var(--ease-out-soft);
+}
+
+.fx-file-why:hover {
+  translate: 0 -2px;
+}
+
+.fx-file-why:focus-visible {
+  outline: 2px solid var(--color-lime);
+  outline-offset: 4px;
+  border-radius: 6px;
+}
+
+.fx-file-why svg {
+  transition: filter 0.35s var(--ease-out-soft);
+}
+
+.fx-file-why:hover svg,
+.fx-file-why:focus-visible svg {
+  filter: drop-shadow(-6px 5px 0 var(--color-lime));
+}
+
+/* the one fact, gone over with a lime marker (as the teaser's) */
+.fx-highlight {
+  position: relative;
+  display: inline-block;
+  padding: 0.12em 0.25em;
+}
+
+.fx-highlight svg {
+  inset: auto;
+  left: -4%;
+  top: 34%;
+  width: 108%;
+  height: 72%;
+}
+
+.fx-highlight svg path {
+  fill: var(--color-lime);
+}
+
+/* --------------------------------------- the carnival lights (CarnivalLights)
+   Lit one at a time with a flicker as the scene comes into view, then
+   every so often one stutters. The glow is in the lit bulb's own art, so a
+   flicker only fades a picture the browser already has. */
+.fx-bulb {
+  position: absolute;
+  width: clamp(1.6rem, 2.3vw, 2.15rem);
+  translate: -50% 0;
+  transform-origin: 50% 0;
+}
+
+.fx-bulb-on {
+  position: absolute;
+  inset: 0;
+  opacity: 1;
+}
+
+section:not([data-awake="true"]) .fx-bulb-on {
+  opacity: 0;
+}
+
+section[data-awake="true"] .fx-bulb-on {
+  animation:
+    fx-bulb-on 0.7s steps(1, end) calc(var(--i) * 0.16s + 0.2s) backwards,
+    fx-bulb-stutter var(--s) steps(1, end) calc(var(--i) * 0.16s + 1.2s) infinite;
+}
+
+@keyframes fx-bulb-on {
+  0% { opacity: 0; }
+  30% { opacity: 1; }
+  45% { opacity: 0.15; }
+  60% { opacity: 1; }
+  72% { opacity: 0.4; }
+  100% { opacity: 1; }
+}
+
+@keyframes fx-bulb-stutter {
+  0%, 94%, 100% { opacity: 1; }
+  95% { opacity: 0.25; }
+  96.5% { opacity: 1; }
+  97.5% { opacity: 0.5; }
+}
+
+/* ----------------------------------------------- a spider on a thread (Spider) */
+.fx-spider {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.fx-spider-line {
+  display: block;
+  width: 1px;
+  height: var(--drop);
+  background: linear-gradient(rgba(8, 8, 8, 0), rgba(8, 8, 8, 0.35) 30%, rgba(8, 8, 8, 0.45));
+  transform-origin: 50% 0;
+  transition: scale 0.5s cubic-bezier(0.5, 0, 0.75, 0);
+}
+
+/* the sprite's own thread overlaps the end of the line, so the two read as one */
+.fx-spider-body {
+  display: block;
+  margin-top: -0.4rem;
+  transform-origin: 50% 0;
+  animation: fx-spider-sway 5.5s ease-in-out infinite;
+  transition: translate 0.5s cubic-bezier(0.5, 0, 0.75, 0);
+}
+
+@keyframes fx-spider-sway {
+  0%, 100% { rotate: -3deg; }
+  50% { rotate: 3deg; }
+}
+
+/* waiting above, until its section comes into view */
+html[data-js="true"] .fx-spider:not([data-on="true"]) .fx-spider-line {
+  scale: 1 0;
+}
+
+html[data-js="true"] .fx-spider:not([data-on="true"]) .fx-spider-body {
+  translate: 0 calc(-1 * var(--drop) - 100%);
+}
+
+/* down it comes, and bounces at the end of its line */
+.fx-spider[data-on="true"] .fx-spider-line {
+  transition: scale 1.1s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.fx-spider[data-on="true"] .fx-spider-body {
+  transition: translate 1.1s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* startled: straight back up */
+.fx-spider[data-up="true"] .fx-spider-line {
+  scale: 1 0.12;
+  transition: scale 0.35s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+.fx-spider[data-up="true"] .fx-spider-body {
+  translate: 0 calc(-0.88 * var(--drop));
+  transition: translate 0.35s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+/* ------------------------------------------- eyes that watch you (Watchers) */
+[data-watch] {
+  pointer-events: none;
+  transition: translate 0.4s var(--ease-out-soft);
+}

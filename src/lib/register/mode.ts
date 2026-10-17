@@ -1,24 +1,16 @@
-import { siteLive } from "@/lib/live";
-
 /**
- * The switch for /register: the sign-up, or the coming-soon page.
+ * Whether the site's own sign-up (/register: the fork, starting and joining a
+ * team) takes anyone. It doesn't: registration runs on an outside page, and
+ * /register redirects there once REGISTER_URL is set (src/lib/register/external.ts).
+ * Until then every /register path is the "isn't open yet" page.
  *
- *   BOO_REGISTRATION_OPEN=true    the whole flow — the fork, the rules, the
- *                                 judging, starting and joining a team
- *   BOO_REGISTRATION_OPEN=false   the coming-soon page on every /register path
- *
- * Unset, it's open. Set it to false to put the coming-soon page back without
- * touching any code — in .env.local here, or in the host's environment
- * variables for a deploy. The value is read where the pages are built, so a
- * change to it needs a new build (on Vercel, a redeploy).
- *
- * While the coming-soon teaser is up (LIVE_STATUS, src/lib/live.ts) it's
- * closed whatever this says: the sign-up, the rules and the judging all name
- * the date, and the teaser can't.
+ * The flow itself is still here, whole — its pages, its checks, the store the
+ * dashboard reads — in case a later edition registers on the site again. To
+ * bring it back, make this return true while the full site is live and drop
+ * the redirect that sends /register's sub-pages to /register (next.config.ts).
+ * The server actions and the ID check ask this too, so nothing can be sent to
+ * a closed flow by calling them directly.
  */
 export function registrationOpen(): boolean {
-  if (!siteLive()) return false;
-  const set = process.env.BOO_REGISTRATION_OPEN?.trim().toLowerCase();
-  if (set === "false" || set === "0" || set === "off" || set === "no") return false;
-  return true;
+  return false;
 }

@@ -44,10 +44,17 @@ export type FooterContent = {
 export default function Footer({
   content,
   mark,
+  lowDesk = false,
 }: {
   content: FooterContent;
   /** set beside BOO!'s wordmark, after a hairline — the teaser's µLearn logo */
   mark?: React.ReactNode;
+  /**
+   * The desk a little deeper, and the cable on it a little smaller, so the
+   * cable can't climb into the links above it — the full site's first column
+   * runs a link longer than the teaser's.
+   */
+  lowDesk?: boolean;
 }) {
   const [email, setEmail] = useState("");
   const root = useRef<HTMLElement>(null);
@@ -244,10 +251,10 @@ export default function Footer({
             rather than spaced out in a row like a toolbar */}
         <div
           data-desk
-          className="pointer-events-none relative mt-[clamp(2rem,5vh,3.5rem)] hidden h-[clamp(6rem,10vw,9rem)] lg:block"
+          className={`pointer-events-none relative mt-[clamp(2rem,5vh,3.5rem)] hidden ${lowDesk ? "h-[clamp(10rem,14vw,12rem)]" : "h-[clamp(6rem,10vw,9rem)]"} lg:block`}
           aria-hidden="true"
         >
-          <Sprite name="cable" scale={0.62} drift={9} idle={3} className="absolute bottom-0 left-[1%]" />
+          <Sprite name="cable" scale={lowDesk ? 0.42 : 0.62} drift={9} idle={3} className="absolute bottom-0 left-[1%]" />
           <Sprite name="can" scale={0.34} drift={11} idle={4} className="absolute bottom-[2%] left-[15%] rotate-[6deg]" />
           <Sprite name="paper-ball" scale={0.26} drift={15} idle={5} className="absolute bottom-[8%] left-[23%]" />
           <Sprite name="pizza-box" scale={0.52} drift={7} className="absolute bottom-0 right-[4%] -rotate-[3deg]" />

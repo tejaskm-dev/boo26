@@ -1,22 +1,27 @@
 import Section, { SectionLabel } from "./Section";
 import Sprite from "@/components/ui/Sprite";
 import Words from "@/components/fx/Words";
-import { BUILD_STEPS, EVENT, NOTES } from "@/lib/site";
+import { BUILD_STEPS, EVENT, NOTES, SURVIVAL } from "@/lib/site";
 
 /**
- * 05 — one word, as large as the viewport allows, with the cat peeking out of
+ * 06 — one word, as large as the viewport allows, with the cat peeking out of
  * the counter of the D. The four steps run underneath as a rule-connected row;
  * SHIP takes the lime because it is the only one that ends the night.
+ *
+ * It usually follows the team, on the same cream. When it follows the ink
+ * instead — the crew's section, or the carnival with no team between — the
+ * ink comes down into it as a join, like every other change of field.
  */
-export default function Build() {
+export default function Build({ index = "06", afterInk = false }: { index?: string; afterInk?: boolean }) {
   return (
     <Section
       id="build"
       field="bone"
-      className="pb-[clamp(3rem,8vh,5rem)] pt-[clamp(3.5rem,8vh,5.5rem)]"
+      forms={afterInk ? [{ shape: "spillLeft", tone: "ink", at: "inset-x-0 top-0 w-full h-[11vh] md:h-[18vh]" }] : undefined}
+      className={`pb-[clamp(3rem,8vh,5rem)] ${afterInk ? "pt-[clamp(6rem,16vh,12rem)] md:pt-[clamp(6rem,22vh,12rem)]" : "pt-[clamp(3.5rem,8vh,5.5rem)]"}`}
     >
       <div className="flex items-start justify-between gap-6 px-[var(--edge)]">
-        <SectionLabel index="06">The Hackathon</SectionLabel>
+        <SectionLabel index={index}>The Hackathon</SectionLabel>
         <p className="label whitespace-pre-line text-right text-ink/45">
           Your idea.{"\n"}Any stack.{"\n"}One night.
         </p>
@@ -31,12 +36,17 @@ export default function Build() {
           Build.
         </Words>
 
+        {/* On a phone, beside the lines under the word, where the row is
+            empty; from a tablet up, peeking over the top of the word, paws
+            on its edge — over it, never across it, so the letters stay whole. */}
         <Sprite
           name="cat-faq-peek"
           scale={0.71}
           drift={18}
           idle={6}
-          className="absolute right-[10%] top-[38%] z-10 md:right-[22%]"
+          data-note={SURVIVAL.notes.build}
+          style={{ pointerEvents: "auto" }}
+          className="absolute right-[3%] top-[104%] z-10 md:left-[44%] md:right-auto md:top-0 md:-translate-y-[92%]"
         />
       </div>
 
@@ -46,11 +56,11 @@ export default function Build() {
               sits over the right half of this row */}
           Something
           <br />
-          that makes
+          that gets
           <br />
-          someone
+          you out
           <br />
-          react.
+          alive.
         </p>
         <Sprite name="squiggle-lime" scale={0.39} className="mb-2" />
 

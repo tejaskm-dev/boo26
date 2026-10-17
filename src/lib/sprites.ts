@@ -102,6 +102,15 @@ export const SPRITE = {
   "tv": { src: "/assets/tv.webp", w: 164, h: 180 },
   "door-smashed": { src: "/assets/door-smashed.webp", w: 410, h: 402 },
   "window": { src: "/assets/window.webp", w: 430, h: 442 },
+
+  // The crew's ghosts, one per person the way each of the core team has a
+  // cat (scripts/cut-ghosts.py, from design/Cute Neon Ghost Sticker Pack.png).
+  "ghost-wave": { src: "/assets/ghost-wave.webp", w: 242, h: 250 },
+  "ghost-headset": { src: "/assets/ghost-headset.webp", w: 237, h: 251 },
+  "ghost-camera": { src: "/assets/ghost-camera.webp", w: 246, h: 247 },
+  "ghost-megaphone": { src: "/assets/ghost-megaphone.webp", w: 277, h: 230 },
+  "ghost-snacks": { src: "/assets/ghost-snacks.webp", w: 226, h: 237 },
+  "ghost-torch": { src: "/assets/ghost-torch.webp", w: 270, h: 208 },
 } as const satisfies Record<string, Sprite>;
 
 export type SpriteName = keyof typeof SPRITE;

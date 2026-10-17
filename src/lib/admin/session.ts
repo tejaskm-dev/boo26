@@ -13,6 +13,8 @@ import { cookies } from "next/headers";
  * itself. Public pages stay exactly as fast, and as cacheable, as they were.
  */
 const COOKIE = "boo_admin";
+/** the cookie's name, for the proxy that checks it before a preview page renders (src/proxy.ts) */
+export const SESSION_COOKIE = COOKIE;
 const PATH = "/admin";
 const DAYS = 7;
 
@@ -83,8 +85,12 @@ export async function endSession() {
  * or no cookie.
  */
 export async function currentAdmin(): Promise<string | null> {
+  return readSession((await cookies()).get(COOKIE)?.value);
+}
+
+/** The same check on a cookie's raw value, wherever it was read from. */
+export async function readSession(raw: string | undefined): Promise<string | null> {
   if (missingSetup().length) return null;
-  const raw = (await cookies()).get(COOKIE)?.value;
   const [body, mac] = raw?.split(".") ?? [];
   if (!body || !mac) return null;
   try {

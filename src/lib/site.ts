@@ -15,14 +15,16 @@ export const EVENT = {
   date: "24–25 OCT 2026",
   dateLong: "24–25 October 2026",
   format: "HALLOWEEN-NIGHT CREATIVE TECHNOLOGY HACKATHON",
-  duration: "20 HOURS",
+  /* No number on purpose: the schedule can still move, and "overnight"
+     stays true whichever way it does. */
+  duration: "OVERNIGHT",
   team: "2 PER TEAM",
-  /* 02 PM on the day, which is when the timeline's first stop opens the doors.
-     Kerala is UTC+5:30 and the offset is written out so the countdown means
-     the same thing from anywhere. */
-  startsAt: "2026-10-24T14:00:00+05:30",
-  /* 20 hours on: 10 AM the next morning, the timeline's last stop. */
-  endsAt: "2026-10-25T10:00:00+05:30",
+  /* 05 PM on the day, which is when the timeline's first stop opens the doors
+     (check-in; the build starts at 6). Kerala is UTC+5:30 and the offset is
+     written out so the countdown means the same thing from anywhere. */
+  startsAt: "2026-10-24T17:00:00+05:30",
+  /* the next morning, once the last stop on the timeline is over */
+  endsAt: "2026-10-25T09:30:00+05:30",
 } as const;
 
 /**
@@ -31,9 +33,9 @@ export const EVENT = {
  */
 export const SEO = {
   title: `${EVENT.name} ${EVENT.year} · Halloween-night hackathon at ASIET, Kalady`,
-  description: `A 20-hour Halloween-night creative technology hackathon at ASIET, Kalady, on ${EVENT.dateLong}. Teams of two, one challenge: build something that makes someone react.`,
+  description: `An overnight Halloween-night hackathon at ASIET, Kalady, on ${EVENT.dateLong}. Teams of two, one night, one prompt. Make it to morning.`,
   /** the share card's line */
-  share: `Most hackathons start with a problem. ${EVENT.name} starts with a reaction. ${EVENT.dateLong}, ASIET Kalady.`,
+  share: `Most hackathons start with a problem. ${EVENT.name} starts with a nightmare. ${EVENT.dateLong}, ASIET Kalady.`,
   keywords: [
     "hackathon",
     "Halloween hackathon",
@@ -51,9 +53,9 @@ export { SOCIALS };
  * "when", "where" and "how long" is never more than a screen away.
  */
 export const BAND = [
-  "24 OCT, 2 PM",
+  "24 OCT, 5 PM",
   "ASIET, KALADY",
-  "20 HOURS",
+  "OVERNIGHT",
   "2 PER TEAM",
   "µLEARN ASIET",
 ] as const;
@@ -63,7 +65,7 @@ export type NavItem = { label: string; index: string; href: string };
 export const NAV: NavItem[] = [
   { label: "The Night", index: "01", href: "#night" },
   { label: "Experience", index: "02", href: "#experience" },
-  { label: "20 Hours", index: "03", href: "#hours" },
+  { label: "No Sleep", index: "03", href: "#hours" },
   { label: "After Dark", index: "04", href: "#after-dark" },
   { label: "The People", index: "05", href: "#team" },
   { label: "Build", index: "06", href: "#build" },
@@ -91,66 +93,69 @@ export const HERO: {
 /** The loading screen's corners — see src/components/fx/PageWipe.tsx. */
 export const PRELOADER = { corner: EVENT.date, venue: EVENT.venue, line: EVENT.format };
 
-/** 01 — THE NIGHT */
-export const FACTS = [
-  // non-breaking spaces, so a narrow column breaks after the comma and never inside "2 PM"
-  { k: "Starts", v: "24 OCT, 2 PM" },
-  { k: "Duration", v: "20 HOURS" },
-  { k: "Team size", v: "2 PEOPLE" },
-  { k: "Venue", v: "ASIET, KALADY" },
-] as const;
+/**
+ * 01 — the file the teaser kept blacked out, torn open (Declassified.tsx):
+ * the bars come off one at a time as it comes into view. WHY stays
+ * redacted: that's the prompt's to say.
+ */
+export const FILE = {
+  stamp: "Declassified",
+  rows: [
+    { k: "What", v: "AN OVERNIGHT HACKATHON" },
+    { k: "When", v: "24 OCT, 5 PM → MORNING" },
+    { k: "Who", v: "TEAMS OF TWO" },
+  ],
+  where: { k: "Where", v: "ASIET, KALADY" },
+  why: { k: "Why", label: "Why: still redacted", note: "the prompt\nwill tell you.", poke: "not yet. the prompt says why." },
+} as const;
 
 /** 02 — THE EXPERIENCE */
 export const EXPERIENCE = [
-  { index: "01", label: "Build", note: "Choose a reaction. Build whatever it takes to cause it. You have a night to make it real." },
-  { index: "02", label: "Play", note: "Step away from the build. Midnight games. A haunted house with a treasure hunt inside." },
-  { index: "03", label: "Survive", note: "Make it to morning. Then put your build in front of someone and watch them react." },
-] as const;
-
-/** 03 — THE 20 HOURS */
-export const TIMELINE = [
-  { time: "02 PM", label: "The doors open", cat: "cat-excited" },
-  { time: "12 AM", label: "Midnight games", cat: "cat-playful" },
-  { time: "03 AM", label: "Questionable decisions", cat: "cat-confused" },
-  { time: "06 AM", label: "Still building", cat: "cat-sleepy" },
-  { time: "10 AM", label: "Make them react.", cat: "cat-box" },
+  { index: "01", label: "Build", note: "One prompt. One night. Build whatever it takes to make it out alive." },
+  { index: "02", label: "Play", note: "Step away from the build. A midnight carnival, and what's in it stays a secret." },
+  { index: "03", label: "Survive", note: "Make it to morning. Then show the jury what kept you alive." },
 ] as const;
 
 /**
- * 04 — AFTER DARK. The house and the hunt are one experience told as two
- * scenes: the hunt runs inside the house, so the copy hands one to the other.
- * Nothing specific about either is confirmed yet, and the copy doesn't guess.
+ * 03 — NO SLEEP. The organisers' plan, which can still move: check-in at 5,
+ * the build from 6, dinner, the carnival from 9 to midnight, then building
+ * till submissions close at 7, judging at 8 and the winners by 9:30. 3 AM
+ * isn't on the plan. It happens anyway.
+ *
+ * `scale` is for the one cat whose art is drawn smaller than the rest;
+ * `note` is what each cat says if you hover it (Notes.tsx).
  */
-export const AFTER_DARK = [
-  {
-    index: "01",
-    title: ["Haunted", "House"],
-    note: "Come in.\nSomething's hidden.",
-    cta: "Enter",
-    aside: "What's inside\nstays secret.\nFor now.",
-  },
-  {
-    index: "02",
-    title: ["Treasure", "Hunt"],
-    note: "Enter the house.\nChase the clues.\nFind what's hidden.",
-    cta: "Follow the trail",
-    aside: "Signed up?\nThen you're\ngoing in.",
-  },
-  {
-    index: "03",
-    title: ["Midnight", "Games"],
-    note: "Around midnight.\nSpooky games.\nOther humans.",
-    cta: "Let's play",
-    aside: "The bugs\nwill wait.",
-  },
-] as const;
+export const TIMELINE: { time: string; label: string; cat: SpriteName; scale?: number; note: string }[] = [
+  { time: "05 PM", label: "The doors open", cat: "cat-excited", note: "last one in locks the door." },
+  { time: "06 PM", label: "The build begins", cat: "cat-stretch", note: "pouncing on the prompt." },
+  { time: "08 PM", label: "Dinner", cat: "cat-playful", note: "it’s not sharing." },
+  { time: "09 PM", label: "Midnight carnival", cat: "cat-skeleton", scale: 0.78, note: "didn’t make it to morning." },
+  { time: "03 AM", label: "Questionable decisions", cat: "cat-confused", note: "it’s 3 AM. trust nothing." },
+  { time: "07 AM", label: "Pens down", cat: "cat-sleepy", note: "five more minutes." },
+  { time: "08 AM", label: "Who made it?", cat: "cat-box", note: "made it. barely." },
+];
+
+/**
+ * 04 — AFTER DARK. One scene now: the midnight carnival, the stretch of the
+ * night (9 PM to midnight) set aside for not building. What's in it isn't
+ * decided yet, so the copy keeps it loose and promises nothing specific —
+ * no house, no hunt, no particular game.
+ */
+export const AFTER_DARK = {
+  index: "01",
+  title: ["Midnight", "Carnival"],
+  note: "Late in the night.\nLeave the build.\nThe rest? A secret.",
+  cta: "Let's go",
+  aside: "The bugs\nwill wait.",
+} as const;
 
 /** 05 — THE PEOPLE */
 export interface TeamMember {
   name: string;
   role?: string;
   tagline: string;
-  image: string;
+  /** the photo, under /assets/team/ — left out, the card shows an empty well (the crew, before its photos) */
+  image?: string;
   imagePosition?: string;
   linkedin?: string;
   /** left out for anyone without one, which drops the icon from their card */
@@ -231,12 +236,45 @@ export const TEAM: TeamMember[] = [
   },
 ];
 
+/**
+ * 05, with TEAM_SECTION=2 — the crew behind the core team, in the ink, each
+ * with a ghost where the core team have cats (src/lib/team.ts). Empty until
+ * the photos are in, and while it's empty the section stays off the site
+ * whatever TEAM_SECTION says; the dashboard's preview shows six stand-ins so
+ * the section can be checked before then.
+ *
+ * One entry per person, like TEAM:
+ *   { name: "…", tagline: "…", image: "/assets/team/….jpg", imagePosition: "center 20%",
+ *     linkedin: "https://…", instagram: "https://…",
+ *     companion: "ghost-headset", companionScale: 0.62, tilt: "-rotate-[1.6deg]" },
+ * The ghosts: ghost-wave, ghost-headset, ghost-camera, ghost-megaphone,
+ * ghost-snacks, ghost-torch — give each person the one that suits them.
+ */
+export const CREW: TeamMember[] = [];
+
+/** the crew section's words */
+export const CREW_WORDS = {
+  label: "The Crew",
+  /** the heading, as "MEET" over "THE CREW" */
+  heading: ["MEET", "THE", "CREW"],
+  note: "the crew\nbehind\nthe crew.",
+  aside: "THE ONES WHO KEEP THE LIGHTS ON. AND THE COFFEE.",
+  /** under the cards, for everyone else who helps */
+  rest: ["…and a", "heck", "of a lot of others."],
+  /** the preview's stand-ins, before the photos are in */
+  standIn: { name: "Crew member", tagline: "photo coming soon." },
+  previewNote: "Preview only: these are stand-ins. Add the crew to CREW in src/lib/site.ts; until then this section stays off the live site.",
+} as const;
+
+/** the stand-ins' ghosts, in order */
+export const CREW_GHOSTS: SpriteName[] = ["ghost-wave", "ghost-headset", "ghost-camera", "ghost-megaphone", "ghost-snacks", "ghost-torch"];
+
 /** 06 — BUILD */
 export const BUILD_STEPS: { index: string; label: string; note: string; lime?: boolean }[] = [
-  { index: "01", label: "Idea", note: "Pick a reaction" },
+  { index: "01", label: "Idea", note: "Read the prompt" },
   { index: "02", label: "Build", note: "Make it real" },
-  { index: "03", label: "Break", note: "Test it on people" },
-  { index: "04", label: "Ship", note: "Watch them react", lime: true },
+  { index: "03", label: "Break", note: "Before it breaks you" },
+  { index: "04", label: "Ship", note: "Make it to morning", lime: true },
 ];
 
 /**
@@ -244,15 +282,17 @@ export const BUILD_STEPS: { index: string; label: string; note: string; lime?: b
  * the coming-soon toast; give it the href once the page it points at exists.
  */
 export const FAQ: { q: string; a: string; tba?: boolean; action?: { label: string; href?: string } }[] = [
-  { q: "When and where is BOO! 2026?", a: "BOO! 2026 takes place on October 24, 2026 at Adi Shankara Institute of Engineering and Technology, Kerala. The event kicks off at 2:00 PM and runs overnight into the morning of October 25." },
+  { q: "When and where is BOO! 2026?", a: "BOO! 2026 takes place on October 24, 2026 at Adi Shankara Institute of Engineering and Technology, Kerala. The doors open at 5:00 PM, the build starts at 6:00 PM, and it runs overnight into the morning of October 25." },
   { q: "Who can participate?", a: "BOO! 2026 is currently open to students of Adi Shankara Institute of Engineering and Technology (ASIET)." },
-  { q: "Team size?", a: "Teams are made up of 2 people. Find your partner, pick your poison, and build something unforgettable." },
-  { q: "What can we build?", a: "Pretty much anything. Software, AI, games, hardware, robotics, electronics, interactive experiences, weird experiments... Build something that makes someone go “WHAT THE HELL?”, jump, freeze, laugh nervously, get curious, feel uneasy, or wonder how the hell you pulled it off." },
+  { q: "Team size?", a: "Teams are made up of 2 people. Rule one of every horror movie: never split up. Find your partner and stick together all night." },
+  { q: "What can we build?", a: "Pretty much anything. Software, AI, games, hardware, robotics, electronics, weird experiments... There's one prompt, and you'll get it before the night. We can't say more yet. Just think about what you'd need to make it out alive." },
   { q: "Do we need to be from ASIET?", a: "For the current edition, yes. BOO! 2026 is currently limited to ASIET students." },
   { q: "Is there a registration fee?", a: "Yep. Registration is currently ₹200 per team of two. That's ₹100 each for a full night of questionable decisions." },
-  { q: "Will food and accommodation be provided?", a: "Food will be provided during the overnight event. Since BOO! takes place on campus and runs through the night, separate accommodation or sleeping facilities will not be provided. If you need a place to stay before the event, you'll need to make your own arrangements." },
-  { q: "What should we bring?", a: "Bring your laptop, charger, whatever hardware or tools your project needs, and anything else you need to survive a long night of building. Don't forget your ID and your teammate." },
-  { q: "What about the non-coding events?", a: "BOO! isn't just about sitting in a lab and staring at your screen. Throughout the night, there'll be a haunted house, a treasure hunt inside it, and spooky midnight activities to break up the build." },
+  { q: "Will food and accommodation be provided?", a: "Food, yes: dinner, midnight snacks and coffee to keep you going. Since BOO! takes place on campus and runs through the night, separate accommodation or sleeping facilities will not be provided. If you need a place to stay before the event, you'll need to make your own arrangements." },
+  { q: "What should we bring?", a: "Bring your laptop, charger, whatever hardware or tools your project needs, and anything else you need to survive a long night of building. Don't forget your ID and your teammate. We'll get you on the Wi-Fi at check-in." },
+  { q: "What about the non-coding events?", a: "BOO! isn't just about sitting in a lab and staring at your screen. Late in the night there's a midnight carnival to break up the build. What's in it? That stays a secret for now." },
+  { q: "How does judging work?", a: "Submissions close at 7:00 AM, and that's a hard deadline: your repo, your pitch deck and a live link. Then the jury comes to your table for a live demo, a look at your code, and a few questions." },
+  { q: "Do we get anything for surviving?", a: "Everyone who takes part gets a participation certificate, and the winners get prizes, handed out at the closing ceremony in the morning." },
   {
     q: "Where can we find the event guidelines?",
     a: "Detailed event guidelines, judging criteria, submission requirements, safety information, and other important details will be available through the registration portal.",
@@ -268,7 +308,7 @@ export const FOOTER_NAV = [
     links: [
       { label: "Home", href: "#top" },
       { label: "The Night", href: "#night" },
-      { label: "20 Hours", href: "#hours" },
+      { label: "No Sleep", href: "#hours" },
       { label: "FAQ", href: "#faq" },
       { label: "Register", href: EVENT.registerHref },
     ],
@@ -276,7 +316,7 @@ export const FOOTER_NAV = [
   {
     title: "The Experience",
     links: [
-      { label: "The 20 Hours", href: "#hours" },
+      { label: "Dusk till Dawn", href: "#hours" },
       { label: "After Dark", href: "#after-dark" },
       { label: "The Hackathon", href: "#build" },
     ],
@@ -291,12 +331,12 @@ export const LEGAL = [
 ] as const;
 
 /** the date on all three, until one of them changes on its own */
-export const LEGAL_UPDATED = "8 Oct 2026";
+export const LEGAL_UPDATED = "17 Oct 2026";
 
 /** Handwritten margin notes, kept in one place so they stay rationed. */
 export const NOTES = {
   scroll: "Scroll\nif you dare",
-  night: "One challenge:\nmake someone\nreact.",
+  night: "One challenge:\nmake it to\nmorning.",
   hours: "A hackathon\nthat stays\nup late.",
   hoursAside: "Ideas sleep\nlater here.",
   survive: "Good ideas\nsurvive.",
@@ -309,15 +349,98 @@ export const NOTES = {
   ready: "Bring an idea.\nWe'll bring\nthe night.",
   footer: "Don't come alone.",
   footerLeft: "Made by dreamers\nfor the weird ones.",
-  desk: "Start with\nthe reaction.\nWork\nbackwards.",
+  desk: "Find the\nway out.\nWork\nbackwards.",
   sign: "Good people\nscarier ideas.",
 } as const;
+
+/**
+ * The full site's jokes (src/components/site/Survival.tsx) and the page the
+ * console points to (/exit). Each one hints at what the night's prompt is
+ * about — a horror story you're stuck in, and what you'd build to get out of
+ * it — without saying so: the prompt says it, when it drops. Each fires at
+ * most once a page load, one at a time, and only when something sets it off.
+ */
+export const SURVIVAL = {
+  console: {
+    cat: ["you opened the console.", "checking for exits? smart."],
+    rules: [
+      "rules for surviving a horror movie:",
+      "  1. never split up. (that’s why teams are two.)",
+      "  2. never say “i’ll be right back.”",
+      "  3. keep your phone charged.",
+      "  4. no way out? build one.",
+    ],
+    hint: "psst: /exit",
+  },
+  /** the tab's title while you're away from it */
+  away: "don’t go out there.",
+  back: "you came back. most don’t.",
+  idle: "standing still never works in the movies.",
+  fast: "never run in a horror movie. that’s when you trip.",
+  /** past midnight, on the visitor's own clock */
+  late: "up this late? you’d survive the first act.",
+  /** a low battery, where the browser says (Chrome, Edge, Android) */
+  battery: (pct: number) => `${pct}% battery. in a horror movie, that’s how it starts.`,
+  konami: "+30 lives. you’re going to need them.",
+  /** Escape, with no menu open to close */
+  pause: "there’s no pause menu tonight.",
+  /** typed anywhere on the page */
+  typed: {
+    help: "no one’s coming. build something.",
+    exit: "the doors are locked. try building a way out.",
+    escape: "the doors are locked. try building a way out.",
+    save: "no save points tonight.",
+  } as Record<string, string>,
+  /** the cat on the logo, poked three times */
+  lockup: "it knows the way out. it’s not telling.",
+  /** after the lights go out (the wordmark seven times, or the code) */
+  lights: "you’d need a flashlight. or you could build one.",
+  end: "you made it to the end. the night is longer.",
+  /** the notes hidden on things (Notes.tsx): hover them, or long-press on a phone */
+  notes: {
+    peekCat: "it knows the way out.",
+    curious: "curiosity. famously fine for cats.",
+    tired: "it’s seen how this ends.",
+    eyes: "they’re not ours.",
+    dice: "roll for initiative.",
+    moon: "always this full here.",
+    controller: "it’s winning. somehow.",
+    build: "it’s seen your code.",
+    faqCat: "ask it about the prompt. it won’t tell.",
+    laptop: "googling “how to survive”.",
+    spider: "it’s been here all along.",
+    sign: "trust the sign.",
+  },
+  /** the cat that peeks up from the bottom of the screen, and the door that opens once (Peeker.tsx) */
+  peek: ["don’t mind me.", "it’s quieter down here."],
+  door: "still alive in there?",
+  /** an eye in the dark, poked (Watchers.tsx) */
+  poke: "rude.",
+  /** what the eyes in the corner say if you stop partway through a pinned
+      scene (CornerEyes.tsx) — nothing in The Experience, which has its own nudge */
+  wait: { experience: null, hours: "no sleeping. keep going." } as Record<string, string | null>,
+  /** what changes, once, when you scroll back up past it (fx/backtrack.ts) */
+  again: {
+    night: "You’re still in it.",
+    hours: "told you.\nno sleep.",
+    ready: "Still looking\nfor the way out?",
+  },
+  /** painted on the signpost beside the last Register button */
+  sign: "This way out",
+  /** the hidden page */
+  exit: {
+    heading: "There’s no\nexit.",
+    note: "you’ll have to build one.",
+    after: "bring a teammate.",
+    back: "Back inside",
+  },
+};
 
 /** Everything the footer says — see src/components/site/Footer.tsx. */
 export const FOOTER: FooterContent = {
   kicker: "Build\nbreak\nhaunt\nrepeat.",
   statement: "See you at",
-  sub: "Come make\nsomeone react.",
+  sub: "Come make it\nout alive.",
   updates: {
     title: "Don\u2019t miss updates",
     note: "Event updates, announcements and a few spooky surprises. No spam, promise.",
@@ -328,7 +451,7 @@ export const FOOTER: FooterContent = {
     rows: [
       ["Where", EVENT.venueLong],
       ["When", EVENT.dateLong],
-      ["Runs for", "20 hours, from 2 PM"],
+      ["Runs", "Overnight, from 5 PM"],
       ["Teams", "2 per team"],
     ],
   },
