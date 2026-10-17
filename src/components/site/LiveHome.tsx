@@ -9,6 +9,7 @@ import Build from "@/components/sections/Build";
 import Faq from "@/components/sections/Faq";
 import Ready from "@/components/sections/Ready";
 import Footer from "@/components/site/Footer";
+import Survival from "@/components/site/Survival";
 import { FOOTER, HERO } from "@/lib/site";
 
 /**
@@ -32,6 +33,7 @@ export default function LiveHome() {
         <Ready />
       </main>
       <Footer content={FOOTER} />
+      <Survival />
     </>
   );
 }

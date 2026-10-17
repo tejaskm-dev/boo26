@@ -311,6 +311,58 @@ export const NOTES = {
   sign: "Good people\nscarier ideas.",
 } as const;
 
+/**
+ * The full site's jokes (src/components/site/Survival.tsx) and the page the
+ * console points to (/exit). Each one hints at what the night's prompt is
+ * about — a horror story you're stuck in, and what you'd build to get out of
+ * it — without saying so: the prompt says it, when it drops. Each fires at
+ * most once a page load, one at a time, and only when something sets it off.
+ */
+export const SURVIVAL = {
+  console: {
+    cat: ["you opened the console.", "checking for exits? smart."],
+    rules: [
+      "rules for surviving a horror movie:",
+      "  1. never split up. (that’s why teams are two.)",
+      "  2. never say “i’ll be right back.”",
+      "  3. keep your phone charged.",
+      "  4. no way out? build one.",
+    ],
+    hint: "psst: /exit",
+  },
+  /** the tab's title while you're away from it */
+  away: "don’t go out there.",
+  back: "you came back. most don’t.",
+  idle: "standing still never works in the movies.",
+  fast: "never run in a horror movie. that’s when you trip.",
+  /** past midnight, on the visitor's own clock */
+  late: "up this late? you’d survive the first act.",
+  /** a low battery, where the browser says (Chrome, Edge, Android) */
+  battery: (pct: number) => `${pct}% battery. in a horror movie, that’s how it starts.`,
+  konami: "+30 lives. you’re going to need them.",
+  /** Escape, with no menu open to close */
+  pause: "there’s no pause menu tonight.",
+  /** typed anywhere on the page */
+  typed: {
+    help: "no one’s coming. build something.",
+    exit: "the doors are locked. try building a way out.",
+    escape: "the doors are locked. try building a way out.",
+    save: "no save points tonight.",
+  } as Record<string, string>,
+  /** the cat on the logo, poked three times */
+  lockup: "it knows the way out. it’s not telling.",
+  /** after the lights go out (the wordmark seven times, or the code) */
+  lights: "you’d need a flashlight. or you could build one.",
+  end: "you made it to the end. the night is longer.",
+  /** the hidden page */
+  exit: {
+    heading: "There’s no\nexit.",
+    note: "you’ll have to build one.",
+    after: "bring a teammate.",
+    back: "Back inside",
+  },
+};
+
 /** Everything the footer says — see src/components/site/Footer.tsx. */
 export const FOOTER: FooterContent = {
   kicker: "Build\nbreak\nhaunt\nrepeat.",

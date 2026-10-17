@@ -14,6 +14,7 @@ const TWINS: Record<string, string> = {
   "/code-of-conduct": "/admin/preview/code-of-conduct",
   "/privacy": "/admin/preview/privacy",
   "/register": "/admin/preview/register",
+  "/exit": "/admin/preview/exit",
 };
 
 /**

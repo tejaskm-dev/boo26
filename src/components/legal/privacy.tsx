@@ -100,9 +100,22 @@ export function privacy(live: boolean): LegalDoc {
           </P>
         ),
       },
-      // the teaser's "Tell a friend" (src/components/soon/chain.ts); the full site has no such button
+      // the full site's jokes (src/components/site/Survival.tsx), and the
+      // teaser's "Tell a friend" (src/components/soon/chain.ts)
       ...(live
-        ? []
+        ? [
+            {
+              id: "jokes",
+              title: "The jokes",
+              body: (
+                <P>
+                  A few jokes on the page notice things your browser already knows — the time, that you switched tabs and
+                  came back, and in some browsers whether your battery is low — and forget them straight away. None of it
+                  is stored or sent anywhere.
+                </P>
+              ),
+            },
+          ]
         : [
             {
               id: "sharing",
