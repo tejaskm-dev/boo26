@@ -1,7 +1,7 @@
 import Section, { SectionLabel } from "./Section";
 import Sprite from "@/components/ui/Sprite";
 import Words from "@/components/fx/Words";
-import { BUILD_STEPS, EVENT, NOTES } from "@/lib/site";
+import { BUILD_STEPS, EVENT, NOTES, SURVIVAL } from "@/lib/site";
 
 /**
  * 06 — one word, as large as the viewport allows, with the cat peeking out of
@@ -36,12 +36,17 @@ export default function Build({ index = "06", afterInk = false }: { index?: stri
           Build.
         </Words>
 
+        {/* On a phone, beside the lines under the word, where the row is
+            empty; from a tablet up, peeking over the top of the word, paws
+            on its edge — over it, never across it, so the letters stay whole. */}
         <Sprite
           name="cat-faq-peek"
           scale={0.71}
           drift={18}
           idle={6}
-          className="absolute right-[10%] top-[38%] z-10 md:right-[22%]"
+          data-note={SURVIVAL.notes.build}
+          style={{ pointerEvents: "auto" }}
+          className="absolute right-[3%] top-[104%] z-10 md:left-[44%] md:right-auto md:top-0 md:-translate-y-[92%]"
         />
       </div>
 

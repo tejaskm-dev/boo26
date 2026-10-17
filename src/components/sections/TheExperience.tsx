@@ -7,7 +7,10 @@ import Section, { SectionLabel } from "./Section";
 import Sprite from "@/components/ui/Sprite";
 import Words from "@/components/fx/Words";
 import RiseIn from "@/components/fx/RiseIn";
-import { EXPERIENCE, NOTES } from "@/lib/site";
+import Awake from "@/components/soon/Awake";
+import InkEyes from "@/components/soon/InkEyes";
+import { reportPin } from "@/components/fx/pins";
+import { EXPERIENCE, NOTES, SURVIVAL } from "@/lib/site";
 import { LG, prefersReducedMotion } from "@/lib/motion";
 
 /** Hand-placed: each beat sits a little off the one before it. */
@@ -133,6 +136,9 @@ export default function TheExperience() {
             st = self;
             watch();
           },
+          // the eyes in the corner follow the stack (CornerEyes.tsx)
+          onToggle: (self) => reportPin("experience", self),
+          onUpdate: (self) => reportPin("experience", self),
         },
       });
       st = tl.scrollTrigger;
@@ -228,6 +234,7 @@ export default function TheExperience() {
       forms={[{ shape: "shelf", tone: "bone", at: "inset-x-0 top-0 w-full h-[9vh] md:h-[13vh]" }]}
       className="flex flex-col justify-center pb-[clamp(3rem,8vh,5.5rem)] pt-[clamp(5rem,13vh,11rem)] md:pt-[clamp(5rem,20vh,11rem)] lg:min-h-screen"
     >
+      <Awake />
       <div ref={root} className="contents">
       <div className="flex items-start justify-between gap-6 px-[var(--edge)]">
         <SectionLabel index="02" className="text-bone">
@@ -246,9 +253,16 @@ export default function TheExperience() {
             {"The\nExperience"}
           </Words>
 
-          <RiseIn className="absolute -top-[clamp(5.5rem,13vw,11rem)] -right-[4%] z-10 md:right-[1%]" start="top 94%">
-            <Sprite name="cat-curious" scale={0.66} drift={20} idle={6} />
+          {/* on a tablet the heading has the whole width and the note sits top
+              right, so the cat comes in over the middle of the word instead */}
+          <RiseIn className="absolute -top-[clamp(5.5rem,13vw,11rem)] -right-[4%] z-10 md:right-[26%] lg:-top-[clamp(6.5rem,14.5vw,12.5rem)] lg:right-[1%]" start="top 94%">
+            <Sprite name="cat-curious" scale={0.66} drift={20} idle={6} data-note={SURVIVAL.notes.curious} style={{ pointerEvents: "auto" }} />
           </RiseIn>
+
+          {/* something else in the dark, watching (Watchers.tsx) */}
+          <span data-watch className="absolute bottom-[-28%] right-[14%] hidden w-[clamp(4rem,5.4vw,5.4rem)] lg:block">
+            <InkEyes className="!relative block w-full" tilt={-6} blink={5.4} delay={0.4} />
+          </span>
 
           <p className="mt-[clamp(1.75rem,4.5vh,2.75rem)] flex items-center gap-3 px-[var(--edge)]">
             <span className="label label-loose whitespace-pre-line text-bone/70">

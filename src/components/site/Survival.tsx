@@ -29,7 +29,6 @@ type BatteryLike = { level: number; charging: boolean };
  * the tab was left) and forget it, as the privacy page says.
  */
 export default function Survival() {
-  const eyes = useRef<HTMLDivElement>(null);
   const dark = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -80,14 +79,13 @@ export default function Survival() {
       document.title = title;
     });
 
-    // go still for a while, and something at the edge of the screen notices
+    // go still for a long while, and it notices (the cat that peeks up from
+    // the bottom of the screen is the one that comes to look: Peeker.tsx)
     let idle = 0;
     const wake = () => {
       window.clearTimeout(idle);
-      if (eyes.current?.dataset.show) delete eyes.current.dataset.show;
       idle = window.setTimeout(() => {
-        if (document.hidden) return;
-        if (troll("idle", SURVIVAL.idle) && eyes.current) eyes.current.dataset.show = "true";
+        if (!document.hidden) troll("idle", SURVIVAL.idle);
       }, IDLE);
     };
     for (const e of ["pointermove", "pointerdown", "keydown", "wheel", "touchstart", "scroll"] as const) listen(e, wake, { passive: true });
@@ -226,15 +224,6 @@ export default function Survival() {
 
   return (
     <>
-      {/* something at the edge of the screen, while you stand still */}
-      <div
-        ref={eyes}
-        aria-hidden="true"
-        className="pointer-events-none fixed right-[clamp(-0.5rem,-1vw,0rem)] top-[44%] z-[75] w-[clamp(4.5rem,9vw,7rem)] translate-x-[60%] opacity-0 data-[show=true]:translate-x-0 data-[show=true]:opacity-100 motion-safe:transition-[opacity,translate] motion-safe:duration-700 motion-safe:ease-[var(--ease-out-soft)]"
-      >
-        <GlowEyes variant="sly" className="w-full" glowId="live-wall-eyes" />
-      </div>
-
       {/* lights out */}
       <div
         ref={dark}

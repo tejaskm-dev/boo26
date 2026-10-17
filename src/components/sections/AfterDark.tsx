@@ -9,7 +9,13 @@ import Sprite from "@/components/ui/Sprite";
 import GhostIndex from "@/components/ui/GhostIndex";
 import EdgeLabel from "@/components/ui/EdgeLabel";
 import Words from "@/components/fx/Words";
-import { AFTER_DARK, NOTES } from "@/lib/site";
+import Awake from "@/components/soon/Awake";
+import InkEyes from "@/components/soon/InkEyes";
+import InkBlob from "@/components/site/InkBlob";
+import Critters from "@/components/soon/Critters";
+import CarnivalLights from "@/components/site/CarnivalLights";
+import { AFTER_DARK, NOTES, SURVIVAL } from "@/lib/site";
+
 
 /**
  * 04 — the night's non-coding half. It used to be three scenes (a haunted
@@ -39,13 +45,12 @@ export default function AfterDark() {
 
           <div className="relative px-[var(--edge)] lg:pl-0">
             {/* the eyes only read as eyes when there is dark around them, so
-                they sit inside an ink blob rather than on the cream */}
+                they sit inside a blob of ink rather than on the cream — one
+                that slowly moves, like the hero's (InkBlob). Its box has room
+                round the blob (520 by 460 for a 400 by 340 shape). */}
             <div className="relative mx-auto grid w-fit place-items-center lg:mx-0">
-              <span
-                aria-hidden="true"
-                className="absolute h-[clamp(13rem,20vw,17rem)] w-[clamp(15rem,24vw,21rem)] bg-ink [border-radius:58%_42%_46%_54%/52%_58%_42%_48%]"
-              />
-              <Sprite name="eyes-glow" scale={0.69} drift={26} idle={6} className="relative" />
+              <InkBlob id="after-dark-ink" className="h-[clamp(17.6rem,27vw,23rem)] w-[clamp(19.5rem,31.2vw,27.3rem)]" />
+              <Sprite name="eyes-glow" scale={0.69} drift={26} idle={6} className="relative" data-note={SURVIVAL.notes.eyes} style={{ pointerEvents: "auto" }} />
             </div>
             <p className="hand mt-6 max-w-[12ch] whitespace-pre-line text-[clamp(1.05rem,1.6vw,1.5rem)] text-ink/60">
               {NOTES.afterDark}
@@ -93,6 +98,9 @@ function MidnightCarnival() {
       forms={[{ shape: "notch", tone: "bone", at: "inset-x-0 top-0 w-full h-[12vh] md:h-[20vh]" }]}
       className="pb-[clamp(4rem,10vh,7rem)] pt-[clamp(5.5rem,16vh,13rem)] md:pt-[clamp(5.5rem,24vh,13rem)]"
     >
+      <Awake />
+      {/* where the device can take it, cat-bats round the moon — tap the dark for more */}
+      <Critters bats={4} sky={[0, 0.17]} zone="[data-night]" className="z-[3]" />
       <GhostIndex className="hidden left-[46%] bottom-[12%] text-[clamp(9rem,21vw,19rem)] lg:block">01</GhostIndex>
       <EdgeLabel side="right" className="top-1/2 -translate-y-1/2">Midnight Carnival</EdgeLabel>
 
@@ -104,16 +112,28 @@ function MidnightCarnival() {
           </p>
         </div>
 
-        <div ref={table} data-scrub="down" data-scrub-amount="10" className="relative min-h-[clamp(15rem,24vw,20rem)]">
-          <Sprite name="moon" scale={0.44} drift={30} idle={7} className="absolute right-[12%] top-0" />
-          <Sprite name="dice" scale={0.5} drift={16} idle={4} className="absolute left-[30%] bottom-[6%] rotate-12" />
-          <Sprite
-            name="cat-controller"
-            scale={1.02}
-            drift={12}
-            idle={5}
-            className="absolute right-[4%] bottom-[8%] z-10"
-          />
+        {/* the carnival: a string of lights over the table, and the table */}
+        <div data-night className="relative pt-[clamp(3.5rem,7vw,5.5rem)]">
+          <CarnivalLights bulbs={7} className="inset-x-[-2%] top-0 h-[clamp(4.5rem,8vw,6.5rem)]" />
+          <span data-watch className="absolute left-[6%] top-[44%] w-[clamp(3.4rem,4.6vw,4.4rem)]">
+            <InkEyes className="!relative block w-full" tilt={8} blink={4.8} delay={0.6} />
+          </span>
+          <div ref={table} data-scrub="down" data-scrub-amount="10" className="relative min-h-[clamp(15rem,24vw,20rem)]">
+            <Sprite name="moon" scale={0.44} drift={30} idle={7} className="absolute right-[12%] top-0" data-note={SURVIVAL.notes.moon} style={{ pointerEvents: "auto" }} />
+            <Sprite name="candy" scale={0.5} drift={10} idle={3} className="absolute bottom-[2%] left-[6%] -rotate-[8deg]" />
+            <Sprite name="lollipop" scale={0.58} drift={12} idle={4} className="absolute bottom-[12%] left-[18%] -rotate-[16deg]" />
+            <Sprite name="dice" scale={0.5} drift={16} idle={4} className="absolute left-[34%] bottom-[6%] rotate-12" data-note={SURVIVAL.notes.dice} style={{ pointerEvents: "auto" }} />
+            <Sprite name="candy-corn" scale={0.62} drift={14} idle={4} className="absolute bottom-[4%] left-[52%] rotate-[14deg]" />
+            <Sprite
+              name="cat-controller"
+              scale={1.02}
+              drift={12}
+              idle={5}
+              data-note={SURVIVAL.notes.controller}
+              style={{ pointerEvents: "auto" }}
+              className="absolute right-[4%] bottom-[8%] z-10"
+            />
+          </div>
         </div>
       </div>
 

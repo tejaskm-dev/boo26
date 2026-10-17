@@ -2,13 +2,18 @@ import Section from "./Section";
 import Marquee from "@/components/fx/Marquee";
 import Countdown from "@/components/fx/Countdown";
 import Sprite from "@/components/ui/Sprite";
-import Words from "@/components/fx/Words";
 import BlobButton from "@/components/ui/BlobButton";
-import { BAND, EVENT, NOTES } from "@/lib/site";
+import GooWord from "@/components/fx/Goo";
+import BackLine from "@/components/fx/BackLine";
+import Awake from "@/components/soon/Awake";
+import Critters from "@/components/soon/Critters";
+import InkEyes from "@/components/soon/InkEyes";
+import { BAND, EVENT, NOTES, SURVIVAL } from "@/lib/site";
 
 /**
- * The closing beat. Lime at full size for the only time on the page, and the
- * cat coming up over the bottom edge as if the night is about to start.
+ * The closing beat. Lime at full size for the only time on the page, in the
+ * lockup's goo, and a signpost by the button pointing the way out. Where the
+ * device can take it, a few bats in the dark above, and a pair of eyes.
  */
 export default function Ready() {
   return (
@@ -18,21 +23,29 @@ export default function Ready() {
       forms={[{ shape: "spillLeft", tone: "bone", at: "inset-x-0 top-0 w-full h-[13vh] md:h-[21vh]" }]}
       className="pb-[clamp(4rem,10vh,7rem)] pt-[clamp(5.5rem,16vh,13rem)] md:pt-[clamp(5.5rem,25vh,13rem)]"
     >
-      <div className="relative px-[var(--edge)]">
-        <p className="label label-loose whitespace-pre-line text-bone/45">
-          One prompt.{"\n"}Any tech.{"\n"}One way out.
-        </p>
+      <Awake />
+      <Critters bats={3} sky={[0.04, 0.22]} zone="[data-night]" className="z-[3]" />
+      <div data-night className="relative px-[var(--edge)]">
+        <BackLine text={"One prompt.\nAny tech.\nOne way out."} back={SURVIVAL.again.ready} className="label label-loose whitespace-pre-line text-bone/45" />
+        <span data-watch className="absolute right-[9%] top-[2%] hidden w-[clamp(4rem,5.4vw,5.4rem)] md:block">
+          <InkEyes className="!relative block w-full" tilt={6} blink={5.8} delay={0.3} />
+        </span>
 
         <div className="mt-[clamp(1.5rem,4vh,3rem)] flex flex-wrap items-center justify-center gap-[clamp(1.5rem,5vw,4rem)]">
-          <Words
-            as="h2"
-            className="brush -rotate-[1.5deg] select-none text-center text-[clamp(5.6rem,18vw,14rem)] leading-[0.84] text-lime"
-          >
-            Ready?
-          </Words>
+          <h2 className="brush -rotate-[1.5deg] select-none text-center text-[clamp(5.6rem,18vw,14rem)] leading-[0.84] text-lime">
+            {/* short drips: the button's right underneath */}
+            <GooWord text="Ready?" short />
+          </h2>
         </div>
 
         <div data-scrub="up" data-scrub-amount="9" className="mt-[clamp(1.5rem,4vh,2.5rem)] flex flex-wrap items-center justify-center gap-[clamp(1.25rem,4vw,3rem)]">
+          {/* the way out, pointing at the button */}
+          <span data-anim="rise" data-note={SURVIVAL.notes.sign} className="relative mt-[clamp(1.5rem,4vh,3rem)] block shrink-0" aria-hidden="true">
+            <Sprite name="signboard" scale={0.5} drift={10} />
+            <span className="hand absolute left-[34%] top-[45%] w-[54%] rotate-[7deg] whitespace-pre-line text-center text-[clamp(0.85rem,1.45vw,1.3rem)] font-bold leading-[0.95] text-lime [text-shadow:0_1px_0_rgba(8,8,8,0.6)]">
+              {`${SURVIVAL.sign}\n→`}
+            </span>
+          </span>
           <BlobButton data-anim="rise" href={EVENT.registerHref} size="lg">
             Register now
           </BlobButton>

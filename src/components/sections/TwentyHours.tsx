@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Section, { SectionLabel } from "./Section";
 import Sprite from "@/components/ui/Sprite";
 import Words from "@/components/fx/Words";
-import { EVENT, NOTES, TIMELINE } from "@/lib/site";
+import { EVENT, NOTES, SURVIVAL, TIMELINE } from "@/lib/site";
 import { LG, prefersReducedMotion } from "@/lib/motion";
+import { reportPin } from "@/components/fx/pins";
+import { useBacktrack } from "@/components/fx/backtrack";
 
 /**
  * 03 — an oversized "No" holding the left ("No sleep"), and the night running
@@ -23,6 +25,10 @@ export default function TwentyHours() {
   const path = useRef<SVGPathElement>(null);
   const numeral = useRef<HTMLDivElement>(null);
   const list = useRef<HTMLOListElement>(null);
+  const note = useRef<HTMLParagraphElement>(null);
+  // come back up past it, and it says so
+  const [told, setTold] = useState(false);
+  useBacktrack(note, () => setTold(true));
 
   useEffect(() => {
     if (prefersReducedMotion()) return;
@@ -50,6 +56,9 @@ export default function TwentyHours() {
               pin: numeral.current,
               pinSpacing: false,
               invalidateOnRefresh: true,
+              // the eyes in the corner follow the hold (CornerEyes.tsx)
+              onToggle: (self) => reportPin("hours", self),
+              onUpdate: (self) => reportPin("hours", self),
             })
           : null;
 
@@ -208,17 +217,20 @@ export default function TwentyHours() {
             </p>
             <Sprite name="squiggle-lime" scale={0.39} className="ml-[0.5em] mt-2" />
 
-            {/* draped over the top of the numeral rather than parked next to it */}
+            {/* perched on the top of the word, paws over the edge — on it, not
+                across it, so NO still reads as NO */}
             <Sprite
               name="cat-tired"
               scale={0.85}
               drift={14}
               idle={5}
-              className="absolute -top-[clamp(0.5rem,2.5vw,2rem)] left-[32%] z-10 w-[46%] md:w-auto"
+              data-note={SURVIVAL.notes.tired}
+              style={{ pointerEvents: "auto" }}
+              className="absolute left-[42%] top-0 z-10 w-[38%] -translate-y-[70%] sm:left-[34%] sm:w-[30%] md:w-auto md:-translate-y-[82%] lg:left-[26%]"
             />
 
-            <p className="body-copy mt-[clamp(1.25rem,3.5vh,2rem)] max-w-[22ch] whitespace-pre-line text-[clamp(0.95rem,1.3vw,1.1rem)] text-ink/60 lg:text-bone/65">
-              {NOTES.hours}
+            <p ref={note} className="body-copy mt-[clamp(1.25rem,3.5vh,2rem)] max-w-[22ch] whitespace-pre-line text-[clamp(0.95rem,1.3vw,1.1rem)] text-ink/60 lg:text-bone/65">
+              {told ? SURVIVAL.again.hours : NOTES.hours}
             </p>
 
             {/* the empty half of the column earns its keep */}
@@ -275,6 +287,8 @@ export default function TwentyHours() {
 
                 <Sprite
                   data-stop-cat
+                  data-note={stop.note}
+                  style={{ pointerEvents: "auto" }}
                   name={stop.cat}
                   scale={stop.scale ?? 0.48}
                   drift={8}

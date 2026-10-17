@@ -77,6 +77,21 @@ in `SURVIVAL` in `site.ts`), each hinting at the night's prompt without
 saying it, and a hidden page the console points to, `/exit` — there only
 while the full site is.
 
+It also carries the teaser's polish, remade without the sound in
+`src/components/fx/` (styles in `fx/fx.css`, which only the full site loads):
+notes hidden on the cats and props (hover, or long-press on a phone), a
+glitching "nightmare", goo on "Ready?", lines that change once you scroll back
+up past them, the night falling as you scroll and the dawn at the end, a cat
+that peeks up when you stop on the cream, the eyes in the corner while a scene
+is pinned, eyes in the dark that watch you, and the edges between the fields
+moving like the hero's ink. The teaser's components it reuses as they are —
+the eyes, the bats, the scroll health — are imported from
+`src/components/soon/`; the teaser's own files are unchanged. The site's own
+additions: the declassified file in The Night, the carnival lights, the
+spider in the FAQ and the way-out signpost by the last Register button.
+Anything that moves every frame is only there on a device that can take it
+(`src/lib/tier.ts`), and none of it runs with reduced motion.
+
 The teaser's art is cut by `scripts/cut-teaser-assets.py` from
 `design/teaser/` and the older boards in `design/`.
 

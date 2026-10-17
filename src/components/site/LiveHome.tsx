@@ -11,8 +11,19 @@ import Faq from "@/components/sections/Faq";
 import Ready from "@/components/sections/Ready";
 import Footer from "@/components/site/Footer";
 import Survival from "@/components/site/Survival";
-import { CREW, CREW_GHOSTS, CREW_WORDS, FOOTER, HERO, NAV, type TeamMember } from "@/lib/site";
+import Notes from "@/components/fx/Notes";
+import Nightfall from "@/components/fx/Nightfall";
+import Peeker from "@/components/fx/Peeker";
+import CornerEyes from "@/components/fx/CornerEyes";
+import Watchers from "@/components/fx/Watchers";
+import LivingEdges from "@/components/fx/LivingEdges";
+import { GooFilter } from "@/components/fx/Goo";
+import ScrollHealth from "@/components/soon/ScrollHealth";
+import Awake from "@/components/soon/Awake";
+import { EyeGlow } from "@/components/soon/InkEyes";
+import { CREW, CREW_GHOSTS, CREW_WORDS, FOOTER, HERO, NAV, SURVIVAL, type TeamMember } from "@/lib/site";
 import { teamMode } from "@/lib/team";
+import "@/components/fx/fx.css";
 
 /** the six the preview shows in the crew's place before their photos are in, one per ghost */
 const STAND_INS: TeamMember[] = CREW_GHOSTS.map((companion, i) => ({
@@ -31,6 +42,13 @@ const STAND_INS: TeamMember[] = CREW_GHOSTS.map((companion, i) => ({
  * Which team it shows is TEAM_SECTION's (src/lib/team.ts): none, the core
  * team, or the core team and the crew. Leave the team out and the menu and
  * the section numbers close up round it.
+ *
+ * Round the sections, the page-wide things the teaser taught it, remade
+ * without the sound (src/components/fx): the notes hidden on things, the
+ * night falling as you scroll and the dawn at the end, the cat that peeks up
+ * when you stop, the eyes in the corner while a scene holds the screen, the
+ * eyes in the dark that watch you, and the edges between the fields moving
+ * like the hero's ink. And the jokes (Survival.tsx).
  */
 export default function LiveHome({ preview = false }: { preview?: boolean }) {
   const mode = teamMode();
@@ -54,8 +72,21 @@ export default function LiveHome({ preview = false }: { preview?: boolean }) {
         <Faq index={at("#faq")} />
         <Ready />
       </main>
-      <Footer content={FOOTER} />
+      <Footer content={FOOTER} lowDesk />
       <Survival />
+
+      {/* the glow every pair of eyes sits in, and the goo every drip melts into: once each, for the page */}
+      <EyeGlow />
+      <GooFilter />
+      <Notes />
+      <Nightfall />
+      <Peeker lines={SURVIVAL.peek} door={SURVIVAL.door} />
+      <CornerEyes lines={SURVIVAL.wait} />
+      <Watchers poke={SURVIVAL.poke} />
+      <LivingEdges />
+      <ScrollHealth />
+      {/* the hero is shared with the teaser: this marks it awake, so its loops rest off screen */}
+      <Awake target="#top" />
     </>
   );
 }

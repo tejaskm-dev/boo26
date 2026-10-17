@@ -3,13 +3,17 @@ import Sprite from "@/components/ui/Sprite";
 import GhostIndex from "@/components/ui/GhostIndex";
 import Words from "@/components/fx/Words";
 import RiseIn from "@/components/fx/RiseIn";
-import { EVENT, FACTS, NOTES } from "@/lib/site";
+import Declassified from "@/components/site/Declassified";
+import NightLine from "./NightLine";
+import { EVENT, NOTES, SURVIVAL } from "@/lib/site";
 
 /**
  * 01 — the first thing after the hero. The heading runs oversized and off the
- * left edge; the facts sit in a quiet editorial row underneath. The peeking cat
- * hooks over the wave the page arrives on, so it reads as coming *through* the
- * section boundary rather than sitting inside the box.
+ * left edge; beside it, the one line, and the teaser's file — WHAT, WHEN,
+ * WHERE — torn open (Declassified). The peeking cat hooks over the wave the
+ * page arrives on, so it reads as coming *through* the section boundary
+ * rather than sitting inside the box — off to the side of the hero's last
+ * line, never over it.
  */
 export default function TheNight() {
   return (
@@ -19,8 +23,8 @@ export default function TheNight() {
       className="pb-[clamp(3rem,8vh,5.5rem)] pt-[clamp(5.5rem,17vh,13rem)] md:pt-[clamp(5.5rem,26vh,13rem)]"
     >
       {/* the cat is hauling itself over the boundary above */}
-      <RiseIn className="absolute -top-[clamp(2.5rem,7vw,6rem)] right-[6%] z-10 md:right-[26%]" start="top 96%">
-        <Sprite name="cat-peek" scale={0.7} drift={16} idle={6} />
+      <RiseIn className="absolute -top-[clamp(2.5rem,7vw,6rem)] right-[6%] z-10 md:right-[2%] lg:right-[7%]" start="top 96%">
+        <Sprite name="cat-peek" scale={0.7} drift={16} idle={6} data-note={SURVIVAL.notes.peekCat} style={{ pointerEvents: "auto" }} />
       </RiseIn>
       <Sprite name="star" scale={0.14} drift={26} className="absolute left-[46%] top-[42%] hidden md:block" />
 
@@ -45,19 +49,11 @@ export default function TheNight() {
         </div>
 
         <div data-scrub="up" data-scrub-amount="10" className="px-[var(--edge)] lg:pl-0 lg:pr-[var(--edge)]">
-          <p data-anim="rise" className="display max-w-[16ch] text-[clamp(1.35rem,2.6vw,2.15rem)] leading-[1.12]">
-            Most hackathons start with a problem. {EVENT.name}&nbsp;starts with a nightmare.
-          </p>
+          <NightLine name={EVENT.name} back={SURVIVAL.again.night} />
 
-          <dl data-stagger
-            className="mt-[clamp(2rem,5vh,3.25rem)] grid grid-cols-2 gap-x-6 gap-y-[clamp(1.25rem,3vh,2rem)] border-t border-ink/15 pt-[clamp(1.25rem,3vh,2rem)] sm:grid-cols-4">
-            {FACTS.map((f) => (
-              <div key={f.k} data-anim="rise">
-                <dt className="label text-ink/45">{f.k}</dt>
-                <dd className="display mt-2 text-[clamp(0.95rem,1.5vw,1.2rem)] leading-none">{f.v}</dd>
-              </div>
-            ))}
-          </dl>
+          <div className="mt-[clamp(2rem,5vh,3.25rem)] border-t border-ink/15 pt-[clamp(1.5rem,3.5vh,2.25rem)]">
+            <Declassified />
+          </div>
         </div>
       </div>
 

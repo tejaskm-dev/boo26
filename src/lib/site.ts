@@ -93,14 +93,21 @@ export const HERO: {
 /** The loading screen's corners — see src/components/fx/PageWipe.tsx. */
 export const PRELOADER = { corner: EVENT.date, venue: EVENT.venue, line: EVENT.format };
 
-/** 01 — THE NIGHT */
-export const FACTS = [
-  // non-breaking spaces, so a narrow column breaks after the comma and never inside "5 PM"
-  { k: "Doors open", v: "24 OCT, 5 PM" },
-  { k: "Duration", v: "OVERNIGHT" },
-  { k: "Team size", v: "2 PEOPLE" },
-  { k: "Venue", v: "ASIET, KALADY" },
-] as const;
+/**
+ * 01 — the file the teaser kept blacked out, torn open (Declassified.tsx):
+ * the bars come off one at a time as it comes into view. WHY stays
+ * redacted: that's the prompt's to say.
+ */
+export const FILE = {
+  stamp: "Declassified",
+  rows: [
+    { k: "What", v: "AN OVERNIGHT HACKATHON" },
+    { k: "When", v: "24 OCT, 5 PM → MORNING" },
+    { k: "Who", v: "TEAMS OF TWO" },
+  ],
+  where: { k: "Where", v: "ASIET, KALADY" },
+  why: { k: "Why", label: "Why: still redacted", note: "the prompt\nwill tell you.", poke: "not yet. the prompt says why." },
+} as const;
 
 /** 02 — THE EXPERIENCE */
 export const EXPERIENCE = [
@@ -115,16 +122,17 @@ export const EXPERIENCE = [
  * till submissions close at 7, judging at 8 and the winners by 9:30. 3 AM
  * isn't on the plan. It happens anyway.
  *
- * `scale` is for the one cat whose art is drawn smaller than the rest.
+ * `scale` is for the one cat whose art is drawn smaller than the rest;
+ * `note` is what each cat says if you hover it (Notes.tsx).
  */
-export const TIMELINE: { time: string; label: string; cat: SpriteName; scale?: number }[] = [
-  { time: "05 PM", label: "The doors open", cat: "cat-excited" },
-  { time: "06 PM", label: "The build begins", cat: "cat-stretch" },
-  { time: "08 PM", label: "Dinner", cat: "cat-playful" },
-  { time: "09 PM", label: "Midnight carnival", cat: "cat-skeleton", scale: 0.78 },
-  { time: "03 AM", label: "Questionable decisions", cat: "cat-confused" },
-  { time: "07 AM", label: "Pens down", cat: "cat-sleepy" },
-  { time: "08 AM", label: "Who made it?", cat: "cat-box" },
+export const TIMELINE: { time: string; label: string; cat: SpriteName; scale?: number; note: string }[] = [
+  { time: "05 PM", label: "The doors open", cat: "cat-excited", note: "last one in locks the door." },
+  { time: "06 PM", label: "The build begins", cat: "cat-stretch", note: "pouncing on the prompt." },
+  { time: "08 PM", label: "Dinner", cat: "cat-playful", note: "it’s not sharing." },
+  { time: "09 PM", label: "Midnight carnival", cat: "cat-skeleton", scale: 0.78, note: "didn’t make it to morning." },
+  { time: "03 AM", label: "Questionable decisions", cat: "cat-confused", note: "it’s 3 AM. trust nothing." },
+  { time: "07 AM", label: "Pens down", cat: "cat-sleepy", note: "five more minutes." },
+  { time: "08 AM", label: "Who made it?", cat: "cat-box", note: "made it. barely." },
 ];
 
 /**
@@ -388,6 +396,37 @@ export const SURVIVAL = {
   /** after the lights go out (the wordmark seven times, or the code) */
   lights: "you’d need a flashlight. or you could build one.",
   end: "you made it to the end. the night is longer.",
+  /** the notes hidden on things (Notes.tsx): hover them, or long-press on a phone */
+  notes: {
+    peekCat: "it knows the way out.",
+    curious: "curiosity. famously fine for cats.",
+    tired: "it’s seen how this ends.",
+    eyes: "they’re not ours.",
+    dice: "roll for initiative.",
+    moon: "always this full here.",
+    controller: "it’s winning. somehow.",
+    build: "it’s seen your code.",
+    faqCat: "ask it about the prompt. it won’t tell.",
+    laptop: "googling “how to survive”.",
+    spider: "it’s been here all along.",
+    sign: "trust the sign.",
+  },
+  /** the cat that peeks up from the bottom of the screen, and the door that opens once (Peeker.tsx) */
+  peek: ["don’t mind me.", "it’s quieter down here."],
+  door: "still alive in there?",
+  /** an eye in the dark, poked (Watchers.tsx) */
+  poke: "rude.",
+  /** what the eyes in the corner say if you stop partway through a pinned
+      scene (CornerEyes.tsx) — nothing in The Experience, which has its own nudge */
+  wait: { experience: null, hours: "no sleeping. keep going." } as Record<string, string | null>,
+  /** what changes, once, when you scroll back up past it (fx/backtrack.ts) */
+  again: {
+    night: "You’re still in it.",
+    hours: "told you.\nno sleep.",
+    ready: "Still looking\nfor the way out?",
+  },
+  /** painted on the signpost beside the last Register button */
+  sign: "This way out",
   /** the hidden page */
   exit: {
     heading: "There’s no\nexit.",
