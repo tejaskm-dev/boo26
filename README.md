@@ -35,8 +35,8 @@ LIVE_STATUS=false    # the coming-soon teaser, and nothing that would date it
 **Unset means the teaser**, on purpose: the organisers asked for no dates or
 timings anywhere until it's announced, and a variable someone forgot to set
 should never be what publishes them. It's read where the site is built, like
-`BOO_REGISTRATION_OPEN`, so flipping it takes a new build — on Vercel, change
-the variable and redeploy. In exchange the switch costs nothing when someone
+`REGISTER_URL`, so flipping it takes a new build — on Vercel, change the
+variable and redeploy. In exchange the switch costs nothing when someone
 visits: both versions are static pages, with no middleware, no check per
 request and nothing extra in the browser.
 
@@ -45,11 +45,11 @@ While the teaser is up:
 | | |
 | --- | --- |
 | `/` | the teaser (`src/app/(site)/soon/page.tsx`), served at `/` by a rewrite in `next.config.ts` |
-| `/register/*` | "Not yet." — the sign-up is closed whatever `BOO_REGISTRATION_OPEN` says |
+| `/register/*` | "Not yet." — and no redirect to the outside sign-up, whatever `REGISTER_URL` says |
 | `/terms`, `/code-of-conduct` | redirect home: both describe the night itself |
 | `/privacy` | stays, with a date-free band |
 | `/shh` | a hidden page for whoever reads the console |
-| `/admin` | unaffected |
+| `/admin` | unaffected — and `/admin/preview` shows the core team the full site before it's up |
 
 **The two sides are edited separately.** Every word on the teaser is in
 `src/lib/soon.ts` (with the rules for writing new ones at the top), and its
@@ -65,22 +65,34 @@ channels) is in `src/lib/brand.ts`.
 In `next dev` the teaser is always at `/soon` too, so it can be worked on
 while the full site is the one on `/`.
 
+The full site has jokes of its own (`src/components/site/Survival.tsx`, words
+in `SURVIVAL` in `site.ts`), each hinting at the night's prompt without
+saying it, and a hidden page the console points to, `/exit` — there only
+while the full site is.
+
 The teaser's art is cut by `scripts/cut-teaser-assets.py` from
 `design/teaser/` and the older boards in `design/`.
 
 ## Registration
 
-`/register` and everything under it is either the sign-up or the coming-soon
-page, decided by one environment variable (see `.env.example`):
+Registration runs on an outside page (a form, an event platform), not on this
+site. One environment variable says where (see `.env.example`):
 
 ```bash
-BOO_REGISTRATION_OPEN=true    # the sign-up: the fork, the rules, the judging
-BOO_REGISTRATION_OPEN=false   # the coming-soon page on every /register path
+REGISTER_URL=https://…   # /register, and every Register button, redirects here
 ```
 
-Unset means open. Set it in `.env.local` here, or in the host's environment
-variables for a deploy. It's read where the pages are built, so changing it
-needs a new build — on Vercel, a redeploy.
+Every Register button points at `/register`, so the address on a poster stays
+`boo26.live/register` whatever the outside page turns out to be. The redirect
+is in `next.config.ts` and only happens while the full site is live; unset,
+`/register` is the "isn't open yet" page. It's read where the site is built,
+so changing it needs a new build — on Vercel, a redeploy.
+
+The site's own sign-up (the fork, starting and joining a team, the rules and
+the judging pages) is still in the code, whole, but switched off:
+`registrationOpen()` in `src/lib/register/mode.ts` returns false, and its
+server actions and the ID check ask the same thing. The rest of this section
+describes it as it was built, for an edition that registers on the site again.
 
 ### What people pick, and what's checked
 
@@ -171,6 +183,27 @@ failing quietly. Nothing else has to happen: no invites, no accounts, no
 passwords. Adding someone to the core team is one more email in
 `ADMIN_EMAILS`; taking them off locks them out on their next request, signed
 in or not.
+
+### Previewing the full site
+
+**Preview live site** in the dashboard's bar (and the card at the top of the
+list) opens `/admin/preview`: the full site's home page — and its terms, code
+of conduct and privacy policy — exactly as `LIVE_STATUS=true` will show them,
+on the production deploy, while visitors still get the teaser. It's the real
+thing rather than a copy: the same sections, the same shell and loading
+screen (`src/components/site/LiveHome.tsx`, `SiteShell.tsx`), in a root layout
+of its own (`src/app/(preview)`). Links in it stay in the preview, and the
+Register buttons open `REGISTER_URL` if it's set. A tab in the corner says
+what's public and where Register goes.
+
+It's for the signed-in core team only. `src/proxy.ts` checks the session before
+a preview page is rendered at all — a page that redirects on its own still
+lists its scripts in the redirect, and the preview's scripts are the full
+site's, dates and all — and every preview page checks again itself. It's
+rendered per request (never built into a page someone else could load), it's
+never indexed, and the proxy runs for `/admin/preview` alone, so no other
+request goes through it. Before the
+site goes live, check it there, then set `LIVE_STATUS=true` and redeploy.
 
 It costs the site nothing. `/admin` is a separate root layout, so it loads
 none of the site's fonts, animation or smooth scrolling, and the site loads
