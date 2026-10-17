@@ -35,6 +35,10 @@ export default function Shell({
           ) : null}
 
           <div className="ml-auto flex flex-wrap items-center gap-x-3 gap-y-2">
+            {/* the full site as it will be, before LIVE_STATUS puts it up (src/app/(preview)) */}
+            <a href="/admin/preview" target="_blank" rel="noopener" className="btn text-[0.8rem]">
+              Preview live site ↗
+            </a>
             <a href="/admin/export" className="btn text-[0.8rem]">
               Export CSV
             </a>

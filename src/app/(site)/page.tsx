@@ -1,19 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import SiteChrome from "@/components/site/SiteChrome";
-import Hero from "@/components/hero/Hero";
-import TheNight from "@/components/sections/TheNight";
-import TheExperience from "@/components/sections/TheExperience";
-import TwentyHours from "@/components/sections/TwentyHours";
-import AfterDark from "@/components/sections/AfterDark";
-import ThePeople from "@/components/sections/ThePeople";
-import Build from "@/components/sections/Build";
-import Faq from "@/components/sections/Faq";
-import Ready from "@/components/sections/Ready";
-import Footer from "@/components/site/Footer";
+import LiveHome from "@/components/site/LiveHome";
 import JsonLd from "@/components/site/JsonLd";
 import { siteLive } from "@/lib/live";
-import { EVENT, FOOTER, HERO, SEO } from "@/lib/site";
+import { EVENT, SEO } from "@/lib/site";
 import { ALSO, KEYWORDS, NAME, ORG_ID, PLACE, SHARE_IMAGE, absolute, pageMeta, siteGraph } from "@/lib/seo";
 
 // (while the teaser is up this page is only ever built as a 404, so it says
@@ -49,19 +39,7 @@ export default function Page() {
   return (
     <>
       <JsonLd graph={[...siteGraph(SEO.description), NIGHT]} />
-      <SiteChrome />
-      <main className="relative overflow-x-clip">
-        <Hero {...HERO} />
-        <TheNight />
-        <TheExperience />
-        <TwentyHours />
-        <AfterDark />
-        <ThePeople />
-        <Build />
-        <Faq />
-        <Ready />
-      </main>
-      <Footer content={FOOTER} />
+      <LiveHome />
     </>
   );
 }
