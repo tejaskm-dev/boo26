@@ -4,19 +4,24 @@ import Words from "@/components/fx/Words";
 import { BUILD_STEPS, EVENT, NOTES } from "@/lib/site";
 
 /**
- * 05 — one word, as large as the viewport allows, with the cat peeking out of
+ * 06 — one word, as large as the viewport allows, with the cat peeking out of
  * the counter of the D. The four steps run underneath as a rule-connected row;
  * SHIP takes the lime because it is the only one that ends the night.
+ *
+ * It usually follows the team, on the same cream. When it follows the ink
+ * instead — the crew's section, or the carnival with no team between — the
+ * ink comes down into it as a join, like every other change of field.
  */
-export default function Build() {
+export default function Build({ index = "06", afterInk = false }: { index?: string; afterInk?: boolean }) {
   return (
     <Section
       id="build"
       field="bone"
-      className="pb-[clamp(3rem,8vh,5rem)] pt-[clamp(3.5rem,8vh,5.5rem)]"
+      forms={afterInk ? [{ shape: "spillLeft", tone: "ink", at: "inset-x-0 top-0 w-full h-[11vh] md:h-[18vh]" }] : undefined}
+      className={`pb-[clamp(3rem,8vh,5rem)] ${afterInk ? "pt-[clamp(6rem,16vh,12rem)] md:pt-[clamp(6rem,22vh,12rem)]" : "pt-[clamp(3.5rem,8vh,5.5rem)]"}`}
     >
       <div className="flex items-start justify-between gap-6 px-[var(--edge)]">
-        <SectionLabel index="06">The Hackathon</SectionLabel>
+        <SectionLabel index={index}>The Hackathon</SectionLabel>
         <p className="label whitespace-pre-line text-right text-ink/45">
           Your idea.{"\n"}Any stack.{"\n"}One night.
         </p>

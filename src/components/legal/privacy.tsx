@@ -3,6 +3,7 @@ import { A, Item, Key, List, P } from "./Prose";
 import { EVENT, LEGAL_UPDATED } from "@/lib/site";
 import { STORAGE } from "@/lib/storage";
 import { registrationOpen } from "@/lib/register/mode";
+import { teamMode } from "@/lib/team";
 
 /**
  * What the site does is checked, not assumed: it loads nothing from any other
@@ -223,8 +224,15 @@ export function privacy(live: boolean): LegalDoc {
         body: (
           <P>
             Email <A href={`mailto:${EVENT.email}`}>{EVENT.email}</A> with any question about this policy or a request about
-            your information. Or talk to any of the core team — you&rsquo;ll find all of us, with our links, under{" "}
-            <A href="/#team">The People</A> on the home page.
+            your information. Or talk to any of the core team
+            {/* the teaser has no team section to point to, and the full site may not (TEAM_SECTION=0) */}
+            {live && teamMode() > 0 ? (
+              <>
+                {" "}
+                — you&rsquo;ll find all of us, with our links, under <A href="/#team">The People</A> on the home page
+              </>
+            ) : null}
+            .
           </P>
         ),
       },

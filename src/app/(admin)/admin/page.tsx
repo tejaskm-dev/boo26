@@ -7,6 +7,8 @@ import { codeFromPath } from "@/lib/register/code";
 import { origin } from "@/lib/origin";
 import { siteLive } from "@/lib/live";
 import { registerUrl } from "@/lib/register/external";
+import { teamMode } from "@/lib/team";
+import { CREW } from "@/lib/site";
 
 /**
  * The core team's view of registration. Nothing links here from the site, and
@@ -75,6 +77,8 @@ export default async function AdminPage({
       temporary={teamsAreTemporary()}
       live={siteLive()}
       register={registerUrl()}
+      team={teamMode()}
+      crew={CREW.length}
     />
   );
 }

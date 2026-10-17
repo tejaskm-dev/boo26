@@ -1,6 +1,7 @@
 import type { LegalDoc } from "./LegalPage";
 import { A, Item, List, P } from "./Prose";
 import { EVENT, LEGAL_UPDATED } from "@/lib/site";
+import { teamMode } from "@/lib/team";
 
 export const CONDUCT: LegalDoc = {
   href: "/code-of-conduct",
@@ -110,8 +111,13 @@ export const CONDUCT: LegalDoc = {
         <List>
           <Item>
             If something happens to you, or you see something that isn&rsquo;t okay, tell any of the core team — in person at
-            the event, by email at <A href={`mailto:${EVENT.email}`}>{EVENT.email}</A>, or through the links on our cards
-            under <A href="/#team">The People</A>.
+            the event{teamMode() > 0 ? ", " : " or "}by email at <A href={`mailto:${EVENT.email}`}>{EVENT.email}</A>
+            {teamMode() > 0 ? (
+              <>
+                , or through the links on our cards under <A href="/#team">The People</A>
+              </>
+            ) : null}
+            .
           </Item>
           <Item>We&rsquo;ll listen, take it seriously, and keep it as private as we can.</Item>
           <Item>In an emergency, call 112 first. Then tell us.</Item>

@@ -146,7 +146,8 @@ export interface TeamMember {
   name: string;
   role?: string;
   tagline: string;
-  image: string;
+  /** the photo, under /assets/team/ — left out, the card shows an empty well (the crew, before its photos) */
+  image?: string;
   imagePosition?: string;
   linkedin?: string;
   /** left out for anyone without one, which drops the icon from their card */
@@ -226,6 +227,39 @@ export const TEAM: TeamMember[] = [
     tilt: "rotate-[1.5deg]",
   },
 ];
+
+/**
+ * 05, with TEAM_SECTION=2 — the crew behind the core team, in the ink, each
+ * with a ghost where the core team have cats (src/lib/team.ts). Empty until
+ * the photos are in, and while it's empty the section stays off the site
+ * whatever TEAM_SECTION says; the dashboard's preview shows six stand-ins so
+ * the section can be checked before then.
+ *
+ * One entry per person, like TEAM:
+ *   { name: "…", tagline: "…", image: "/assets/team/….jpg", imagePosition: "center 20%",
+ *     linkedin: "https://…", instagram: "https://…",
+ *     companion: "ghost-headset", companionScale: 0.62, tilt: "-rotate-[1.6deg]" },
+ * The ghosts: ghost-wave, ghost-headset, ghost-camera, ghost-megaphone,
+ * ghost-snacks, ghost-torch — give each person the one that suits them.
+ */
+export const CREW: TeamMember[] = [];
+
+/** the crew section's words */
+export const CREW_WORDS = {
+  label: "The Crew",
+  /** the heading, as "MEET" over "THE CREW" */
+  heading: ["MEET", "THE", "CREW"],
+  note: "the crew\nbehind\nthe crew.",
+  aside: "THE ONES WHO KEEP THE LIGHTS ON. AND THE COFFEE.",
+  /** under the cards, for everyone else who helps */
+  rest: ["…and a", "heck", "of a lot of others."],
+  /** the preview's stand-ins, before the photos are in */
+  standIn: { name: "Crew member", tagline: "photo coming soon." },
+  previewNote: "Preview only: these are stand-ins. Add the crew to CREW in src/lib/site.ts; until then this section stays off the live site.",
+} as const;
+
+/** the stand-ins' ghosts, in order */
+export const CREW_GHOSTS: SpriteName[] = ["ghost-wave", "ghost-headset", "ghost-camera", "ghost-megaphone", "ghost-snacks", "ghost-torch"];
 
 /** 06 — BUILD */
 export const BUILD_STEPS: { index: string; label: string; note: string; lime?: boolean }[] = [

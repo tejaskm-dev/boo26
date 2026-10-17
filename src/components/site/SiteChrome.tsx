@@ -3,10 +3,14 @@
 import { useState } from "react";
 import Header from "./Header";
 import FullscreenNav from "./FullscreenNav";
-import { EVENT, NAV } from "@/lib/site";
+import { EVENT, NAV, type NavItem } from "@/lib/site";
 
-/** The full site's header and menu. The teaser has its own (src/components/soon/SoonChrome.tsx). */
-export default function SiteChrome() {
+/**
+ * The full site's header and menu. The teaser has its own
+ * (src/components/soon/SoonChrome.tsx). The menu's items come from the page
+ * when it leaves a section out (TEAM_SECTION=0, src/lib/team.ts).
+ */
+export default function SiteChrome({ items = NAV }: { items?: NavItem[] }) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -14,7 +18,7 @@ export default function SiteChrome() {
       <FullscreenNav
         open={open}
         onClose={() => setOpen(false)}
-        items={NAV}
+        items={items}
         facts={[EVENT.date, EVENT.venue]}
         cta={{ label: "Register now", href: EVENT.registerHref }}
       />

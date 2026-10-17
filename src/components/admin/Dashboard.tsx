@@ -60,6 +60,8 @@ export default function Dashboard({
   temporary,
   live,
   register,
+  team,
+  crew,
 }: {
   who: string;
   teams: TeamRecord[];
@@ -72,6 +74,8 @@ export default function Dashboard({
   /** what the public site is right now (LIVE_STATUS), and where Register goes (REGISTER_URL) */
   live: boolean;
   register: string | null;
+  team: 0 | 1 | 2;
+  crew: number;
 }) {
   const people = teams.flatMap((t) => t.members);
   const complete = teams.filter((t) => t.members.length >= 2).length;
@@ -98,7 +102,7 @@ export default function Dashboard({
         ) : null}
       </div>
 
-      <SiteStatus live={live} register={register} />
+      <SiteStatus live={live} register={register} team={team} crew={crew} />
 
       {said === "team-removed" ? (
         <p className="mt-4 rounded-[2px] border border-[#cbe06a] bg-[#f2f9d6] px-4 py-3 text-[0.86rem] text-[#40500a]">

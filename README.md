@@ -65,6 +65,13 @@ channels) is in `src/lib/brand.ts`.
 In `next dev` the teaser is always at `/soon` too, so it can be worked on
 while the full site is the one on `/`.
 
+Which team the full site shows is `TEAM_SECTION` (see `.env.example`): `0`
+none (the menu and the section numbers close up round it, and the legal
+pages stop pointing to it), `1` the core team, `2` the core team and then the
+crew — a black section with a ghost for each of them where the core team have
+cats. The crew is `CREW` in `src/lib/site.ts`; until it's filled in, `2` shows
+the same as `1`, and the dashboard's preview shows six stand-ins instead.
+
 The full site has jokes of its own (`src/components/site/Survival.tsx`, words
 in `SURVIVAL` in `site.ts`), each hinting at the night's prompt without
 saying it, and a hidden page the console points to, `/exit` — there only

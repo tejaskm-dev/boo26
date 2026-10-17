@@ -1,6 +1,7 @@
 import type { LegalDoc } from "./LegalPage";
 import { A, Item, List, P } from "./Prose";
 import { EVENT, LEGAL_UPDATED } from "@/lib/site";
+import { teamMode } from "@/lib/team";
 
 /**
  * Facts only from what the site already states. Anything not settled yet —
@@ -174,8 +175,14 @@ export const TERMS: LegalDoc = {
       title: "Questions",
       body: (
         <P>
-          Email us at <A href={`mailto:${EVENT.email}`}>{EVENT.email}</A>, or ask any of the core team — you&rsquo;ll find
-          all of us, with our links, under <A href="/#team">The People</A> on the home page.
+          Email us at <A href={`mailto:${EVENT.email}`}>{EVENT.email}</A>, or ask any of the core team
+          {teamMode() > 0 ? (
+            <>
+              {" "}
+              — you&rsquo;ll find all of us, with our links, under <A href="/#team">The People</A> on the home page
+            </>
+          ) : null}
+          .
         </P>
       ),
     },
