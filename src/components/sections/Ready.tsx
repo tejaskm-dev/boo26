@@ -20,7 +20,7 @@ export default function Ready() {
     >
       <div className="relative px-[var(--edge)]">
         <p className="label label-loose whitespace-pre-line text-bone/45">
-          No problem statement.{"\n"}No required tech.{"\n"}Just a reaction.
+          One prompt.{"\n"}Any tech.{"\n"}One way out.
         </p>
 
         <div className="mt-[clamp(1.5rem,4vh,3rem)] flex flex-wrap items-center justify-center gap-[clamp(1.5rem,5vw,4rem)]">

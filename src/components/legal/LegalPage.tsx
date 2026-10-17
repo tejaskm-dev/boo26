@@ -219,7 +219,7 @@ export default function LegalPage({
                 <Sprite name="cat-sleepy" scale={0.5} drift={12} idle={4} />
               </RiseIn>
               <p className="hand max-w-[16ch] -rotate-[2deg] whitespace-pre-line text-[clamp(1.1rem,1.7vw,1.55rem)] text-bone/60">
-                {"Read all of it?\nRespect. Now go\nmake someone react."}
+                {live ? "Read all of it?\nRespect. Now go\nfind a way out." : "Read all of it?\nRespect. Now go\ntouch grass."}
               </p>
               <BlobButton href="/" size="lg">
                 Back to {EVENT.name}

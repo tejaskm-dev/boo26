@@ -57,7 +57,10 @@ export const TERMS: LegalDoc = {
       title: "Registration and the fee",
       body: (
         <List>
-          <Item>Registration isn&rsquo;t open yet. When it opens, you&rsquo;ll register through the registration portal linked from this site.</Item>
+          <Item>
+            Registration runs on an outside registration portal, not on this website. When it opens, the Register buttons
+            here take you to it.
+          </Item>
           <Item>The fee is ₹200 per team of two — ₹100 each.</Item>
           <Item>
             Give accurate details when you register. We use them to run the event, as the{" "}
@@ -76,16 +79,15 @@ export const TERMS: LegalDoc = {
       body: (
         <List>
           <Item>
-            {EVENT.name} starts at 2 PM on 24 October and runs for 20 hours, through the night and into the morning of 25
-            October.
+            The doors open at 5 PM on 24 October, the build starts at 6 PM, and {EVENT.name} runs through the night into
+            the morning of 25 October.
           </Item>
           <Item>
             Food is provided during the event. Accommodation and sleeping facilities are not — if you need somewhere to stay
             before the event, that&rsquo;s yours to arrange.
           </Item>
           <Item>
-            The haunted house, the treasure hunt inside it and the midnight games are part of the night. Joining them is up
-            to you.
+            The midnight carnival is part of the night. Joining in is up to you.
           </Item>
           <Item>ASIET&rsquo;s rules for students and for the campus apply for the whole event.</Item>
           <Item>Plans can change. If the schedule, the activities or the venue details change, we&rsquo;ll update this site, or tell you at the event.</Item>

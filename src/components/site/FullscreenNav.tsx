@@ -61,7 +61,7 @@ export type NavLook = { wdth: number; size: number; indent: number; tilt: number
 const ITEM: NavLook[] = [
   { wdth: 118, size: 1.1, indent: 0, tilt: -1.9 },   // The Night
   { wdth: 86, size: 0.9, indent: 2.6, tilt: 1.3 },   // Experience
-  { wdth: 112, size: 1.05, indent: 0.9, tilt: -0.7 }, // 20 Hours
+  { wdth: 112, size: 1.05, indent: 0.9, tilt: -0.7 }, // No Sleep
   { wdth: 88, size: 0.92, indent: 3, tilt: 2.3 },    // After Dark
   { wdth: 96, size: 0.82, indent: 4.2, tilt: -1.1 }, // The People
   { wdth: 125, size: 1.2, indent: 5.4, tilt: -1.4 }, // Build

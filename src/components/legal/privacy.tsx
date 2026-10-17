@@ -2,13 +2,15 @@ import type { LegalDoc } from "./LegalPage";
 import { A, Item, Key, List, P } from "./Prose";
 import { EVENT, LEGAL_UPDATED } from "@/lib/site";
 import { STORAGE } from "@/lib/storage";
+import { registrationOpen } from "@/lib/register/mode";
 
 /**
  * What the site does is checked, not assumed: it loads nothing from any other
  * origin, sets no cookies and no localStorage, and the only things it keeps are
- * the session-storage keys in src/lib/storage.ts, listed from there. The
- * footer's newsletter form sends nothing. Registration isn't built yet, so
- * that part says what it will be for, not what it will ask.
+ * the session-storage keys in src/lib/storage.ts, listed from there (the
+ * sign-up's draft only while the site's own sign-up is open, which it isn't:
+ * registration runs on an outside portal). The footer's newsletter form
+ * sends nothing.
  */
 export function privacy(live: boolean): LegalDoc {
   return {
@@ -23,7 +25,7 @@ export function privacy(live: boolean): LegalDoc {
       "No cookies, no analytics and no trackers on this site.",
       "A few small notes live in your browser tab, and go when you close it.",
       "The newsletter box isn't connected yet. Nothing you type is sent.",
-      `When registration opens, we'll ask only for what ${EVENT.name} needs, and never sell it.`,
+      `Registration runs on an outside portal. We use what you give it only to run ${EVENT.name}, and never sell it.`,
     ],
     clauses: [
       {
@@ -60,7 +62,7 @@ export function privacy(live: boolean): LegalDoc {
         body: (
           <>
             <P>
-              The site keeps up to four small notes in your browser&rsquo;s session storage. They never leave your device,
+              The site keeps up to {registrationOpen() ? "four" : "three"} small notes in your browser&rsquo;s session storage. They never leave your device,
               and they&rsquo;re deleted when you close the tab.
             </P>
             <List>
@@ -75,11 +77,13 @@ export function privacy(live: boolean): LegalDoc {
                 <Key>{STORAGE.tilt}</Key> — on iPhone and iPad only: you allowed motion access, so you aren&rsquo;t asked again
                 this visit.
               </Item>
-              <Item>
-                <Key>{STORAGE.draft}</Key> — while you&rsquo;re registering, what you&rsquo;ve typed into the form, so a reload
-                or a switch to another app doesn&rsquo;t lose it. It stays in the tab, and it&rsquo;s deleted the moment your
-                team is made or joined.
-              </Item>
+              {registrationOpen() ? (
+                <Item>
+                  <Key>{STORAGE.draft}</Key> — while you&rsquo;re registering, what you&rsquo;ve typed into the form, so a
+                  reload or a switch to another app doesn&rsquo;t lose it. It stays in the tab, and it&rsquo;s deleted the
+                  moment your team is made or joined.
+                </Item>
+              ) : null}
             </List>
             <P>If your browser blocks storage, the site still works. It just plays the full intro every time.</P>
           </>
@@ -129,8 +133,8 @@ export function privacy(live: boolean): LegalDoc {
         body: (
           <>
             <P>
-              Registration isn&rsquo;t open yet. When it opens, the form will ask for what we need to run the event — things
-              like your name, your contact details, your college details and your team.
+              Registration runs on an outside registration portal, not on this website. It asks for what we need to run
+              the event — things like your name, your contact details, your college details and your team.
             </P>
             <List>
               <Item>
@@ -143,8 +147,8 @@ export function privacy(live: boolean): LegalDoc {
                 campus, say — we&rsquo;ll share only that.
               </Item>
               <Item>
-                If the registration portal runs on another service, that service&rsquo;s own privacy policy applies to it too,
-                and we&rsquo;ll name it on the portal.
+                The portal is another service, so its own privacy policy applies to what you give it, as well as this one.
+                We&rsquo;ll name it when registration opens.
               </Item>
             </List>
             <P>We&rsquo;ll update this page with exactly what&rsquo;s collected before registration opens.</P>

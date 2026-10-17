@@ -8,13 +8,15 @@ import Sprite from "@/components/ui/Sprite";
 import Words from "@/components/fx/Words";
 import { EVENT, NOTES, TIMELINE } from "@/lib/site";
 import { LG, prefersReducedMotion } from "@/lib/motion";
-import type { SpriteName } from "@/lib/sprites";
 
 /**
- * 03 — an oversized "20" holding the left, and the night running down the right
- * on a lime thread that draws itself as you scroll. Each stop has its own cat,
- * sitting on the thread rather than beside it: excited at the doors, playful
- * at midnight, confused at 3am, asleep at 6, popping out of a box at the end.
+ * 03 — an oversized "No" holding the left ("No sleep"), and the night running
+ * down the right on a lime thread that draws itself as you scroll. No number
+ * of hours: the schedule can still move, and no sleep stays true. Two letters,
+ * like the "20" this slot was drawn for, so it still fits the ink cove and the
+ * cat still drapes over it. Each stop has its own cat, sitting on the thread
+ * rather than beside it: excited at the doors, in costume at the carnival,
+ * confused at 3am, asleep at pens down, popping out of a box at the end.
  */
 export default function TwentyHours() {
   const root = useRef<HTMLDivElement>(null);
@@ -183,7 +185,7 @@ export default function TwentyHours() {
     >
       <div ref={root} className="px-[var(--edge)]">
         <div className="flex items-start justify-between gap-6">
-          <SectionLabel index="03" className="lg:text-bone">The 20 Hours</SectionLabel>
+          <SectionLabel index="03" className="lg:text-bone">No Sleep</SectionLabel>
           <p className="hand hidden max-w-[10ch] whitespace-pre-line text-right text-[clamp(1rem,1.5vw,1.4rem)] text-ink/55 md:block">
             {NOTES.hoursAside}
           </p>
@@ -199,10 +201,10 @@ export default function TwentyHours() {
               data-numeral-art
               className="brush select-none text-[clamp(8rem,26vw,22rem)] leading-[0.74] tracking-[-0.04em]"
             >
-              20
+              No
             </p>
             <p className="brush -mt-[0.12em] ml-[0.12em] text-[clamp(2.2rem,6vw,4.5rem)] leading-none">
-              Hours
+              Sleep
             </p>
             <Sprite name="squiggle-lime" scale={0.39} className="ml-[0.5em] mt-2" />
 
@@ -250,7 +252,7 @@ export default function TwentyHours() {
               <li
                 key={stop.time}
                 data-stop
-                style={{ marginLeft: `${[0, 2.4, 0.8, 3.2, 1.2][i] ?? 0}vw` }}
+                style={{ marginLeft: `${[0, 2.4, 0.8, 3.2, 1.2, 2.8, 0.4][i] ?? 0}vw` }}
                 /* the right lane is reserved for the cat, so a long label
                    never runs under it */
                 className={`relative py-[clamp(1.5rem,4.2vh,2.75rem)] pr-[clamp(7rem,16vw,13.5rem)] ${
@@ -273,8 +275,8 @@ export default function TwentyHours() {
 
                 <Sprite
                   data-stop-cat
-                  name={stop.cat as SpriteName}
-                  scale={0.48}
+                  name={stop.cat}
+                  scale={stop.scale ?? 0.48}
                   drift={8}
                   idle={5}
                   className={`absolute top-1/2 w-[4.25rem] -translate-y-1/2 sm:w-auto ${

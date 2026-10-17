@@ -6,11 +6,11 @@ export const CONDUCT: LegalDoc = {
   href: "/code-of-conduct",
   title: "Code of Conduct",
   heading: "Code of\nConduct",
-  note: "Scares are for\nthe haunted house.",
+  note: "Scares are for\nthe movies.",
   cat: "cat-scared",
   updated: LEGAL_UPDATED,
   summary: [
-    "Make people react. Never make them unsafe.",
+    "Scary is fine. Unsafe never is.",
     "No harassment, of anyone, in any form.",
     "Every scare is opt-in, and “stop” means stop.",
     "Something wrong? Tell any of the core team.",
@@ -22,8 +22,8 @@ export const CONDUCT: LegalDoc = {
       body: (
         <>
           <P>
-            {EVENT.name} is built around one idea: make someone react. Jumping, laughing, &ldquo;how did you do
-            that?&rdquo; — that&rsquo;s the point. Feeling unsafe, singled out or harassed is not.
+            {EVENT.name} is one long, strange night: building, playing, and making it to morning together. Spooky is the
+            point. Feeling unsafe, singled out or harassed is not.
           </P>
           <P>
             This code applies to everyone at {EVENT.name} {EVENT.year}, participants and the core team alike: at the venue,
@@ -72,10 +72,9 @@ export const CONDUCT: LegalDoc = {
       body: (
         <List>
           <Item>
-            The haunted house, the treasure hunt and the midnight games are meant to be scary fun. Every one of them is
-            opt-in.
+            The midnight carnival, and anything spooky on the night, is meant to be fun. Every part of it is opt-in.
           </Item>
-          <Item>You can leave any of them at any point, with no questions and no teasing.</Item>
+          <Item>You can step out of any of it at any point, with no questions and no teasing.</Item>
           <Item>&ldquo;Stop&rdquo; means stop — for everyone, every time.</Item>
           <Item>Never touch someone to scare them.</Item>
           <Item>No pranks outside the planned activities, and nothing that could actually hurt anyone.</Item>

@@ -46,11 +46,11 @@ export default function Build() {
               sits over the right half of this row */}
           Something
           <br />
-          that makes
+          that gets
           <br />
-          someone
+          you out
           <br />
-          react.
+          alive.
         </p>
         <Sprite name="squiggle-lime" scale={0.39} className="mb-2" />
 
